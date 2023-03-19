@@ -1,0 +1,82 @@
+{
+  "name": "media-captions",
+  "version": "0.0.1",
+  "description": "",
+  "license": "MIT",
+  "type": "module",
+  "types": "dist/types/index.d.ts",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16"
+  },
+  "files": [
+    "*.d.ts",
+    "dist/"
+  ],
+  "scripts": {
+    "dev": "pnpm clean && tsup --watch & pnpm run types -w",
+    "build": "tsup",
+    "types": "tsc -p tsconfig.build.json",
+    "clean": "rimraf dist",
+    "format": "prettier src --write --loglevel warn",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch"
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^3.7.0",
+    "prettier": "^2.8.4",
+    "tslib": "^2.5.0",
+    "tsup": "^6.6.0",
+    "typescript": "^5.0.0",
+    "undici": "^5.21.0",
+    "vite": "^4.2.0",
+    "vitest": "^0.29.0"
+  },
+  "contributors": [
+    "Rahim Alwer <rahim.alwer@gmail.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vidstack/media-captions.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vidstack/media-captions/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "test": "./dist/dev/index.js",
+      "require": "./dist/server/index.cjs",
+      "node": "./dist/server/index.js",
+      "deno": "./dist/server/index.js",
+      "development": "./dist/dev/index.js",
+      "default": "./dist/prod/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "ass",
+    "captions",
+    "cues",
+    "engine",
+    "fast",
+    "lightweight",
+    "media",
+    "parser",
+    "player",
+    "regions",
+    "srt",
+    "ssa",
+    "streaming",
+    "text-tracks",
+    "ts",
+    "typescript",
+    "video",
+    "vidstack",
+    "vtt",
+    "web"
+  ]
+}
