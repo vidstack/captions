@@ -1,0 +1,158 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`bg_color 1`] = `
+[
+  {
+    "bgColor": "white",
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "bgColor": "lime",
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "bgColor": "cyan",
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "bgColor": "red",
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "bgColor": "yellow",
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "bgColor": "magenta",
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "bgColor": "blue",
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "bgColor": "black",
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+]
+`;
+
+exports[`color 1`] = `
+[
+  {
+    "children": [],
+    "color": "white",
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "children": [],
+    "color": "lime",
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "children": [],
+    "color": "cyan",
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "children": [],
+    "color": "red",
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "children": [],
+    "color": "yellow",
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "children": [],
+    "color": "magenta",
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "children": [],
+    "color": "blue",
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "children": [],
+    "color": "black",
+    "tagName": "span",
+    "type": "c",
+  },
+]
+`;
+
+exports[`tag name 1`] = `
+[
+  {
+    "children": [],
+    "tagName": "span",
+    "type": "c",
+  },
+  {
+    "children": [],
+    "tagName": "i",
+    "type": "i",
+  },
+  {
+    "children": [],
+    "tagName": "b",
+    "type": "b",
+  },
+  {
+    "children": [],
+    "tagName": "u",
+    "type": "u",
+  },
+  {
+    "children": [],
+    "tagName": "ruby",
+    "type": "ruby",
+  },
+  {
+    "children": [],
+    "tagName": "rt",
+    "type": "rt",
+  },
+  {
+    "children": [],
+    "tagName": "span",
+    "type": "v",
+  },
+  {
+    "children": [],
+    "tagName": "span",
+    "type": "lang",
+  },
+  {
+    "children": [],
+    "tagName": "span",
+    "time": 70,
+    "type": "timestamp",
+  },
+]
+`;

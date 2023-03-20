@@ -20,7 +20,7 @@
     "clean": "rimraf dist",
     "format": "prettier src --write --loglevel warn",
     "test": "vitest --run",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch --single-thread"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^3.7.0",

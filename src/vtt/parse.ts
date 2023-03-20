@@ -4,19 +4,19 @@ import { toCoords, toFloat, toNumber, toPercentage } from '../utils/unit';
 import { VTTCue } from './vtt-cue';
 import { VTTRegion } from './vtt-region';
 
-const COMMA = ',',
-  COLON = ':',
-  PERCENT_SIGN = '%',
-  NOTE_BLOCK_START = 'NOTE',
-  REGION_BLOCK_START = 'REGION',
-  REGION_BLOCK_START_RE = /REGION(?:\s|\t)+/,
-  SPACE_RE = /(?:\s|\t)+/,
-  TIMESTAMP_SEP = '-->',
-  TIMESTAMP_SEP_RE = /(?:\s|\t)*-->(?:\s|\t)+/,
-  ALIGN_RE = /start|center|end|left|right/,
-  LINE_ALIGN_RE = /start|center|end/,
-  POS_ALIGN_RE = /line-(?:left|right)|center|auto/,
-  TIMESTAMP_RE = /^(?:(\d{1,2}):)?(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
+const COMMA = /*#__PURE__*/ ',',
+  PERCENT_SIGN = /*#__PURE__*/ '%',
+  SETTING_SEP_RE = /*#__PURE__*/ /[:=]/,
+  SETTING_LINE_RE = /*#__PURE__*/ /[\s\t]*\w+[:=]/,
+  NOTE_BLOCK_START_RE = /*#__PURE__*/ /^NOTE/i,
+  REGION_BLOCK_START_RE = /*#__PURE__*/ /^REGION:?[\s\t]*/i,
+  SPACE_RE = /*#__PURE__*/ /[\s\t]+/,
+  TIMESTAMP_SEP = /*#__PURE__*/ '-->',
+  TIMESTAMP_SEP_RE = /*#__PURE__*/ /[\s\t]*-->[\s\t]+/,
+  ALIGN_RE = /*#__PURE__*/ /start|center|end|left|right/,
+  LINE_ALIGN_RE = /*#__PURE__*/ /start|center|end/,
+  POS_ALIGN_RE = /*#__PURE__*/ /line-(?:left|right)|center|auto/,
+  TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d{1,2}):)?(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
 
 const enum VTTBlock {
   Header = 0,
@@ -57,7 +57,7 @@ export default class WebVTTParser implements CaptionsParser {
           case VTTBlock.Cue:
             if (this._cue) {
               const hasText = this._cue!.text.length > 0;
-              if (!hasText && line.includes(COLON)) {
+              if (!hasText && SETTING_LINE_RE.test(line)) {
                 this._parseCueSettings(line.split(SPACE_RE), lineCount);
               } else {
                 this._cue!.text += (hasText ? '\n' : '') + line;
@@ -68,9 +68,9 @@ export default class WebVTTParser implements CaptionsParser {
             this._parseRegionSettings(line.split(SPACE_RE), lineCount);
             break;
         }
-      } else if (line.startsWith(NOTE_BLOCK_START)) {
+      } else if (NOTE_BLOCK_START_RE.test(line)) {
         this._block = VTTBlock.Note;
-      } else if (line.startsWith(REGION_BLOCK_START)) {
+      } else if (REGION_BLOCK_START_RE.test(line)) {
         this._block = VTTBlock.Region;
         this._region = new VTTRegion();
         this._parseRegionSettings(
@@ -134,8 +134,8 @@ export default class WebVTTParser implements CaptionsParser {
     } else if (line === '') {
       this._block = VTTBlock.None;
       this._init.onHeaderMetadata?.(this._metadata);
-    } else if (line.includes(COLON)) {
-      const [key, value] = line.split(COLON);
+    } else if (SETTING_SEP_RE.test(line)) {
+      const [key, value] = line.split(SETTING_SEP_RE);
       if (key) this._metadata[key] = (value || '').replace(SPACE_RE, '');
     }
 
@@ -157,9 +157,9 @@ export default class WebVTTParser implements CaptionsParser {
   private _parseRegionSettings(settings: string[], line: number) {
     let badValue: boolean;
     for (let i = 0; i < settings.length; i++) {
-      if (settings[i].includes(COLON)) {
+      if (SETTING_SEP_RE.test(settings[i])) {
         badValue = false;
-        const [name, value] = settings[i].split(COLON);
+        const [name, value] = settings[i].split(SETTING_SEP_RE);
         switch (name) {
           case 'id':
             this._region!.id = value;
@@ -223,8 +223,8 @@ export default class WebVTTParser implements CaptionsParser {
     let badValue: boolean;
     for (let i = 0; i < settings.length; i++) {
       badValue = false;
-      if (settings[i].includes(COLON)) {
-        const [name, value] = settings[i].split(COLON);
+      if (SETTING_SEP_RE.test(settings[i])) {
+        const [name, value] = settings[i].split(SETTING_SEP_RE);
         switch (name) {
           case 'region':
             const region = this._regions[value];

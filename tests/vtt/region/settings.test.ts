@@ -153,7 +153,7 @@ test('GOOD: scroll setting', async () => {
 test('BAD: scroll setting', async () => {
   const { regions, errors } = await parseText(['WEBVTT', '', 'REGION scroll:nope'].join('\n'));
   expect(regions).toHaveLength(1);
-  expect(regions[0].scroll).toBe('none');
+  expect(regions[0].scroll).toBe('');
   expect(errors).toMatchInlineSnapshot(`
     [
       [Error: invalid value for region setting \`scroll\` on line 3 (value: nope)],

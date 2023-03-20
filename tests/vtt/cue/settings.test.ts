@@ -257,7 +257,7 @@ test('GOOD: unknown setting', async () => {
 
 test('GOOD: single line settings', async () => {
   const { cues, errors } = await parseText(
-    ['WEBVTT', '', '00:00 --> 00:02 line:50% align:end size:45%', 'Text A'].join('\n'),
+    ['WEBVTT', '', '00:00 --> 00:02 line=50% align=end size=45%', 'Text A'].join('\n'),
   );
 
   expect(cues).toHaveLength(1);

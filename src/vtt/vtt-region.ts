@@ -34,5 +34,5 @@ export class VTTRegion {
   /**
    * An enum representing how adding new cues will move existing cues.
    */
-  scroll: 'none' | 'up' = 'none';
+  scroll: '' | 'up' = '';
 }
