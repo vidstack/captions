@@ -2,8 +2,8 @@ import { tokenizeVTTCue, VTTCue } from 'media-captions';
 
 test('text', () => {
   const cue = new VTTCue(0, 100, 'This is some text.');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "data": "This is some text.",
@@ -29,8 +29,8 @@ test('tag name', () => {
       '<01:10></01:20>',
     ].join(''),
   );
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchSnapshot();
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchSnapshot();
 });
 
 test('color', () => {
@@ -41,8 +41,8 @@ test('color', () => {
       .map((color) => `<c.${color}></c>`)
       .join(''),
   );
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchSnapshot();
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchSnapshot();
 });
 
 test('bg_color', () => {
@@ -53,14 +53,14 @@ test('bg_color', () => {
       .map((color) => `<c.bg_${color}></c>`)
       .join(''),
   );
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchSnapshot();
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchSnapshot();
 });
 
 test('lang', () => {
   const cue = new VTTCue(0, 100, '<lang en-US></lang><lang en   \tUS></lang>');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "children": [],
@@ -80,8 +80,8 @@ test('lang', () => {
 
 test('voice', () => {
   const cue = new VTTCue(0, 100, '<v John></v><v John  \tDoe></v>');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "children": [],
@@ -101,8 +101,8 @@ test('voice', () => {
 
 test('class', () => {
   const cue = new VTTCue(0, 100, '<c.foo.bar.baz></c><v.foo.bar John Doe></v>');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "children": [],
@@ -123,8 +123,8 @@ test('class', () => {
 
 test('bold', () => {
   const cue = new VTTCue(0, 100, 'This is <b>bold</b>, right?');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "data": "This is ",
@@ -150,8 +150,8 @@ test('bold', () => {
 
 test('italic', () => {
   const cue = new VTTCue(0, 100, 'This is <i>italic<i/>');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "data": "This is ",
@@ -173,8 +173,8 @@ test('italic', () => {
 
 test('ruby', () => {
   const cue = new VTTCue(0, 100, 'This is <ruby><rt>ruby text</rt></ruby>.');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "data": "This is ",
@@ -206,8 +206,8 @@ test('ruby', () => {
 
 test('timestamp', () => {
   const cue = new VTTCue(0, 100, 'This is a <01:20>timestamp</01:20>');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "data": "This is a ",
@@ -230,8 +230,8 @@ test('timestamp', () => {
 
 test('out of range timestamp', () => {
   const cue = new VTTCue(0, 100, '<01:10:00>Timestamp');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "data": "Timestamp",
@@ -243,8 +243,8 @@ test('out of range timestamp', () => {
 
 test('nested tags', () => {
   const cue = new VTTCue(0, 100, 'This is <b>Bold and <i>italic</i></b>, right?');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "data": "This is ",
@@ -280,8 +280,8 @@ test('nested tags', () => {
 
 test('no closing tag', () => {
   const cue = new VTTCue(0, 100, '<b><i>No closing tags');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "children": [
@@ -305,8 +305,8 @@ test('no closing tag', () => {
 
 test('html entities', () => {
   const cue = new VTTCue(0, 100, '&amp;&lt;&gt;&quot;&#39;&nbsp;&lrm;&rlm;');
-  const nodes = tokenizeVTTCue(cue);
-  expect(nodes).toMatchInlineSnapshot(`
+  const tokens = tokenizeVTTCue(cue);
+  expect(tokens).toMatchInlineSnapshot(`
     [
       {
         "data": "&<>\\"' ‎‏",
