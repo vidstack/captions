@@ -21,7 +21,8 @@ export function renderVTTCueString(cue: VTTCue, currentTime = 0): string {
 }
 
 function stringifyVTTTokens(tokens: VTTNode[], currentTime = 0): string {
-  let result = '';
+  let attrs: Record<string, any>,
+    result = '';
 
   for (const token of tokens) {
     if (token.type === 'text') {
@@ -29,22 +30,24 @@ function stringifyVTTTokens(tokens: VTTNode[], currentTime = 0): string {
     } else {
       const isTimestamp = token.type === 'timestamp';
 
-      const attrs = [
-        ['class', token.class],
-        ['title', token.type === 'v' && token.voice],
-        ['lang', token.type === 'lang' && token.lang],
-        ['data-voice', token.type === 'v'],
-        ['data-timed', isTimestamp],
-        ['data-future', isTimestamp && token.time > currentTime],
-        ['data-past', isTimestamp && token.time < currentTime],
-        ['data-color', token.color],
-        ['data-bg-color', token.bgColor],
-      ]
+      attrs = {};
+      attrs.class = token.class;
+      attrs.title = token.type === 'v' && token.voice;
+      attrs.lang = token.type === 'lang' && token.lang;
+      attrs['data-voice'] = token.type === 'v';
+      attrs['data-timed'] = isTimestamp;
+      attrs['data-future'] = isTimestamp && token.time > currentTime;
+      attrs['data-past'] = isTimestamp && token.time < currentTime;
+      attrs.style = `${token.color ? `color: ${token.color};` : ''}${
+        token.bgColor ? `background-color: ${token.bgColor};` : ''
+      }`;
+
+      const attributes = Object.entries(attrs)
         .filter((v) => v[1])
         .map((v) => `${v[0]}="${v[1]}"`)
         .join(' ');
 
-      result += `<${token.tagName}${attrs ? ' ' + attrs : ''}>${stringifyVTTTokens(
+      result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${stringifyVTTTokens(
         token.children,
       )}</${token.tagName}>`;
     }

@@ -34,5 +34,5 @@ export default defineConfig([
   // prod
   dist({ dev: false, server: false }),
   // server
-  dist({ dev: false, server: true }),
+  dist({ dev: true, server: true }),
 ]);

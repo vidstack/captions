@@ -4,6 +4,10 @@ import type { VTTRegion } from './vtt-region';
 // get region styles/position
 // get cue styles/position
 
+// <overlay> (not ours?)
+// <regions>
+// <cue>
+
 export class CaptionsOverlayRenderer {
   private _overlay: HTMLElement;
   private _cues = new Map<VTTCue, HTMLElement>();

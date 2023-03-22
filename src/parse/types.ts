@@ -53,7 +53,7 @@ export interface ParseCaptionsOptions {
   onRegion?(region: VTTRegion): void;
   /**
    * Invoked when a loading or parser error is encountered. This is only invoked in development
-   * mode.
+   * mode and server-side.
    */
   onError?(error: ParseError): void;
 }

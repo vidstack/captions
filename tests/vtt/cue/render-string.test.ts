@@ -24,6 +24,6 @@ test('timestamp', () => {
 test('color', () => {
   const cue = new VTTCue(0, 100, '<c.lime.bg_white>Go this way!');
   expect(renderVTTCueString(cue)).toMatchInlineSnapshot(
-    '"<span data-color=\\"lime\\" data-bg-color=\\"white\\">Go this way!</span>"',
+    '"<span style=\\"color: lime;background-color: white;\\">Go this way!</span>"',
   );
 });
