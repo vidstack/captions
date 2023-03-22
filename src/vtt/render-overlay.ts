@@ -1,6 +1,9 @@
 import type { VTTCue } from './vtt-cue';
 import type { VTTRegion } from './vtt-region';
 
+// get region styles/position
+// get cue styles/position
+
 export class CaptionsOverlayRenderer {
   private _overlay: HTMLElement;
   private _cues = new Map<VTTCue, HTMLElement>();

@@ -81,8 +81,8 @@ export default class WebVTTParser implements CaptionsParser {
         this._block = VTTBlock.Cue;
         const [startTimeText, trailingText = ''] = line.split(TIMESTAMP_SEP_RE),
           [endTimeText, ...settingsText] = trailingText.split(SPACE_RE),
-          startTime = parseTimestamp(startTimeText),
-          endTime = parseTimestamp(endTimeText);
+          startTime = parseVTTTimestamp(startTimeText),
+          endTime = parseVTTTimestamp(endTimeText);
         if (startTime !== null && endTime !== null && endTime > startTime) {
           this._cue = new VTTCue(startTime, endTime, '');
           this._cue.id = this._prevLine;
@@ -316,7 +316,7 @@ export default class WebVTTParser implements CaptionsParser {
 /**
  * @see {@link https://www.w3.org/TR/webvtt1/#collect-a-webvtt-timestamp}
  */
-export function parseTimestamp(timestamp: string): number | null {
+export function parseVTTTimestamp(timestamp: string): number | null {
   const match = timestamp.match(TIMESTAMP_RE);
   if (!match) return null;
 

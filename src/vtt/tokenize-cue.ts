@@ -1,4 +1,4 @@
-import { parseTimestamp } from './parse';
+import { parseVTTTimestamp } from './parse';
 import type { VTTCue } from './vtt-cue';
 
 const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
@@ -130,7 +130,7 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
         break;
       case Mode.Timestamp:
         if (char === '>') {
-          const time = parseTimestamp(buffer);
+          const time = parseVTTTimestamp(buffer);
 
           if (time !== null && time >= cue.startTime && time <= cue.endTime) {
             buffer = 'timestamp';

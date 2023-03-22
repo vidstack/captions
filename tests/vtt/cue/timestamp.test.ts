@@ -1,6 +1,4 @@
-import { parseText } from 'media-captions';
-
-import { parseTimestamp } from '../../../src/vtt/parse';
+import { parseText, parseVTTTimestamp } from 'media-captions';
 
 // -------------------------------------------------------------------------------
 // BAD
@@ -140,6 +138,6 @@ test('GOOD: parse raw timestamp', () => {
   ] as const;
 
   for (const [timestamp, expected] of testCases) {
-    expect(parseTimestamp(timestamp)).toBe(expected);
+    expect(parseVTTTimestamp(timestamp)).toBe(expected);
   }
 });
