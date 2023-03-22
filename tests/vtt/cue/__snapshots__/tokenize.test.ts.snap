@@ -149,7 +149,12 @@ exports[`tag name 1`] = `
     "type": "lang",
   },
   {
-    "children": [],
+    "children": [
+      {
+        "data": "Timed",
+        "type": "text",
+      },
+    ],
     "tagName": "span",
     "time": 70,
     "type": "timestamp",

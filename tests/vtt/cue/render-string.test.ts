@@ -14,10 +14,10 @@ test('voices', () => {
 test('timestamp', () => {
   const cue = new VTTCue(0, 100, '<01:10>Go this way!');
   expect(renderVTTCueString(cue, 0)).toMatchInlineSnapshot(
-    '"<span data-timed=\\"true\\" data-future=\\"true\\">Go this way!</span>"',
+    '"<span data-time=\\"70\\" data-future=\\"true\\">Go this way!</span>"',
   );
   expect(renderVTTCueString(cue, 85)).toMatchInlineSnapshot(
-    '"<span data-timed=\\"true\\" data-past=\\"true\\">Go this way!</span>"',
+    '"<span data-time=\\"70\\" data-past=\\"true\\">Go this way!</span>"',
   );
 });
 

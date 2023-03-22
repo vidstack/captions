@@ -66,8 +66,4 @@ export class VTTCue extends TextCue {
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/VTTCue/align}
    */
   align: 'start' | 'center' | 'end' | 'left' | 'right' = 'center';
-  /**
-   * Inline styles that were applied to the cue that were extracted while parsing.
-   */
-  styles?: Record<string, string>;
 }

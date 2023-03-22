@@ -26,7 +26,7 @@ test('tag name', () => {
       '<rt></rt>',
       '<v></v>',
       '<lang></lang>',
-      '<01:10></01:20>',
+      '<01:10>Timed',
     ].join(''),
   );
   const tokens = tokenizeVTTCue(cue);
@@ -205,7 +205,7 @@ test('ruby', () => {
 });
 
 test('timestamp', () => {
-  const cue = new VTTCue(0, 100, 'This is a <01:20>timestamp</01:20>');
+  const cue = new VTTCue(0, 100, 'This is a <01:20>timestamp');
   const tokens = tokenizeVTTCue(cue);
   expect(tokens).toMatchInlineSnapshot(`
     [

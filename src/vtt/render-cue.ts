@@ -1,26 +1,28 @@
 import { tokenizeVTTCue, VTTNode } from './tokenize-cue';
 import type { VTTCue } from './vtt-cue';
 
-export function renderVTTCueHTML(cue: VTTCue): HTMLDivElement {
+export function renderVTTCueHTML(cue: VTTCue): RenderedVTTCue {
   if (__SERVER__) {
     throw Error(
       '[media-captions] called `renderVTTCueHTML` on the server - use `renderVTTCueString`',
     );
   }
 
-  const div = document.createElement('div');
-  div.setAttribute('data-id', cue.id);
-  div.setAttribute('data-cue', '');
-  div.innerHTML = renderVTTCueString(cue);
+  const template = document.createElement('template');
+  template.innerHTML = renderVTTCueString(cue);
+  return { cue, content: template.content };
+}
 
-  return div;
+export interface RenderedVTTCue {
+  readonly cue: VTTCue;
+  readonly content: DocumentFragment;
 }
 
 export function renderVTTCueString(cue: VTTCue, currentTime = 0): string {
-  return stringifyVTTTokens(tokenizeVTTCue(cue), currentTime);
+  return renderVTTTokensString(tokenizeVTTCue(cue), currentTime);
 }
 
-function stringifyVTTTokens(tokens: VTTNode[], currentTime = 0): string {
+export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): string {
   let attrs: Record<string, any>,
     result = '';
 
@@ -35,7 +37,7 @@ function stringifyVTTTokens(tokens: VTTNode[], currentTime = 0): string {
       attrs.title = token.type === 'v' && token.voice;
       attrs.lang = token.type === 'lang' && token.lang;
       attrs['data-voice'] = token.type === 'v';
-      attrs['data-timed'] = isTimestamp;
+      attrs['data-time'] = isTimestamp && token.time;
       attrs['data-future'] = isTimestamp && token.time > currentTime;
       attrs['data-past'] = isTimestamp && token.time < currentTime;
       attrs.style = `${token.color ? `color: ${token.color};` : ''}${
@@ -47,11 +49,23 @@ function stringifyVTTTokens(tokens: VTTNode[], currentTime = 0): string {
         .map((v) => `${v[0]}="${v[1]}"`)
         .join(' ');
 
-      result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${stringifyVTTTokens(
+      result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${renderVTTTokensString(
         token.children,
       )}</${token.tagName}>`;
     }
   }
 
   return result;
+}
+
+export function updateTimedVTTCueNodes(root: Element, currentTime: number) {
+  if (__SERVER__) return;
+  for (const el of root.querySelectorAll('span[data-time]')) {
+    const time = Number(el.getAttribute('data-time'));
+    if (Number.isNaN(time)) continue;
+    if (time < currentTime) el.setAttribute('data-future', 'true');
+    else el.removeAttribute('data-future');
+    if (time > currentTime) el.setAttribute('data-past', 'true');
+    else el.removeAttribute('data-past');
+  }
 }
