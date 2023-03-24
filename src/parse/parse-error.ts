@@ -1,13 +1,15 @@
-export enum ParseErrorCode {
-  LoadFail = 0,
-  BadSignature = 1,
-  BadTimestamp = 2,
-  BadSettingValue = 3,
-  UnknownSetting = 4,
-}
+export const ParseErrorCode = {
+  LoadFail: 0,
+  BadSignature: 1,
+  BadTimestamp: 2,
+  BadSettingValue: 3,
+  UnknownSetting: 4,
+} as const;
+
+export type ParseErrorCodes = (typeof ParseErrorCode)[keyof typeof ParseErrorCode];
 
 export class ParseError extends Error {
-  readonly code: ParseErrorCode;
+  readonly code: ParseErrorCodes;
   readonly line: number;
   constructor(init: ParseErrorInit) {
     super(init.reason);
@@ -17,7 +19,7 @@ export class ParseError extends Error {
 }
 
 export interface ParseErrorInit {
-  code: ParseErrorCode;
+  code: ParseErrorCodes;
   reason: string;
   line: number;
 }

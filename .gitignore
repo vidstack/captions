@@ -2,6 +2,7 @@
 
 dist/
 dist-*/
+sandbox/
 node_modules/
 
 debug.log

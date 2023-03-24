@@ -41,7 +41,7 @@ export class VTTCue extends TextCue {
   lineAlign: 'start' | 'center' | 'end' = 'start';
   /**
    * Returns the indentation of the cue within the line. This can be the string `'auto'` or a
-   * number representing the percentage of the `VTTCue.region`, or the video size if `VTTCu`.region`
+   * number representing the percentage of the `VTTCue.region`, or the video size if `VTTCue`.region`
    * is `null`.
    *
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/VTTCue/position}

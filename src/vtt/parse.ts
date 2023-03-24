@@ -8,8 +8,9 @@ const COMMA = /*#__PURE__*/ ',',
   PERCENT_SIGN = /*#__PURE__*/ '%',
   SETTING_SEP_RE = /*#__PURE__*/ /[:=]/,
   SETTING_LINE_RE = /*#__PURE__*/ /[\s\t]*\w+[:=]/,
-  NOTE_BLOCK_START_RE = /*#__PURE__*/ /^NOTE/i,
-  REGION_BLOCK_START_RE = /*#__PURE__*/ /^REGION:?[\s\t]*/i,
+  NOTE_BLOCK_START = /*#__PURE__*/ 'NOTE',
+  REGION_BLOCK_START = /*#__PURE__*/ 'REGION',
+  REGION_BLOCK_START_RE = /*#__PURE__*/ /^REGION:?[\s\t]+/,
   SPACE_RE = /*#__PURE__*/ /[\s\t]+/,
   TIMESTAMP_SEP = /*#__PURE__*/ '-->',
   TIMESTAMP_SEP_RE = /*#__PURE__*/ /[\s\t]*-->[\s\t]+/,
@@ -68,9 +69,9 @@ export default class WebVTTParser implements CaptionsParser {
             this._parseRegionSettings(line.split(SPACE_RE), lineCount);
             break;
         }
-      } else if (NOTE_BLOCK_START_RE.test(line)) {
+      } else if (line.startsWith(NOTE_BLOCK_START)) {
         this._block = VTTBlock.Note;
-      } else if (REGION_BLOCK_START_RE.test(line)) {
+      } else if (line.startsWith(REGION_BLOCK_START)) {
         this._block = VTTBlock.Region;
         this._region = new VTTRegion();
         this._parseRegionSettings(

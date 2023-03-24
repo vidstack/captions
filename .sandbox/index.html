@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <title>Media Captions</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/sandbox/favicon-32x32.png" />
+    <link rel="stylesheet" href="/styles/captions.css" />
+    <link rel="stylesheet" href="/styles/regions.css" />
+    <script type="module" src="/sandbox/main.ts"></script>
+    <style>
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+      }
+
+      .viewport {
+        position: relative;
+        width: 960px;
+        height: 540px;
+        background-color: #dcdcdc;
+        box-sizing: border-box;
+      }
+
+      #current-time {
+        margin-top: 48px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="viewport">
+      <div id="overlay"></div>
+    </div>
+
+    <input id="current-time" type="number" value="0" />
+  </body>
+</html>

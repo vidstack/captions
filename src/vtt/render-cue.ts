@@ -1,10 +1,11 @@
+import { setDataAttr } from '../utils/style';
 import { tokenizeVTTCue, VTTNode } from './tokenize-cue';
 import type { VTTCue } from './vtt-cue';
 
-export function renderVTTCueHTML(cue: VTTCue): RenderedVTTCue {
+export function createVTTCueTemplate(cue: VTTCue): VTTCueTemplate {
   if (__SERVER__) {
     throw Error(
-      '[media-captions] called `renderVTTCueHTML` on the server - use `renderVTTCueString`',
+      '[media-captions] called `createVTTCueTemplate` on the server - use `renderVTTCueString`',
     );
   }
 
@@ -13,7 +14,7 @@ export function renderVTTCueHTML(cue: VTTCue): RenderedVTTCue {
   return { cue, content: template.content };
 }
 
-export interface RenderedVTTCue {
+export interface VTTCueTemplate {
   readonly cue: VTTCue;
   readonly content: DocumentFragment;
 }
@@ -38,15 +39,15 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
       attrs.lang = token.type === 'lang' && token.lang;
       attrs['data-voice'] = token.type === 'v';
       attrs['data-time'] = isTimestamp && token.time;
-      attrs['data-future'] = isTimestamp && token.time > currentTime;
-      attrs['data-past'] = isTimestamp && token.time < currentTime;
+      attrs['data-future'] = isTimestamp && token.time < currentTime;
+      attrs['data-past'] = isTimestamp && token.time > currentTime;
       attrs.style = `${token.color ? `color: ${token.color};` : ''}${
         token.bgColor ? `background-color: ${token.bgColor};` : ''
       }`;
 
       const attributes = Object.entries(attrs)
         .filter((v) => v[1])
-        .map((v) => `${v[0]}="${v[1]}"`)
+        .map((v) => `${v[0]}="${v[1] === true ? '' : v[1]}"`)
         .join(' ');
 
       result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${renderVTTTokensString(
@@ -63,9 +64,9 @@ export function updateTimedVTTCueNodes(root: Element, currentTime: number) {
   for (const el of root.querySelectorAll('span[data-time]')) {
     const time = Number(el.getAttribute('data-time'));
     if (Number.isNaN(time)) continue;
-    if (time < currentTime) el.setAttribute('data-future', 'true');
+    if (time > currentTime) setDataAttr(el, 'future');
     else el.removeAttribute('data-future');
-    if (time > currentTime) el.setAttribute('data-past', 'true');
+    if (time < currentTime) setDataAttr(el, 'past');
     else el.removeAttribute('data-past');
   }
 }
