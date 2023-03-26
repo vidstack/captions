@@ -24,24 +24,13 @@ export function positionRegion(
     cuePaddingY = getPaddingY(cueEl),
     cueMarginTop = parseFloat(getComputedStyle(cueEl).marginTop) || 0,
     cues = Array.from(regionEl.querySelectorAll('[data-cue]')),
-    activeLines = 0;
+    remainingLines = region.lines;
 
   for (let i = cues.length - 1; i >= 0; i--) {
-    let newLines = Math.round((cues[i].clientHeight - cuePaddingY) / cueLineHeight),
-      lineCount = region.lines - activeLines;
-
-    if (newLines <= lineCount) {
-      height += cues[i].clientHeight + cueMarginTop;
-    } else if (lineCount > 0) {
-      height += cuePaddingY / 2 + cueMarginTop + 1;
-      while (lineCount > 0) {
-        height += cueLineHeight;
-        lineCount--;
-      }
-    }
-
-    activeLines += newLines;
-    if (activeLines > region.lines) break;
+    const newLines = Math.round((cues[i].clientHeight - cuePaddingY) / cueLineHeight);
+    remainingLines -= newLines;
+    if (remainingLines >= 0) height += cues[i].clientHeight + cueMarginTop;
+    else break;
   }
 
   setCSSVar(regionEl, 'region-height', height + 'px');
