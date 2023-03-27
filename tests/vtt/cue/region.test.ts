@@ -17,7 +17,7 @@ test('GOOD: associate cue with region', async () => {
     ].join('\n'),
   );
 
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(regions).toHaveLength(2);
   expect(cues).toHaveLength(2);
 
@@ -55,7 +55,7 @@ test('GOOD: disassociate region from cue if no longer valid', async () => {
     ].join('\n'),
   );
 
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(regions).toHaveLength(1);
   expect(cues).toHaveLength(4);
 

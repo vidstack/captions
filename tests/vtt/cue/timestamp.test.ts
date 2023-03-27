@@ -93,7 +93,7 @@ test('GOOD: valid timestamps', async () => {
   );
 
   expect(cues).toHaveLength(3);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].startTime).toBe(0);
   expect(cues[0].endTime).toBe(2.1);

@@ -1,4 +1,4 @@
-export const ParseErrorCode = {
+export const ParseErrorCode = /*#__PURE__*/ {
   LoadFail: 0,
   BadSignature: 1,
   BadTimestamp: 2,

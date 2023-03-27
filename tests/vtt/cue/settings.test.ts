@@ -18,7 +18,7 @@ test('GOOD: vertical settings', async () => {
   );
 
   expect(cues).toHaveLength(2);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].vertical).toBe('lr');
   expect(cues[1].vertical).toBe('rl');
@@ -60,7 +60,7 @@ test('GOOD: line settings', async () => {
   );
 
   expect(cues).toHaveLength(3);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].line).toBe(50);
   expect(cues[0].snapToLines).toBe(false);
@@ -126,7 +126,7 @@ test('GOOD: position settings', async () => {
   );
 
   expect(cues).toHaveLength(3);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].position).toBe(50);
   expect(cues[0].positionAlign).toBe('auto');
@@ -184,7 +184,7 @@ test('GOOD: size settings', async () => {
   );
 
   expect(cues).toHaveLength(2);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].size).toBe(45);
   expect(cues[1].size).toBe(25);
@@ -215,7 +215,7 @@ test('GOOD: align settings', async () => {
   );
 
   expect(cues).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].align).toBe('end');
 });
@@ -261,7 +261,7 @@ test('GOOD: single line settings', async () => {
   );
 
   expect(cues).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].line).toBe(50);
   expect(cues[0].size).toBe(45);
@@ -274,7 +274,7 @@ test('GOOD: multiline settings', async () => {
   );
 
   expect(cues).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].line).toBe(50);
   expect(cues[0].size).toBe(45);

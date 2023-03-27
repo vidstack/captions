@@ -39,8 +39,8 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
       attrs.lang = token.type === 'lang' && token.lang;
       attrs['data-voice'] = token.type === 'v';
       attrs['data-time'] = isTimestamp && token.time;
-      attrs['data-future'] = isTimestamp && token.time < currentTime;
-      attrs['data-past'] = isTimestamp && token.time > currentTime;
+      attrs['data-future'] = isTimestamp && token.time > currentTime;
+      attrs['data-past'] = isTimestamp && token.time < currentTime;
       attrs.style = `${token.color ? `color: ${token.color};` : ''}${
         token.bgColor ? `background-color: ${token.bgColor};` : ''
       }`;

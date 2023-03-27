@@ -28,7 +28,7 @@ it('should parse response', async () => {
   const { cues, errors } = await parseResponse(new Response(stream, { status: 200 }));
 
   expect(cues).toHaveLength(2);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
 
   expect(cues[0].startTime).toBe(12.72);
   expect(cues[0].endTime).toBe(15.12);

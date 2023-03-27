@@ -1,10 +1,12 @@
-import { ParseError, ParseErrorCode } from '../parse/parse-error';
+import type { ParseError } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit } from '../parse/types';
 import { toCoords, toFloat, toNumber, toPercentage } from '../utils/unit';
+import type { VTTErrorBuilder } from './errors';
 import { VTTCue } from './vtt-cue';
 import { VTTRegion } from './vtt-region';
 
-const COMMA = /*#__PURE__*/ ',',
+const HEADER_MAGIC /*#__PURE__*/ = 'WEBVTT',
+  COMMA = /*#__PURE__*/ ',',
   PERCENT_SIGN = /*#__PURE__*/ '%',
   SETTING_SEP_RE = /*#__PURE__*/ /[:=]/,
   SETTING_LINE_RE = /*#__PURE__*/ /[\s\t]*\w+[:=]/,
@@ -20,124 +22,95 @@ const COMMA = /*#__PURE__*/ ',',
   TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d{1,2}):)?(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
 
 const enum VTTBlock {
-  Header = 0,
-  None = 1,
+  None = 0,
+  Header = 1,
   Cue = 2,
   Region = 3,
   Note = 4,
 }
 
-export default class WebVTTParser implements CaptionsParser {
-  private _block = VTTBlock.Header;
-  private _metadata: Record<string, any> = {};
-  private _regions: Record<string, VTTRegion> = {};
-  private _cues: VTTCue[] = [];
-  private _cue: VTTCue | null = null;
-  private _region: VTTRegion | null = null;
-  private _errors: ParseError[] = [];
-  private _prevLine = '';
+export class VTTParser implements CaptionsParser {
+  protected _init!: CaptionsParserInit;
+  protected _block = VTTBlock.None;
+  protected _metadata: Record<string, any> = {};
+  protected _regions: Record<string, VTTRegion> = {};
+  protected _cues: VTTCue[] = [];
+  protected _cue: VTTCue | null = null;
+  protected _region: VTTRegion | null = null;
+  protected _errors: ParseError[] = [];
+  protected _errorBuilder?: typeof VTTErrorBuilder;
+  protected _prevLine = '';
 
-  constructor(private _init: CaptionsParserInit) {}
+  async init(init: CaptionsParserInit) {
+    this._init = init;
+    if (init.strict) this._block = VTTBlock.Header;
+    if (init.errors) this._errorBuilder = (await import('./errors')).VTTErrorBuilder;
+  }
 
   parse(line: string, lineCount: number) {
-    if (this._block > VTTBlock.Header) {
-      if (line === '') {
-        if (this._cue) {
-          this._cues.push(this._cue);
-          this._init.onCue?.(this._cue);
-          this._cue = null;
-        } else if (this._region) {
-          this._regions[this._region.id] = this._region;
-          this._init.onRegion?.(this._region);
-          this._region = null;
-        }
+    if (line === '') {
+      if (this._cue) {
+        this._cues.push(this._cue);
+        this._init.onCue?.(this._cue);
+        this._cue = null;
+      } else if (this._region) {
+        this._regions[this._region.id] = this._region;
+        this._init.onRegion?.(this._region);
+        this._region = null;
+      } else if (this._block === VTTBlock.Header) {
+        this._parseHeader(line, lineCount);
+        this._init.onHeaderMetadata?.(this._metadata);
+      }
 
-        this._block = VTTBlock.None;
-      } else if (this._block > VTTBlock.None) {
-        switch (this._block) {
-          case VTTBlock.Cue:
-            if (this._cue) {
-              const hasText = this._cue!.text.length > 0;
-              if (!hasText && SETTING_LINE_RE.test(line)) {
-                this._parseCueSettings(line.split(SPACE_RE), lineCount);
-              } else {
-                this._cue!.text += (hasText ? '\n' : '') + line;
-              }
+      this._block = VTTBlock.None;
+    } else if (this._block > VTTBlock.None) {
+      switch (this._block) {
+        case VTTBlock.Header:
+          this._parseHeader(line, lineCount);
+          break;
+        case VTTBlock.Cue:
+          if (this._cue) {
+            const hasText = this._cue!.text.length > 0;
+            if (!hasText && SETTING_LINE_RE.test(line)) {
+              this._parseCueSettings(line.split(SPACE_RE), lineCount);
+            } else {
+              this._cue!.text += (hasText ? '\n' : '') + line;
             }
-            break;
-          case VTTBlock.Region:
-            this._parseRegionSettings(line.split(SPACE_RE), lineCount);
-            break;
+          }
+          break;
+        case VTTBlock.Region:
+          this._parseRegionSettings(line.split(SPACE_RE), lineCount);
+          break;
+      }
+    } else if (line.startsWith(NOTE_BLOCK_START)) {
+      this._block = VTTBlock.Note;
+    } else if (line.startsWith(REGION_BLOCK_START)) {
+      this._block = VTTBlock.Region;
+      this._region = new VTTRegion();
+      this._parseRegionSettings(line.replace(REGION_BLOCK_START_RE, '').split(SPACE_RE), lineCount);
+    } else if (line.includes(TIMESTAMP_SEP)) {
+      this._block = VTTBlock.Cue;
+      const [startTimeText, trailingText = ''] = line.split(TIMESTAMP_SEP_RE),
+        [endTimeText, ...settingsText] = trailingText.split(SPACE_RE),
+        startTime = parseVTTTimestamp(startTimeText),
+        endTime = parseVTTTimestamp(endTimeText);
+      if (startTime !== null && endTime !== null && endTime > startTime) {
+        this._cue = new VTTCue(startTime, endTime, '');
+        this._cue.id = this._prevLine;
+        this._parseCueSettings(settingsText, lineCount);
+      } else {
+        if (startTime === null) {
+          this._handleError(this._errorBuilder?._badStartTimestamp(startTimeText, lineCount));
         }
-      } else if (line.startsWith(NOTE_BLOCK_START)) {
-        this._block = VTTBlock.Note;
-      } else if (line.startsWith(REGION_BLOCK_START)) {
-        this._block = VTTBlock.Region;
-        this._region = new VTTRegion();
-        this._parseRegionSettings(
-          line.replace(REGION_BLOCK_START_RE, '').split(SPACE_RE),
-          lineCount,
-        );
-      } else if (line.includes(TIMESTAMP_SEP)) {
-        this._block = VTTBlock.Cue;
-        const [startTimeText, trailingText = ''] = line.split(TIMESTAMP_SEP_RE),
-          [endTimeText, ...settingsText] = trailingText.split(SPACE_RE),
-          startTime = parseVTTTimestamp(startTimeText),
-          endTime = parseVTTTimestamp(endTimeText);
-        if (startTime !== null && endTime !== null && endTime > startTime) {
-          this._cue = new VTTCue(startTime, endTime, '');
-          this._cue.id = this._prevLine;
-          this._parseCueSettings(settingsText, lineCount);
-        } else if (__DEV__) {
-          if (startTime === null) {
-            const error = new ParseError({
-              code: ParseErrorCode.BadTimestamp,
-              reason: `cue start timestamp \`${startTimeText}\` is invalid on line ${lineCount}`,
-              line: lineCount,
-            });
-            this._errors.push(error);
-            this._init.onError?.(error);
-          }
-          if (endTime === null) {
-            const error = new ParseError({
-              code: ParseErrorCode.BadTimestamp,
-              reason: `cue end timestamp \`${endTimeText}\` is invalid on line ${lineCount}`,
-              line: lineCount,
-            });
-            this._errors.push(error);
-            this._init.onError?.(error);
-          }
-          if (startTime != null && endTime !== null && endTime > startTime) {
-            const error = new ParseError({
-              code: ParseErrorCode.BadTimestamp,
-              reason: `cue end timestamp \`${endTime}\` is greater than start \`${startTime}\` on line ${lineCount}`,
-              line: lineCount,
-            });
-            this._errors.push(error);
-            this._init.onError?.(error);
-          }
+        if (endTime === null) {
+          this._handleError(this._errorBuilder?._badEndTimestamp(endTimeText, lineCount));
+        }
+        if (startTime != null && endTime !== null && endTime > startTime) {
+          this._handleError(this._errorBuilder?._badRangeTimestamp(startTime, endTime, lineCount));
         }
       }
     } else if (lineCount === 1) {
-      if (!line.startsWith('WEBVTT')) {
-        if (__DEV__) {
-          const error = new ParseError({
-            code: ParseErrorCode.BadSignature,
-            reason: 'missing WEBVTT file header',
-            line: lineCount,
-          });
-          this._errors.push(error);
-          this._init.onError?.(error);
-        }
-
-        this._init.cancel();
-      }
-    } else if (line === '') {
-      this._block = VTTBlock.None;
-      this._init.onHeaderMetadata?.(this._metadata);
-    } else if (SETTING_SEP_RE.test(line)) {
-      const [key, value] = line.split(SETTING_SEP_RE);
-      if (key) this._metadata[key] = (value || '').replace(SPACE_RE, '');
+      this._parseHeader(line, lineCount);
     }
 
     this._prevLine = line;
@@ -148,14 +121,27 @@ export default class WebVTTParser implements CaptionsParser {
       metadata: this._metadata,
       cues: this._cues,
       regions: Object.values(this._regions),
-      errors: __DEV__ && this._errors.length ? this._errors : null,
+      errors: this._errors,
     };
+  }
+
+  protected _parseHeader(line: string, lineCount: number) {
+    if (lineCount > 1) {
+      if (SETTING_SEP_RE.test(line)) {
+        const [key, value] = line.split(SETTING_SEP_RE);
+        if (key) this._metadata[key] = (value || '').replace(SPACE_RE, '');
+      }
+    } else if (line.startsWith(HEADER_MAGIC)) {
+      this._block = VTTBlock.Header;
+    } else {
+      this._handleError(this._errorBuilder?._badHeader());
+    }
   }
 
   /**
    * @see {@link https://www.w3.org/TR/webvtt1/#region-settings-parsing}
    */
-  private _parseRegionSettings(settings: string[], line: number) {
+  protected _parseRegionSettings(settings: string[], line: number) {
     let badValue: boolean;
     for (let i = 0; i < settings.length; i++) {
       if (SETTING_SEP_RE.test(settings[i])) {
@@ -168,50 +154,36 @@ export default class WebVTTParser implements CaptionsParser {
           case 'width':
             const width = toPercentage(value);
             if (width !== null) this._region!.width = width;
-            else if (__DEV__) badValue = true;
+            else badValue = true;
             break;
           case 'lines':
             const lines = toNumber(value);
             if (lines !== null) this._region!.lines = lines;
-            else if (__DEV__) badValue = true;
+            else badValue = true;
             break;
           case 'regionanchor':
             const region = toCoords(value);
             if (region !== null) {
               this._region!.regionAnchorX = region[0];
               this._region!.regionAnchorY = region[1];
-            } else if (__DEV__) badValue = true;
+            } else badValue = true;
             break;
           case 'viewportanchor':
             const viewport = toCoords(value);
             if (viewport !== null) {
               this._region!.viewportAnchorX = viewport[0];
               this._region!.viewportAnchorY = viewport[1];
-            } else if (__DEV__) badValue = true;
+            } else badValue = true;
             break;
           case 'scroll':
             if (value === 'up') this._region!.scroll = 'up';
-            else if (__DEV__) badValue = true;
+            else badValue = true;
             break;
           default:
-            if (__DEV__) {
-              const error = new ParseError({
-                code: ParseErrorCode.UnknownSetting,
-                reason: `unknown region setting \`${name}\` on line ${line} (value: ${value})`,
-                line,
-              });
-              this._errors.push(error);
-              this._init.onError?.(error);
-            }
+            this._handleError(this._errorBuilder?._unknownRegionSetting(name, value, line));
         }
-        if (__DEV__ && badValue) {
-          const error = new ParseError({
-            code: ParseErrorCode.BadSettingValue,
-            reason: `invalid value for region setting \`${name}\` on line ${line} (value: ${value})`,
-            line,
-          });
-          this._errors.push(error);
-          this._init.onError?.(error);
+        if (badValue) {
+          this._handleError(this._errorBuilder?._badRegionSetting(name, value, line));
         }
       }
     }
@@ -220,7 +192,7 @@ export default class WebVTTParser implements CaptionsParser {
   /**
    * @see {@link https://www.w3.org/TR/webvtt1/#cue-timings-and-settings-parsing}
    */
-  private _parseCueSettings(settings: string[], line: number) {
+  protected _parseCueSettings(settings: string[], line: number) {
     let badValue: boolean;
     for (let i = 0; i < settings.length; i++) {
       badValue = false;
@@ -235,7 +207,7 @@ export default class WebVTTParser implements CaptionsParser {
             if (value === 'lr' || value === 'rl') {
               this._cue!.vertical = value;
               this._cue!.region = null;
-            } else if (__DEV__) badValue = true;
+            } else badValue = true;
             break;
           case 'line':
             const [linePos, lineAlign] = value.split(COMMA);
@@ -245,16 +217,16 @@ export default class WebVTTParser implements CaptionsParser {
               if (percentage !== null) {
                 this._cue!.line = percentage;
                 this._cue!.snapToLines = false;
-              } else if (__DEV__) badValue = true;
+              } else badValue = true;
             } else {
               const number = toFloat(linePos);
               if (number !== null) this._cue!.line = number;
-              else if (__DEV__) badValue = true;
+              else badValue = true;
             }
 
             if (LINE_ALIGN_RE.test(lineAlign)) {
               this._cue!.lineAlign = lineAlign as VTTCue['lineAlign'];
-            } else if (__DEV__ && lineAlign) {
+            } else if (lineAlign) {
               badValue = true;
             }
 
@@ -265,11 +237,11 @@ export default class WebVTTParser implements CaptionsParser {
               position = toPercentage(colPos);
 
             if (position !== null) this._cue!.position = position;
-            else if (__DEV__) badValue = true;
+            else badValue = true;
 
             if (colAlign && POS_ALIGN_RE.test(colAlign)) {
               this._cue!.positionAlign = colAlign as VTTCue['positionAlign'];
-            } else if (__DEV__ && colAlign) {
+            } else if (colAlign) {
               badValue = true;
             }
             break;
@@ -278,38 +250,36 @@ export default class WebVTTParser implements CaptionsParser {
             if (size !== null) {
               this._cue!.size = size;
               if (size < 100) this._cue!.region = null;
-            } else if (__DEV__) {
+            } else {
               badValue = true;
             }
             break;
           case 'align':
             if (ALIGN_RE.test(value)) {
               this._cue!.align = value as VTTCue['align'];
-            } else if (__DEV__) {
+            } else {
               badValue = true;
             }
             break;
           default:
-            if (__DEV__) {
-              const error = new ParseError({
-                code: ParseErrorCode.UnknownSetting,
-                reason: `unknown cue setting \`${name}\` on line ${line} (value: ${value})`,
-                line,
-              });
-              this._errors.push(error);
-              this._init.onError?.(error);
-            }
+            this._handleError(this._errorBuilder?._unknownCueSetting(name, value, line));
         }
-        if (__DEV__ && badValue) {
-          const error = new ParseError({
-            code: ParseErrorCode.BadSettingValue,
-            reason: `invalid value for cue setting \`${name}\` on line ${line} (value: ${value})`,
-            line,
-          });
-          this._errors.push(error);
-          this._init.onError?.(error);
+
+        if (badValue) {
+          this._handleError(this._errorBuilder?._badCueSetting(name, value, line));
         }
       }
+    }
+  }
+
+  protected _handleError(error?: ParseError) {
+    if (!error) return;
+    this._errors.push(error);
+    if (this._init.strict) {
+      this._init.cancel();
+      throw error;
+    } else {
+      this._init.onError?.(error);
     }
   }
 }
@@ -332,4 +302,8 @@ export function parseVTTTimestamp(timestamp: string): number | null {
   }
 
   return total;
+}
+
+export default function createVTTParser() {
+  return new VTTParser();
 }

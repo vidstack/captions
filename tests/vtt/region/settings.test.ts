@@ -7,7 +7,7 @@ import { parseText } from 'media-captions';
 test('GOOD: id setting', async () => {
   const { regions, errors } = await parseText(['WEBVTT', '', 'REGION id:foo'].join('\n'));
   expect(regions).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(regions[0].id).toBe('foo');
 });
 
@@ -18,7 +18,7 @@ test('GOOD: id setting', async () => {
 test('GOOD: width setting', async () => {
   const { regions, errors } = await parseText(['WEBVTT', '', 'REGION width:45'].join('\n'));
   expect(regions).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(regions[0].width).toBe(45);
 });
 
@@ -40,7 +40,7 @@ test('BAD: width setting', async () => {
 test('GOOD: lines setting', async () => {
   const { regions, errors } = await parseText(['WEBVTT', '', 'REGION lines:5'].join('\n'));
   expect(regions).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(regions[0].lines).toBe(5);
 });
 
@@ -64,7 +64,7 @@ test('GOOD: region anchor setting', async () => {
     ['WEBVTT', '', 'REGION regionanchor:10%,50%'].join('\n'),
   );
   expect(regions).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(regions[0].regionAnchorX).toBe(10);
   expect(regions[0].regionAnchorY).toBe(50);
 });
@@ -106,7 +106,7 @@ test('GOOD: viewport anchor setting', async () => {
     ['WEBVTT', '', 'REGION viewportanchor:10%,50%'].join('\n'),
   );
   expect(regions).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(regions[0].viewportAnchorX).toBe(10);
   expect(regions[0].viewportAnchorY).toBe(50);
 });
@@ -146,7 +146,7 @@ test('BAD: viewport anchor y setting', async () => {
 test('GOOD: scroll setting', async () => {
   const { regions, errors } = await parseText(['WEBVTT', '', 'REGION scroll:up'].join('\n'));
   expect(regions).toHaveLength(1);
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(regions[0].scroll).toBe('up');
 });
 

@@ -5,11 +5,15 @@ import type { ParseError } from './parse-error';
 
 export type CaptionsFileFormat = 'vtt' | 'srt' | 'ssa' | 'ass';
 
-export interface CaptionsParserConstructor {
-  new (init: CaptionsParserInit): CaptionsParser;
+export interface CaptionsParserFactory {
+  (): CaptionsParser;
 }
 
 export interface CaptionsParser {
+  /**
+   * Called when initializing the parser before the parsing process begins.
+   */
+  init(init: CaptionsParserInit): void | Promise<void>;
   /**
    * Called when a new line of text has been found and requires parsing. This includes empty lines
    * which can be used to separate caption blocks.
@@ -26,7 +30,7 @@ export interface ParsedCaptionsResult {
   metadata: VTTHeaderMetadata;
   regions: VTTRegion[];
   cues: VTTCue[];
-  errors: ParseError[] | null;
+  errors: ParseError[];
 }
 
 export interface CaptionsParserInit extends ParseCaptionsOptions {
@@ -35,10 +39,31 @@ export interface CaptionsParserInit extends ParseCaptionsOptions {
 
 export interface ParseCaptionsOptions {
   /**
-   * The captions file format to be parsed or a custom parser constructor. Supported types
-   * include: 'vtt', 'srt', 'ssa', and 'ass'.
+   * Whether strict mode should be enabled. In strict mode:
+   *
+   * - If the file header is not valid the parsing process will be cancelled.
+   * - If a parser error is found, the parsing process will be cancelled and an error will be
+   * thrown instead of invoking the `onError` callback .
+   *
+   * Do note that strict mode will only work
+   *
+   * @defaultValue false
    */
-  type?: CaptionsFileFormat | CaptionsParserConstructor;
+  strict?: boolean;
+  /**
+   * Whether errors should be collected and reported in the final parser result. By default, this
+   * value will be true in dev mode or if `strict` mode is true. If set to true and `strict` mode
+   * is false, the `onError` callback will be invoked.
+   *
+   * Do note, setting this to true will dynamically load error builders which will slightly
+   * increase bundle size (~1kB).
+   */
+  errors?: boolean;
+  /**
+   * The captions file format to be parsed or a custom parser factory (functions that returns a
+   * captions parser). Supported types include: 'vtt', 'srt', 'ssa', and 'ass'.
+   */
+  type?: CaptionsFileFormat | CaptionsParserFactory;
   /**
    * Invoked with metadata that was parsed from the VTT header.
    */

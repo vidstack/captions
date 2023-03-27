@@ -29,7 +29,7 @@ test('GOOD: cue blocks', async () => {
     ].join('\n'),
   );
 
-  expect(errors).toBeNull();
+  expect(errors).toHaveLength(0);
   expect(cues).toHaveLength(4);
 
   expect(cues[0].id).toBe('1');
