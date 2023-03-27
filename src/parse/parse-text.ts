@@ -1,4 +1,3 @@
-import createVTTParser from '../vtt/parse';
 import { LINE_TERMINATOR_RE } from './text-transform';
 import type { CaptionsParserFactory, ParseCaptionsOptions, ParsedCaptionsResult } from './types';
 
@@ -32,9 +31,10 @@ export async function parseTextStream(
         break;
       case 'ssa':
       case 'ass':
-        factory = (await import('../ass/parse')).default;
+        factory = (await import('../ssa/parse')).default;
+        break;
       default:
-        factory = createVTTParser;
+        factory = (await import('../vtt/parse')).default;
     }
   } else {
     factory = type;

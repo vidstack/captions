@@ -3,7 +3,8 @@ export const ParseErrorCode = /*#__PURE__*/ {
   BadSignature: 1,
   BadTimestamp: 2,
   BadSettingValue: 3,
-  UnknownSetting: 4,
+  BadFormat: 4,
+  UnknownSetting: 5,
 } as const;
 
 export type ParseErrorCodes = (typeof ParseErrorCode)[keyof typeof ParseErrorCode];

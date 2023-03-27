@@ -53,34 +53,19 @@ export function positionCue(container: Box, cue: VTTCue, cueEl: HTMLElement, box
 
     moveBox(cueBox, initialAxis, position);
   } else {
-    const lineHeight = getLineHeight(cueEl.firstElementChild!),
-      percentage = (lineHeight / container.height) * 100;
+    const isHorizontal = cue.vertical === '',
+      posAxis = isHorizontal ? '+y' : '+x',
+      size = isHorizontal ? cueBox.height : cueBox.width;
 
-    switch (cue.lineAlign) {
-      case 'center':
-        line -= percentage / 2;
-        break;
-      case 'end':
-        line -= percentage;
-        break;
-    }
+    moveBox(cueBox, posAxis, ((isHorizontal ? container.height : container.width) * line) / 100);
 
-    let position: string;
-    switch (cue.vertical) {
-      case '':
-        position = 'top';
-        break;
-      case 'rl':
-        position = 'left';
-        break;
-      case 'lr':
-        position = 'right';
-        break;
-    }
+    moveBox(
+      cueBox,
+      posAxis,
+      cue.lineAlign === 'center' ? size / 2 : cue.lineAlign === 'end' ? size : 0,
+    );
 
-    setCSSVar(cueEl, `cue-${position}`, line + '%');
-    axis = ['+y', '-x', '+x', '-y'];
-    cueBox = createBox(cueEl);
+    axis = isHorizontal ? ['-y', '+y', '-x', '+x'] : ['-x', '+x', '-y', '+y'];
   }
 
   avoidBoxCollisions(container, cueBox, boxes, axis);
@@ -104,9 +89,11 @@ export function computeCueLine(cue: VTTCue): number {
 export function computeCuePosition(cue: VTTCue): number {
   if (cue.position === 'auto') {
     switch (cue.align) {
+      case 'start':
       case 'left':
         return 0;
       case 'right':
+      case 'end':
         return 100;
       default:
         return 50;

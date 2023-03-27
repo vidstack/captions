@@ -217,6 +217,12 @@ export class CaptionsOverlayRenderer {
     if (cue.vertical !== '') setDataAttr(display, 'vertical');
     setCSSVar(display, 'cue-text-align', cue.align);
 
+    if (cue.style) {
+      for (const prop of Object.keys(cue.style)) {
+        display.style.setProperty(prop, cue.style[prop]);
+      }
+    }
+
     // https://www.w3.org/TR/webvtt1/#processing-cue-settings
     if (!this._hasRegion(cue)) {
       setCSSVar(

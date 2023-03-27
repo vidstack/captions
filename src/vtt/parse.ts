@@ -1,7 +1,7 @@
+import type { ParseErrorBuilder } from '../parse/errors';
 import type { ParseError } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit } from '../parse/types';
 import { toCoords, toFloat, toNumber, toPercentage } from '../utils/unit';
-import type { VTTErrorBuilder } from './errors';
 import { VTTCue } from './vtt-cue';
 import { VTTRegion } from './vtt-region';
 
@@ -19,7 +19,7 @@ const HEADER_MAGIC /*#__PURE__*/ = 'WEBVTT',
   ALIGN_RE = /*#__PURE__*/ /start|center|end|left|right/,
   LINE_ALIGN_RE = /*#__PURE__*/ /start|center|end/,
   POS_ALIGN_RE = /*#__PURE__*/ /line-(?:left|right)|center|auto/,
-  TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d{1,2}):)?(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
+  TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d{1,2}):)?(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/;
 
 export const enum VTTBlock {
   None = 0,
@@ -38,13 +38,13 @@ export class VTTParser implements CaptionsParser {
   protected _cue: VTTCue | null = null;
   protected _region: VTTRegion | null = null;
   protected _errors: ParseError[] = [];
-  protected _errorBuilder?: typeof VTTErrorBuilder;
+  protected _errorBuilder?: typeof ParseErrorBuilder;
   protected _prevLine = '';
 
   async init(init: CaptionsParserInit) {
     this._init = init;
     if (init.strict) this._block = VTTBlock.Header;
-    if (init.errors) this._errorBuilder = (await import('./errors')).VTTErrorBuilder;
+    if (init.errors) this._errorBuilder = (await import('../parse/errors')).ParseErrorBuilder;
   }
 
   parse(line: string, lineCount: number) {
@@ -63,7 +63,7 @@ export class VTTParser implements CaptionsParser {
       }
 
       this._block = VTTBlock.None;
-    } else if (this._block > VTTBlock.None) {
+    } else if (this._block) {
       switch (this._block) {
         case VTTBlock.Header:
           this._parseHeader(line, lineCount);
@@ -89,26 +89,13 @@ export class VTTParser implements CaptionsParser {
       this._region = new VTTRegion();
       this._parseRegionSettings(line.replace(REGION_BLOCK_START_RE, '').split(SPACE_RE), lineCount);
     } else if (line.includes(TIMESTAMP_SEP)) {
-      this._block = VTTBlock.Cue;
-      const [startTimeText, trailingText = ''] = line.split(TIMESTAMP_SEP_RE),
-        [endTimeText, ...settingsText] = trailingText.split(SPACE_RE),
-        startTime = this._parseTimestamp(startTimeText),
-        endTime = this._parseTimestamp(endTimeText);
-      if (startTime !== null && endTime !== null && endTime > startTime) {
-        this._cue = new VTTCue(startTime, endTime, '');
+      const result = this._parseTimestamp(line, lineCount);
+      if (result) {
+        this._cue = new VTTCue(result[0], result[1], '');
         this._cue.id = this._prevLine;
-        this._parseCueSettings(settingsText, lineCount);
-      } else {
-        if (startTime === null) {
-          this._handleError(this._errorBuilder?._badStartTimestamp(startTimeText, lineCount));
-        }
-        if (endTime === null) {
-          this._handleError(this._errorBuilder?._badEndTimestamp(endTimeText, lineCount));
-        }
-        if (startTime != null && endTime !== null && endTime > startTime) {
-          this._handleError(this._errorBuilder?._badRangeTimestamp(startTime, endTime, lineCount));
-        }
+        this._parseCueSettings(result[2], lineCount);
       }
+      this._block = VTTBlock.Cue;
     } else if (lineCount === 1) {
       this._parseHeader(line, lineCount);
     }
@@ -134,12 +121,28 @@ export class VTTParser implements CaptionsParser {
     } else if (line.startsWith(HEADER_MAGIC)) {
       this._block = VTTBlock.Header;
     } else {
-      this._handleError(this._errorBuilder?._badHeader());
+      this._handleError(this._errorBuilder?._badVTTHeader());
     }
   }
 
-  protected _parseTimestamp(timestamp: string) {
-    return parseVTTTimestamp(timestamp);
+  protected _parseTimestamp(line: string, lineCount: number) {
+    const [startTimeText, trailingText = ''] = line.split(TIMESTAMP_SEP_RE),
+      [endTimeText, ...settingsText] = trailingText.split(SPACE_RE),
+      startTime = parseVTTTimestamp(startTimeText),
+      endTime = parseVTTTimestamp(endTimeText);
+    if (startTime !== null && endTime !== null && endTime > startTime) {
+      return [startTime, endTime, settingsText] as const;
+    } else {
+      if (startTime === null) {
+        this._handleError(this._errorBuilder?._badStartTimestamp(startTimeText, lineCount));
+      }
+      if (endTime === null) {
+        this._handleError(this._errorBuilder?._badEndTimestamp(endTimeText, lineCount));
+      }
+      if (startTime != null && endTime !== null && endTime > startTime) {
+        this._handleError(this._errorBuilder?._badRangeTimestamp(startTime, endTime, lineCount));
+      }
+    }
   }
 
   /**

@@ -31,6 +31,10 @@
   bottom: var(--cue-bottom);
   width: var(--cue-width, auto);
   height: var(--cue-height, auto);
+  margin-top: var(--cue-margin-top);
+  margin-left: var(--cue-margin-left);
+  margin-right: var(--cue-margin-right);
+  margin-bottom: var(--cue-margin-bottom);
   box-sizing: border-box;
   text-align: var(--cue-text-align);
   writing-mode: var(--cue-writing-mode, unset);
@@ -49,6 +53,10 @@
   background-color: var(--cue-bg-color);
   box-sizing: border-box;
   color: var(--cue-color);
+  outline: var(--cue-outline);
+  outline-color: inherit;
+  box-shadow: var(--cue-box-shadow);
+  transform: var(--cue-transform);
   white-space: pre-wrap;
   min-width: min-content;
   min-height: min-content;

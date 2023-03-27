@@ -1,4 +1,4 @@
-import { parseText } from '../../src/parse/parse-text';
+import { parseText } from 'media-captions';
 
 test('GOOD: valid timestamp', async () => {
   const { cues, errors } = await parseText(['1', '00:00:00 --> 00:00:02,200', 'Text'].join('\n'), {

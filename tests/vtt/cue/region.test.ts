@@ -1,4 +1,4 @@
-import { parseText } from '../../../src/parse/parse-text';
+import { parseText } from 'media-captions';
 
 test('GOOD: associate cue with region', async () => {
   const { cues, regions, errors } = await parseText(

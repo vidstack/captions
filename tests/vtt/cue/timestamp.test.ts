@@ -19,12 +19,12 @@ test('BAD: invalid timestamp separators', async () => {
 
 test('BAD: invalid fractional digits', async () => {
   const { cues, errors } = await parseText(
-    ['WEBVTT', '', '00:00.00 --> 00:02.000', 'Text'].join('\n'),
+    ['WEBVTT', '', '00:00.00 --> 00:02.0000', 'Text'].join('\n'),
   );
   expect(cues).toHaveLength(0);
   expect(errors).toMatchInlineSnapshot(`
     [
-      [Error: cue start timestamp \`00:00.00\` is invalid on line 3],
+      [Error: cue end timestamp \`00:02.0000\` is invalid on line 3],
     ]
   `);
 });
@@ -119,6 +119,7 @@ test('GOOD: parse raw timestamp', () => {
     // Valid - optional parts omitted
     ['00:00:00', 0],
     ['0:00:00', 0],
+    ['00:00.10', 0.01],
     ['00:00', 0],
     ['59:00', 3540],
     ['00:01:23', 83],
@@ -127,7 +128,6 @@ test('GOOD: parse raw timestamp', () => {
 
     // Invalid
     ['00:60', null], // minutes part is 60 and no seconds part
-    ['00:00.10', null], // milliseconds part has less than 3 digits
     ['01:23:45.1234', null], // milliseconds part has more than 3 digits
     ['00:60:00.000', null], // minutes part is 60
     ['00:80:00.000', null], // minutes part is greater than 60

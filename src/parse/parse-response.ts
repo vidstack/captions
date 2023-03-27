@@ -27,7 +27,7 @@ export async function parseResponse(
       metadata: {},
       cues: [],
       regions: [],
-      errors: __DEV__ ? [error] : null,
+      errors: [error],
     };
   }
 

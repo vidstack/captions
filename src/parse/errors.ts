@@ -1,7 +1,7 @@
-import { ParseError, ParseErrorCode } from '../parse/parse-error';
+import { ParseError, ParseErrorCode } from './parse-error';
 
-export const VTTErrorBuilder = {
-  _badHeader() {
+export const ParseErrorBuilder = {
+  _badVTTHeader() {
     return new ParseError({
       code: ParseErrorCode.BadSignature,
       reason: 'missing WEBVTT file header',
@@ -54,6 +54,14 @@ export const VTTErrorBuilder = {
     return new ParseError({
       code: ParseErrorCode.UnknownSetting,
       reason: `unknown region setting \`${name}\` on line ${line} (value: ${value})`,
+      line,
+    });
+  },
+  // SSA-specific errors
+  _missingFormat(type: 'Style' | 'Dialogue', line: number) {
+    return new ParseError({
+      code: ParseErrorCode.BadFormat,
+      reason: `format missing for \`${type}\` block on line ${line}`,
       line,
     });
   },
