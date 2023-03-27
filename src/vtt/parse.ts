@@ -21,7 +21,7 @@ const HEADER_MAGIC /*#__PURE__*/ = 'WEBVTT',
   POS_ALIGN_RE = /*#__PURE__*/ /line-(?:left|right)|center|auto/,
   TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d{1,2}):)?(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
 
-const enum VTTBlock {
+export const enum VTTBlock {
   None = 0,
   Header = 1,
   Cue = 2,
@@ -92,8 +92,8 @@ export class VTTParser implements CaptionsParser {
       this._block = VTTBlock.Cue;
       const [startTimeText, trailingText = ''] = line.split(TIMESTAMP_SEP_RE),
         [endTimeText, ...settingsText] = trailingText.split(SPACE_RE),
-        startTime = parseVTTTimestamp(startTimeText),
-        endTime = parseVTTTimestamp(endTimeText);
+        startTime = this._parseTimestamp(startTimeText),
+        endTime = this._parseTimestamp(endTimeText);
       if (startTime !== null && endTime !== null && endTime > startTime) {
         this._cue = new VTTCue(startTime, endTime, '');
         this._cue.id = this._prevLine;
@@ -136,6 +136,10 @@ export class VTTParser implements CaptionsParser {
     } else {
       this._handleError(this._errorBuilder?._badHeader());
     }
+  }
+
+  protected _parseTimestamp(timestamp: string) {
+    return parseVTTTimestamp(timestamp);
   }
 
   /**

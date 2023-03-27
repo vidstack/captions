@@ -1,4 +1,3 @@
-import createSRTParser from '../srt/parse';
 import createVTTParser from '../vtt/parse';
 import { LINE_TERMINATOR_RE } from './text-transform';
 import type { CaptionsParserFactory, ParseCaptionsOptions, ParsedCaptionsResult } from './types';
@@ -29,7 +28,7 @@ export async function parseTextStream(
   if (typeof type === 'string') {
     switch (type) {
       case 'srt':
-        factory = createSRTParser;
+        factory = (await import('../srt/parse')).default;
         break;
       case 'ssa':
       case 'ass':
