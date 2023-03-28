@@ -37,10 +37,15 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
       attrs.class = token.class;
       attrs.title = token.type === 'v' && token.voice;
       attrs.lang = token.type === 'lang' && token.lang;
-      attrs['data-voice'] = token.type === 'v';
-      attrs['data-time'] = isTimestamp && token.time;
-      attrs['data-future'] = isTimestamp && token.time > currentTime;
-      attrs['data-past'] = isTimestamp && token.time < currentTime;
+      attrs['part'] = token.type === 'v' && 'voice';
+
+      if (isTimestamp) {
+        attrs['part'] = 'timed';
+        attrs['data-time'] = token.time;
+        attrs['data-future'] = token.time > currentTime;
+        attrs['data-past'] = token.time < currentTime;
+      }
+
       attrs.style = `${token.color ? `color: ${token.color};` : ''}${
         token.bgColor ? `background-color: ${token.bgColor};` : ''
       }`;
@@ -61,7 +66,7 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
 
 export function updateTimedVTTCueNodes(root: Element, currentTime: number) {
   if (__SERVER__) return;
-  for (const el of root.querySelectorAll('span[data-time]')) {
+  for (const el of root.querySelectorAll('[part="timed"]')) {
     const time = Number(el.getAttribute('data-time'));
     if (Number.isNaN(time)) continue;
     if (time > currentTime) setDataAttr(el, 'future');

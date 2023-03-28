@@ -1,4 +1,4 @@
-:where([data-region]) {
+:where([part='captions'] [part='region']) {
   position: absolute;
   display: inline-flex;
   flex-flow: column;
@@ -29,18 +29,18 @@
   box-sizing: border-box;
 }
 
-:where([data-region][data-active]) {
+:where([part='captions'] [part='region'][data-active]) {
 }
 
-:where([data-region][data-scroll='up']) {
+:where([part='captions'] [part='region'][data-scroll='up']) {
   justify-content: end;
 }
 
-:where([data-region][data-active][data-scroll='up']) {
+:where([part='captions'] [part='region'][data-active][data-scroll='up']) {
   transition: top 0.433s;
 }
 
-:where([data-region] > [data-cue-display]) {
+:where([part='captions'] [part='region'] > [part='cue-display']) {
   position: relative;
   width: auto;
   left: var(--cue-offset);
@@ -50,7 +50,7 @@
   margin-top: 2px;
 }
 
-:where([data-region] [data-cue]) {
+:where([part='captions'] [part='region'] [part='cue']) {
   position: relative;
   border-radius: 0px;
 }

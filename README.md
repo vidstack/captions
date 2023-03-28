@@ -5,6 +5,8 @@
 
 Some introduction...
 
+**Features**
+
 - 0 deps
 - built with typescript
 - modern apis (readablestream/fetch response)
@@ -22,7 +24,10 @@ Some introduction...
 - custom rendering via tokens
 - ...?
 
-⏭️ **[Skip to Examples](#examples)**
+**Examples**
+
+- [HTML Video](https://stackblitz.com/edit/media-captions?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor)
+- [React + Next.js](https://stackblitz.com/edit/media-captions-next?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor)
 
 ⏭️ **[Skip to Installation](#installation)**
 
@@ -41,13 +46,6 @@ custom rendering
 
 old and missing features
 
-## Examples
-
-- [HTML Video](https://stackblitz.com/edit/media-captions?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor)
-- [React + Next.js](https://stackblitz.com/edit/media-captions-next?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor)
-- [Custom Renderer (HTML)](https://stackblitz.com/edit/media-captions-custom-html-renderer?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor)
-- [Custom Renderer (React)](https://stackblitz.com/edit/media-captions-custom-react-renderer?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor)
-
 ## Installation
 
 First, install the NPM package:
@@ -56,7 +54,7 @@ First, install the NPM package:
 npm i media-captions
 ```
 
-Next, include styles if you plan on rendering captions:
+Next, include styles if you plan on rendering captions using the [`CaptionsOverlayRenderer`](#captionsoverlayrenderer):
 
 ```js
 import 'media-captions/styles/captions.css';
@@ -85,9 +83,9 @@ like so:
   - [`parseByteStream`](#parsebytestream)
   - [`CaptionsParser`](#captionsparser)
 - **Rendering**
-  - [`tokenizeVTTCue`](#tokenizevttcue)
   - [`createVTTCueTemplate`](#createvttcuetemplate)
   - [`renderVTTCueString`](#rendervttcuestring)
+  - [`tokenizeVTTCue`](#tokenizevttcue)
   - [`renderVTTTokensString`](#rendervtttokensstring)
   - [`updateTimedVTTCueNodes`](#updatetimedvttcuenodes)
   - [`CaptionsOverlayRenderer`](#captionsoverlayrenderer)
@@ -96,10 +94,7 @@ like so:
   - [VTT](#vtt)
   - [SRT](#srt)
   - [SSA/ASS](#ssaass)
-- **Usage**
-  - [VTT Cue](#vtt-cue)
-  - [VTT Region](#vtt-region)
-  - [Types](#types)
+- [Types](#types)
 
 ## Parse Options
 
@@ -245,7 +240,7 @@ const stream = new ReadableStream<string>({
   },
 });
 
-// You can await the response.
+// You can await the parse result.
 parseTextStream(stream, {
   onCue(cue) {
     // ...
@@ -261,7 +256,7 @@ The `parseResponse` function accepts a [`Response`](https://developer.mozilla.or
 ```ts
 import { ParseErrorCode, parseResponse } from 'media-captions';
 
-// You can await the response.
+// You can await the parse result.
 parseResponse(fetch('/media/subs/english.vtt'), {
   onCue(cue) {
     // ...
@@ -301,7 +296,7 @@ const byteStream = new ReadableStream<Uint8Array>({
   // ...
 });
 
-// You can await the response.
+// You can await the parse result.
 parseByteStream(byteStream, {
   encoding: 'utf8',
   onCue(cue) {
@@ -354,67 +349,417 @@ parseText('...', {
 });
 ```
 
-## `tokenizeVTTCue`
-
-...
-
 ## `createVTTCueTemplate`
 
-...
+This function takes a `VTTCue` and renders the cue text string into a HTML template element
+and returns a `VTTCueTemplate`. The template can be used to efficiently store and clone
+the rendered cue HTML like so:
+
+```ts
+import { createVTTCueTemplate, VTTCue } from 'media-captions';
+
+const cue = new VTTCue(0, 10, '<v Joe>Hello world!');
+const template = createVTTCueTemplate(cue);
+
+template.cue; // original `VTTCue`
+template.content; // `DocumentFragment`
+
+// <span title="Joe" part="voice">Hello world!</span>
+const cueHTML = template.content.cloneNode(true);
+```
 
 ## `renderVTTCueString`
 
-...
+This function takes a `VTTCue` and renders the cue text string into a HTML string. This
+function can be used server-side to render cue content like so:
+
+```ts
+import { renderVTTCueString, VTTCue } from 'media-captions';
+
+const cue = new VTTCue(0, 10, '<v Joe>Hello world!');
+
+// Output: <span title="Joe" part="voice">Hello world!</span>
+const content = renderVTTCueString(cue);
+```
+
+The second argument accepts the current playback time to add the correct `data-past` and
+`data-future` attributes to timed text (i.e., karaoke-style captions):
+
+```ts
+const cue = new VTTCue(0, 320, 'Hello my name is <5:20>Joe!');
+
+// Output: Hello my name is <span part="timed" data-time="80" data-future>Joe!</span>
+renderVTTCueString(cue, 310);
+
+// Output: Hello my name is <span part="timed" data-time="80" data-past>Joe!</span>
+renderVTTCueString(cue, 321);
+```
+
+## `tokenizeVTTCue`
+
+This function takes a `VTTCue` and returns a collection of VTT tokens based on the cue
+text. Tokens represent the render nodes for a cue:
+
+```ts
+import { tokenizeVTTCue, VTTCue } from 'media-captions';
+
+const cue = new VTTCue(0, 10, '<b.foo.bar><v Joe>Hello world!');
+
+const tokens = tokenizeVTTCue(cue);
+
+// `tokens` output:
+[
+  {
+    tagName: 'b',
+    type: 'b',
+    class: 'foo bar',
+    children: [
+      {
+        tagName: 'span',
+        type: 'v',
+        voice: 'Joe',
+        children: [{ type: 'text', data: 'Hello world!' }],
+      },
+    ],
+  },
+];
+```
+
+Nodes can be a `VTTBlockNode` which can have children (i.e., class, italic, bold, underline,
+ruby, ruby text, voice, lang, timestamp) or a `VTTLeafNode` (i.e., text nodes). The tokens
+can be used for custom rendering like so:
+
+```ts
+function renderTokens(tokens: VTTNode[]) {
+  for (const token of tokens) {
+    if (token.type === 'text') {
+      // Process text nodes here...
+      token.data;
+    } else {
+      // Process block nodes here...
+      token.tagName;
+      token.class;
+      token.type === 'v' && token.voice;
+      token.type === 'lang' && token.lang;
+      token.type === 'timestamp' && token.time;
+      token.color;
+      token.bgColor;
+      renderTokens(tokens.children);
+    }
+  }
+}
+```
+
+All token types are listed below for use in TypeScript:
+
+```ts
+import type {
+  VTTBlock,
+  VTTBlockNode,
+  VTTBlockType,
+  VTTBoldNode,
+  VTTClassNode,
+  VTTextNode,
+  VTTItalicNode,
+  VTTLangNode,
+  VTTLeafNode,
+  VTTNode,
+  VTTRubyNode,
+  VTTRubyTextNode,
+  VTTTimestampNode,
+  VTTUnderlineNode,
+  VTTVoiceNode,
+} from 'media-captions';
+```
 
 ## `renderVTTTokensString`
 
-...
+This function takes an array of `VTToken` objects and renders them into a string:
+
+```ts
+import { renderVTTTokensString, tokenizeVTTCue, VTTCue } from 'media-captions';
+
+const cue = new VTTCue(0, 10, '<v Joe>Hello world!');
+const tokens = tokenizeVTTCue(cue);
+
+// Output: <span title="Joe" part="voice">Hello world!</span>
+const result = renderVTTTokensString(tokens);
+```
 
 ## `updateTimedVTTCueNodes`
 
-...
+This function accepts a root DOM node to update all timed text nodes by setting the correct
+`data-future` and `data-past` attributes.
+
+```ts
+import { updateTimedVTTCueNodes } from 'media-captions';
+
+const video = document.querySelector('video')!,
+  captions = document.querySelector('#captions')!;
+
+video.addEventListener('timeupdate', () => {
+  updateTimedVTTCueNodes(captions, video.currentTime);
+});
+```
+
+This can be used when working with karaoke-style captions:
+
+```ts
+const cue = new VTTCue(300, 308, '<05:00>Timed...<05:05>Text!');
+
+// Timed text nodes that would be updated at 303 seconds:
+// <span part="timed" data-time="300" data-past>Timed...</span>
+// <span part="timed" data-time="305" data-future>Text!</span>
+```
 
 ## `CaptionsOverlayRenderer`
 
-...
+The overlay renderer is used to render captions over a video player. It follows the
+[WebVTT rendering specification](https://www.w3.org/TR/webvtt1/#rendering) on how regions
+and cues should be visually rendered. It includes:
+
+- Correctly aligning and positioning regions and cues.
+- Processing and applying all region and cue settings.
+- Rendering captions top-down in-order (Cue 1, Cue 2, Cue 3).
+- Rendering roll up captions in regions.
+- Collision detection to avoid overlapping cues.
+- Updating timed text nodes with `data-past` and `data-future` attributes.
+- Updating when the overlay is resized.
+- Applying SSA/ASS styles.
+- Accepts native `VTTCue` objects.
+
+> **Warning**
+> The [styles files](#installation) need to be included for the overlay renderer to work correctly!
+
+```html
+<div>
+  <video src="..."></video>
+  <div id="captions"></div>
+</div>
+```
+
+```ts
+import 'media-captions/styles/captions.css';
+import 'media-captions/styles/regions.css';
+
+import { CaptionsOverlayRenderer, parseResponse } from 'media-captions';
+
+const video = document.querySelector('video')!,
+  captions = document.querySelector('#captions')!,
+  renderer = new CaptionsOverlayRenderer(captions);
+
+parseResponse(fetch('/media/subs/english.vtt')).then(({ regions, cues }) => {
+  renderer.setup(regions, cues);
+});
+
+video.addEventListener('timeupdate', () => {
+  renderer.currentTime = video.currentTime;
+});
+```
+
+**Props**
+
+- `dir`: Sets the text direction (i.e., `ltr` or `rtl`).
+- `currentTime`: Updates the current playback time and schedules a re-render.
+
+**Methods**
+
+- `setup(regions: VTTRegion[], cues: VTTCue[])`: Resets the renderer and prepares new regions
+  and cues. This should be called on text track change.
+- `addCue(cue: VTTCue)`: Add a new cue to the renderer.
+- `removeCue(cue: VTTCue)`: Remove a cue from the renderer.
+- `update(forceUpdate: boolean)`: Schedule a re-render.
+- `reset()`: Reset the renderer and clear all internal state including region and cue DOM nodes.
+- `destroy()`: Reset the renderer and destroy internal observers and event listeners.
 
 ## Styling
 
-...
+Captions rendered with the [`CaptionOverlayRenderer`](#captionsoverlayrenderer) can be
+easily customized with CSS. Here are all the parts you can select and customize:
+
+```css
+/* `#captions` assumes you set the id on the captions overlay element. */
+#captions {
+  /* simple CSS vars customization (defaults below) */
+  --overlay-padding: 1%;
+  --cue-color: white;
+  --cue-bg-color: rgba(0, 0, 0, 0.8);
+  --cue-font-size: calc(var(--overlay-height) / 100 * 5);
+  --cue-line-height: calc(var(--cue-font-size) * 1.2);
+  --cue-padding-x: calc(var(--cue-font-size) * 0.6);
+  --cue-padding-y: calc(var(--cue-font-size) * 0.4);
+}
+
+#captions [part='region'] {
+}
+
+#captions [part='region'][data-active] {
+}
+
+#captions [part='region'][data-scroll='up'] {
+}
+
+#captions [part='cue-display'] {
+}
+
+#captions [part='cue'] {
+}
+
+#captions [part='voice'] {
+}
+
+#captions [part='voice'][title='Joe'] {
+}
+
+#captions [part='timed'] {
+}
+
+#captions [part='timed'][data-past] {
+}
+
+#captions [part='timed'][data-future] {
+}
+```
 
 ## VTT
 
-...
+Web Video Text Tracks (WebVTT) is the natively supported captions format supported
+by browsers. You can learn more about it on
+[MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API) or by reading the
+[W3 specification](https://www.w3.org/TR/webvtt1).
+
+WebVTT file is a plain-text file that looks something like this:
+
+```text
+WEBVTT
+
+REGION id:foo width:100 lines:3 viewportanchor:0%,0% regionanchor:0%,0% scroll:up
+
+1
+00:00 --> 00:02 region:foo
+Hello, Joe!
+
+2
+00:02 --> 00:04 region:foo
+Hello, Jane!
+```
+
+> **Warning**
+> The parser will throw in strict parsing mode if the WEBVTT header line is not present.
+
+### VTT Regions
+
+WebVTT supports regions for bounding/positioning cues and implementing roll up captions
+by setting `scroll:up`.
+
+<img 
+  src="./assets/vtt-regions.png" 
+  width="400px" 
+  alt="Visual explanation of VTT regions" 
+/>
+
+<img 
+  src="./assets/vtt-region-scroll.png" 
+  width="400px" 
+  alt="Visual explanation of VTT region scroll up setting for roll up captions" 
+/>
+
+### VTT Cues
+
+WebVTT cues are used for positioning and displaying text. They can snap to lines or be
+freely positioned as a percentage of the viewport.
+
+```ts
+const cue = new VTTCue(0, 10, '...');
+
+// Position at line 5 in the video.
+// Lines are calculated using cue line height.
+cue.line = 5;
+
+// 50% from the top and 10% from the left of the video.
+cue.snapToLines = false;
+cue.line = 50;
+cue.position = 10;
+
+// Align cue horizontally at end of line.
+cue.align = 'end';
+// Align top of the cue at the bottom of the line.
+cue.lineAlign = 'end';
+```
+
+<img 
+  src="./assets/vtt-cues.png" 
+  width="400px" 
+  alt="Visual explanation of VTT cues" 
+/>
 
 ## SRT
 
-...
+SubRip Subtitle (SRT) is a simple captions format that only contains cues. There are no
+regions or positioning settings as found in [VTT](#vtt).
+
+SRT is a plain-text file that looks like this:
+
+```text
+00:00 --> 00:02,200
+Hello, Joe!
+
+00:02,200 --> 00:04,400
+Hello, Jane!
+```
+
+Note that SRT timestamps use a comma `,` to separate the milliseconds unit unlike VTT which uses
+a dot `.`.
 
 ## SSA/ASS
 
-...
-note what is supported:
+SubStation Alpha (SSA) and its successor Advanced SubStation Alpha (ASS) are subtitle formats
+commonly used for anime content. They allow for rich text formatting, including
+color, font size, bold, italic, and underline, as well as more advanced features like karaoke and
+typesetting.
 
-...
+SSA/ASS is a plain-text file that looks like this:
 
-note what's not supported:
+```text
+[Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,36,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1
 
-Picture
-Sound
-Movie
-Command
-Text codes
-fonts
-graphics
-layers
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:05.10,0:00:07.20,Default,,0,0,0,,Hello, world!
 
-## VTT Cue
+[Other Events]
+Format: Start, End, Text
+Dialogue: 0:00:04,\t0:00:07.20, One!
+Dialogue: 0:00:05,\t0:00:08.20, Two!
+Dialogue: 0:00:06,\t0:00:09.20, Three!
+Continue dialogue on a new line.
+```
 
-...
+The following features are supported:
 
-## VTT Region
+- Multiple styles blocks and all format fields (e.g., PrimaryColour, Bold, ScaleX, etc.).
+- Multiple events blocks and associating them with styles.
 
-...
+The following features are not supported yet:
+
+- Layers
+- Movie
+- Picture
+- Sound
+- Command
+- Font Loading
+- Text Codes (stripped out for now)
+
+It is very likely we will implement custom font loading, layers, and text codes in the
+near future. The rest is unlikely for now. You can always try and implement custom transitions
+or animations using CSS (see [Styling](#styling)).
+
+We recommend using [SubtitlesOctopus](https://github.com/libass/JavascriptSubtitlesOctopus) for
+SSA/ASS captions as it supports most features and is a performant WASM wrapper of
+[libass](https://github.com/libass/libass). You'll need to fall back to this implementation on
+iOS Safari (iPhone) as custom captions are not possible.
 
 ## Types
 
@@ -433,6 +778,7 @@ import type {
   ParseErrorInit,
   TextCue,
   VTTCue,
+  VTTCueTemplate,
   VTTHeaderMetadata,
   VTTRegion,
 } from 'media-captions';

@@ -6,6 +6,10 @@ export function setDataAttr(el: Element, name: string, value: string | true | nu
   el.setAttribute(`data-${name}`, value === true ? '' : value + '');
 }
 
+export function setPartAttr(el: Element, name: string) {
+  el.setAttribute('part', name);
+}
+
 export function getLineHeight(el: Element) {
   return parseFloat(getComputedStyle(el).lineHeight) || 0;
 }

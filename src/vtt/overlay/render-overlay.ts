@@ -1,5 +1,5 @@
-import { setCSSVar, setDataAttr } from '../../utils/style';
-import { createVTTCueTemplate, updateTimedVTTCueNodes } from '../render-cue';
+import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
+import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTRegion } from '../vtt-region';
 import { Box, createBox, updateBoxDimensions } from './box';
@@ -43,7 +43,7 @@ export class CaptionsOverlayRenderer {
   constructor(overlay: HTMLElement, init?: CaptionsOverlayRendererInit) {
     this.overlay = overlay;
     this.dir = init?.dir ?? 'ltr';
-    setDataAttr(overlay, 'captions');
+    setPartAttr(overlay, 'captions');
     this._updateOverlay();
     this._resizeObserver = new ResizeObserver(this._resize.bind(this));
     this._resizeObserver.observe(overlay);
@@ -194,7 +194,7 @@ export class CaptionsOverlayRenderer {
   private _createRegionElement(region: VTTRegion): HTMLElement | null {
     const el = document.createElement('div');
 
-    setDataAttr(el, 'region');
+    setPartAttr(el, 'region');
     setDataAttr(el, 'id', region.id);
     setDataAttr(el, 'scroll', region.scroll);
 
@@ -213,7 +213,7 @@ export class CaptionsOverlayRenderer {
       position = computeCuePosition(cue),
       positionAlignment = computeCuePositionAlignment(cue, this._dir);
 
-    setDataAttr(display, 'cue-display');
+    setPartAttr(display, 'cue-display');
     if (cue.vertical !== '') setDataAttr(display, 'vertical');
     setCSSVar(display, 'cue-text-align', cue.align);
 
@@ -259,11 +259,10 @@ export class CaptionsOverlayRenderer {
     }
 
     const el = document.createElement('div');
-    setDataAttr(el, 'cue');
+    setPartAttr(el, 'cue');
     if (cue.id) setDataAttr(el, 'id', cue.id);
 
-    const template = createVTTCueTemplate(cue);
-    el.append(template.content);
+    el.innerHTML = renderVTTCueString(cue);
     display.append(el);
 
     return display;

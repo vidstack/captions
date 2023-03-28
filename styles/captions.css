@@ -1,4 +1,4 @@
-:where([data-captions]) {
+:where([part='captions']) {
   --overlay-padding: 1%;
   --cue-color: white;
   --cue-bg-color: rgba(0, 0, 0, 0.8);
@@ -11,6 +11,8 @@
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 1;
+  contain: content;
   margin: var(--overlay-padding);
   font-size: var(--cue-font-size);
   font-family: sans-serif;
@@ -21,7 +23,7 @@
   word-break: break-word;
 }
 
-:where([data-captions] > [data-cue-display]) {
+:where([part='captions'] > [part='cue-display']) {
   position: absolute;
   direction: ltr;
   overflow: visible;
@@ -42,11 +44,11 @@
   unicode-bidi: plaintext;
 }
 
-:where([data-dir='rtl'] [data-cue-display]) {
+:where([data-dir='rtl'] [part='cue-display']) {
   direction: rtl;
 }
 
-:where([data-cue]) {
+:where([part='captions'] [part='cue']) {
   display: inline-block;
   padding: var(--cue-padding-y) var(--cue-padding-x);
   line-height: var(--cue-line-height);
@@ -62,6 +64,6 @@
   min-height: min-content;
 }
 
-:where([data-cue-display][data-vertical] [data-cue]) {
+:where([part='captions'] [part='cue-display'][data-vertical] [part='cue']) {
   padding: var(--cue-padding-x) var(--cue-padding-y);
 }

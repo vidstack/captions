@@ -19,11 +19,11 @@ export function positionRegion(
   boxes: Box[],
 ) {
   let height = 0,
-    cueEl = regionEl.querySelector('[data-cue]')!,
+    cueEl = regionEl.querySelector('[part="cue"]')!,
     cueLineHeight = getLineHeight(cueEl),
     cuePaddingY = getPaddingY(cueEl),
     cueMarginTop = parseFloat(getComputedStyle(cueEl).marginTop) || 0,
-    cues = Array.from(regionEl.querySelectorAll('[data-cue]')),
+    cues = Array.from(regionEl.querySelectorAll('[part="cue"]')),
     remainingLines = region.lines;
 
   for (let i = cues.length - 1; i >= 0; i--) {
