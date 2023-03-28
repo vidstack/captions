@@ -45,8 +45,6 @@ export interface ParseCaptionsOptions {
    * - If a parser error is found, the parsing process will be cancelled and an error will be
    * thrown instead of invoking the `onError` callback .
    *
-   * Do note that strict mode will only work
-   *
    * @defaultValue false
    */
   strict?: boolean;
@@ -77,8 +75,8 @@ export interface ParseCaptionsOptions {
    */
   onRegion?(region: VTTRegion): void;
   /**
-   * Invoked when a loading or parser error is encountered. This is only invoked in development
-   * mode and server-side.
+   * Invoked when a loading or parser error is encountered. This is only invoked if the
+   * `errors` option is true.
    */
   onError?(error: ParseError): void;
 }
