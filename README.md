@@ -8,7 +8,7 @@ Captions parsing and rendering library built for the modern web.
 **Features**
 
 - 🚯 0 dependencies.
-- 💪 Built with TypeScript.
+- 💪 Built with TypeScript (TS 5 bundle mode ready).
 - 🪶 5kB total + modular (parser/renderer split) + tree-shaking support.
 - 💤 Parsers are lazy loaded on-demand.
 - 🚄 Efficiently load and apply styles in parallel via CSS files.
@@ -19,31 +19,80 @@ Captions parsing and rendering library built for the modern web.
 - 📝 WebVTT spec-compliant settings and rendering.
 - 🎤 Timed text-tracks for karaoke-style captions.
 - 🛠️ Supports custom captions parser and cue renderer.
-- 💥 Collision detection to avoid overlapping cues.
-- 🛑 Adjustable error-tolerance with strict and non-strict modes.
+- 💥 Collision detection to avoid overlapping or out-of-bounds cues.
+- 🏗️ Fixed and in-order cue rendering (including on font or overlay size changes).
+- 🛑 Adjustable parsing error-tolerance with strict and non-strict modes.
 - 🖥️ Works in the browser and server-side (string renderer).
-- 🎨 Easy customization via CSS .
+- 🎨 Easy customization via CSS.
+
+➕ Planning to also add a TTML, CEA-608, and CEA-708 parser that will map to VTT and render
+correctly. In addition, custom font loading and text codes support is planned for SSA/ASS captions.
+We don't have an exact date but most likely after the [Vidstack Player][vidstack-player] 1.0. If
+urgent and you're willing to sponsor, feel free to email me at rahim.alwer@gmail.com.
+
+🔗 **Quicklinks**
+
+- **[Installation](#installation)**
+- **[Demo](#demo)**
+- **[Motivation](#motivation)**
+- **[API](#api)**
+
+## Demo
+
+The StackBlitz link below showcases a simple example of how captions are fetched, parsed, and
+rendered over a native video element. We plan on adding more examples for additional captions
+formats and scenarios.
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)][stackblitz-demo]
 
-⏭️ **[Skip to Installation](#installation)**
-
-⏭️ **[Skip to API](#api)**
-
 ## Motivation
 
-Intro into why I built this?
-
-**Are native captions good enough?**
+❓ **Are native captions not good enough?**
 
 Simply put, no.
 
-no -> accessibility + customization + consistency + features (karaoke/regions)
-custom rendering
+- Positioning, styling, and rendering of cues is interpreted differently across browsers (i.e.,
+  not consistent).
+- Styling customization via pseudo `::cue` selector is inconsistent across browsers and severely
+  limited with respect to even basic movement and styles.
+- Cues can not be easily or accurately moved which means they'll become hidden when custom controls
+  are active.
+- Multiple active cues are not rendered in the correct order. This can also occur randomly on font
+  and overlay size changes (e.g., entering fullscreen).
+- Failure in positioning and customizing styles correctly results in failing accessibility
+  guidelines.
+- Text tracks cannot be removed in most browsers as there's no native API to do so. Captions need
+  to be managed externally and mapped to a generic text track.
+- Karaoke-style captions are not supported out of the box in most browsers.
+- Only VTT is natively supported by browsers.
+- VTT Regions and roll-up captions are not fully supported in all browsers.
+- Custom rendering of cues is not supported.
+- Large caption files can not be streamed and aborted when no longer required.
+- Obviously can not be used server-side.
 
-**What about [mozilla/vtt](https://github.com/mozilla/vtt.js)?**
+Did you know closed-captions are governed by the Federal Communications Commission (FCC) under the
+Communications and Video Accessibility Act (CVA)? Not providing captions and adequate
+customization options on the web for content that was shown on TV doesn't meet guidelines 😱 Filed
+law suits have dramatically increased in recent years! See the amazing
+[Caption Me If You Can][caption-me-talk] talk at [Demuxed][demuxed] by Dan Sparacio to learn more.
 
-old and missing features
+❓ **What about [mozilla/vtt][mozilla-vtt]?**
+
+The library is old, outdated, and unmaintained.
+
+- Not packaged correctly by modern standards using Node exports with ES6, TS types, CJS/ESM,
+  and server bundles.
+- Doesn't lazy load the parser.
+- Doesn't cleanly work server-side out of the box.
+- Doesn't split parser and renderer so they can be imported separately when needed.
+- Not built with TypeScript so no types are shipped.
+- Doesn't support a wide variety features that we support. Including streaming via modern APIs,
+  VTT regions, roll-up captions, custom renderers, alternative captions formats (SRT/SSA),
+  timed-text and more.
+- In-lines all styles which means they can't be loaded in parallel with JS, makes it harder to
+  customize, and slower with respect to DOM updates.
+- Doesn't include flexible error tolerance settings.
+- Doesn't expose styling attrs for selecting nodes such as cues, voice nodes, and timed-text nodes.
 
 ## Installation
 
@@ -93,6 +142,7 @@ like so:
   - [VTT](#vtt)
   - [SRT](#srt)
   - [SSA/ASS](#ssaass)
+- [Streaming](#streaming)
 - [Types](#types)
 
 ## Parse Options
@@ -602,6 +652,9 @@ easily customized with CSS. Here are all the parts you can select and customize:
 #captions [part='cue'] {
 }
 
+#captions [part='cue'][data-id='...'] {
+}
+
 #captions [part='voice'] {
 }
 
@@ -772,6 +825,39 @@ SSA/ASS captions as it supports most features and is a performant WASM wrapper o
 [libass](https://github.com/libass/libass). You'll need to fall back to this implementation on
 iOS Safari (iPhone) as custom captions are not supported there.
 
+## Streaming
+
+You can split large captions files into chunks and use the [`parseTextStream`](#parsetextstream)
+or [`parseResponse`](#parseresponse) functions to read and parse the stream. Files can be chunked
+however you like and don't need to be aligned with line breaks.
+
+Here's an example that chunks and streams a large VTT file on the server:
+
+```ts
+import fs from 'node:fs';
+
+async function handle() {
+  const stream = new ReadableStream({
+    start(controller) {
+      const encoder = new TextEncoder();
+      const stream = fs.createReadStream('english.vtt');
+      stream.on('readable', () => {
+        controller.enqueue(encoder.encode(stream.read()));
+      });
+      stream.on('end', () => {
+        controller.close();
+      });
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/vtt; charset=utf-8',
+    },
+  });
+}
+```
+
 ## Types
 
 Here's the types that are available from this package for use in TypeScript:
@@ -805,4 +891,8 @@ Media Captions is [MIT licensed](./LICENSE).
 [package-badge]: https://img.shields.io/npm/v/media-captions?style=flat-square
 [discord]: https://discord.com/invite/7RGU7wvsu9
 [discord-badge]: https://img.shields.io/discord/742612686679965696?color=%235865F2&label=%20&logo=discord&logoColor=white&style=flat-square
-[stackblitz-demo]: https://stackblitz.com/edit/media-captions?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor
+[stackblitz-demo]: https://stackblitz.com/edit/media-captions?embed=1&file=index.ts&hideNavigation=1&view=editor
+[demuxed]: https://demuxed.com
+[caption-me-talk]: https://www.youtube.com/watch?v=Z0HqYQqdErE
+[mozilla-vtt]: https://github.com/mozilla/vtt.js
+[vidstack-player]: https://github.com/vidstack/player
