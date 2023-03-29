@@ -6,7 +6,6 @@
     "checkJs": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "importsNotUsedAsValues": "error",
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
     "moduleResolution": "node",
@@ -22,7 +21,8 @@
     "paths": {
       "media-captions": ["./src/index.ts"]
     },
-    "types": ["@types/node", "vitest/globals"]
+    "types": ["vitest/globals"],
+    "verbatimModuleSyntax": true
   },
   "include": ["src", "tests"]
 }

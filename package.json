@@ -22,11 +22,13 @@
     "test": "vitest --run",
     "test:watch": "vitest --watch --single-thread",
     "sandbox": "node ./.sandbox/launch.js",
-    "release": "pnpm test && pnpm build && pnpm types && standard-version && git push --follow-tags origin main && npm publish"
+    "release": "pnpm validate && standard-version && git push --follow-tags origin main && npm publish",
+    "validate": "pnpm test && pnpm clean && pnpm build && pnpm types"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^3.7.0",
     "prettier": "^2.8.4",
+    "rimraf": "^4.4.1",
     "standard-version": "^9.5.0",
     "tslib": "^2.5.0",
     "tsup": "^6.7.0",

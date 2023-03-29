@@ -2,7 +2,7 @@ import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
 import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTRegion } from '../vtt-region';
-import { Box, createBox, updateBoxDimensions } from './box';
+import { createBox, updateBoxDimensions, type Box } from './box';
 import { computeCuePosition, computeCuePositionAlignment, positionCue } from './position-cue';
 import { positionRegion } from './position-region';
 

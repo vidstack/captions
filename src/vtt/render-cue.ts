@@ -1,5 +1,5 @@
 import { setDataAttr } from '../utils/style';
-import { tokenizeVTTCue, VTTNode } from './tokenize-cue';
+import { tokenizeVTTCue, type VTTNode } from './tokenize-cue';
 import type { VTTCue } from './vtt-cue';
 
 export function createVTTCueTemplate(cue: VTTCue): VTTCueTemplate {

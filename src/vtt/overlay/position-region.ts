@@ -2,12 +2,12 @@ import { getLineHeight, getPaddingY, setCSSVar } from '../../utils/style';
 import type { VTTRegion } from '../vtt-region';
 import {
   avoidBoxCollisions,
-  Box,
   createBox,
-  DirectionalAxis,
   setBoxCSSVars,
   STARTING_BOX,
   updateBoxDimensions,
+  type Box,
+  type DirectionalAxis,
 } from './box';
 
 const REGION_AXIS: DirectionalAxis[] = ['+y', '-y', '-x', '+x'];

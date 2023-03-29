@@ -1,14 +1,14 @@
-import { getLineHeight, setCSSVar } from '../../utils/style';
+import { getLineHeight } from '../../utils/style';
 import type { VTTCue } from '../vtt-cue';
 import {
   avoidBoxCollisions,
-  Box,
   createBox,
-  DirectionalAxis,
   moveBox,
   setBoxCSSVars,
   STARTING_BOX,
   updateBoxDimensions,
+  type Box,
+  type DirectionalAxis,
 } from './box';
 
 // Adapted from: https://github.com/videojs/vtt.js
