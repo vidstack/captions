@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.5](https://github.com/vidstack/media-captions/compare/v0.0.4...v0.0.5) (2023-03-29)
+
+
+### Bug Fixes
+
+* incorrect node export index paths -_- ([fa00f56](https://github.com/vidstack/media-captions/commit/fa00f560fa14b3941f3c37925bdfe0431901c1c2))
+
 ### [0.0.4](https://github.com/vidstack/media-captions/compare/v0.0.3...v0.0.4) (2023-03-29)
 
 
