@@ -58,6 +58,7 @@
       "development": "./dist/dev/index.js",
       "default": "./dist/prod/index.js"
     },
+    "./styles/*": "./styles/*",
     "./package.json": "./package.json"
   },
   "publishConfig": {
