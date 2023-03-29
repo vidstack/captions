@@ -891,7 +891,7 @@ Media Captions is [MIT licensed](./LICENSE).
 [package-badge]: https://img.shields.io/npm/v/media-captions?style=flat-square
 [discord]: https://discord.com/invite/7RGU7wvsu9
 [discord-badge]: https://img.shields.io/discord/742612686679965696?color=%235865F2&label=%20&logo=discord&logoColor=white&style=flat-square
-[stackblitz-demo]: https://stackblitz.com/edit/media-captions?embed=1&file=index.ts&hideNavigation=1&view=editor
+[stackblitz-demo]: https://stackblitz.com/edit/media-captions?embed=1&file=src/main.ts&hideNavigation=1&showSidebar=1
 [demuxed]: https://demuxed.com
 [caption-me-talk]: https://www.youtube.com/watch?v=Z0HqYQqdErE
 [mozilla-vtt]: https://github.com/mozilla/vtt.js
