@@ -6,7 +6,7 @@ import { Box, createBox, updateBoxDimensions } from './box';
 import { computeCuePosition, computeCuePositionAlignment, positionCue } from './position-cue';
 import { positionRegion } from './position-region';
 
-export class CaptionsOverlayRenderer {
+export class CaptionsRenderer {
   readonly overlay: HTMLElement;
   private _overlayBox!: Box;
 
@@ -40,7 +40,7 @@ export class CaptionsOverlayRenderer {
     this.update();
   }
 
-  constructor(overlay: HTMLElement, init?: CaptionsOverlayRendererInit) {
+  constructor(overlay: HTMLElement, init?: CaptionsRendererInit) {
     this.overlay = overlay;
     this.dir = init?.dir ?? 'ltr';
     setPartAttr(overlay, 'captions');
@@ -49,7 +49,7 @@ export class CaptionsOverlayRenderer {
     this._resizeObserver.observe(overlay);
   }
 
-  changeTrack({ regions, cues }: CaptionsOverlayTrack) {
+  changeTrack({ regions, cues }: CaptionsRendererTrack) {
     this.reset();
 
     if (regions) {
@@ -275,12 +275,12 @@ export class CaptionsOverlayRenderer {
   }
 }
 
-export interface CaptionsOverlayRendererInit {
+export interface CaptionsRendererInit {
   /* Text direction. */
   dir?: 'ltr' | 'rtl';
 }
 
-export interface CaptionsOverlayTrack {
+export interface CaptionsRendererTrack {
   id?: string;
   regions?: VTTRegion[];
   cues: VTTCue[];

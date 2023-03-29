@@ -102,7 +102,7 @@ First, install the NPM package:
 npm i media-captions
 ```
 
-Next, include styles if you plan on rendering captions using the [`CaptionsOverlayRenderer`](#captionsoverlayrenderer):
+Next, include styles if you plan on rendering captions using the [`CaptionsRenderer`](#captionsrenderer):
 
 ```js
 import 'media-captions/styles/captions.css';
@@ -136,7 +136,7 @@ like so:
   - [`tokenizeVTTCue`](#tokenizevttcue)
   - [`renderVTTTokensString`](#rendervtttokensstring)
   - [`updateTimedVTTCueNodes`](#updatetimedvttcuenodes)
-  - [`CaptionsOverlayRenderer`](#captionsoverlayrenderer)
+  - [`CaptionsRenderer`](#captionsrenderer)
   - [Styling](#styling)
 - **Formats**
   - [VTT](#vtt)
@@ -560,9 +560,9 @@ const cue = new VTTCue(300, 308, '<05:00>Timed...<05:05>Text!');
 // <span part="timed" data-time="305" data-future>Text!</span>
 ```
 
-## `CaptionsOverlayRenderer`
+## `CaptionsRenderer`
 
-The overlay renderer is used to render captions over a video player. It follows the
+The captions overlay renderer is used to render captions over a video player. It follows the
 [WebVTT rendering specification](https://www.w3.org/TR/webvtt1/#rendering) on how regions
 and cues should be visually rendered. It includes:
 
@@ -590,11 +590,11 @@ and cues should be visually rendered. It includes:
 import 'media-captions/styles/captions.css';
 import 'media-captions/styles/regions.css';
 
-import { CaptionsOverlayRenderer, parseResponse } from 'media-captions';
+import { CaptionsRenderer, parseResponse } from 'media-captions';
 
 const video = document.querySelector('video')!,
   captions = document.querySelector('#captions')!,
-  renderer = new CaptionsOverlayRenderer(captions);
+  renderer = new CaptionsRenderer(captions);
 
 parseResponse(fetch('/media/subs/english.vtt')).then((result) => {
   renderer.changeTrack(result);
@@ -612,7 +612,7 @@ video.addEventListener('timeupdate', () => {
 
 **Methods**
 
-- `changeTrack(track: CaptionsOverlayTrack)`: Resets the renderer and prepares new regions and cues.
+- `changeTrack(track: CaptionsRendererTrack)`: Resets the renderer and prepares new regions and cues.
 - `addCue(cue: VTTCue)`: Add a new cue to the renderer.
 - `removeCue(cue: VTTCue)`: Remove a cue from the renderer.
 - `update(forceUpdate: boolean)`: Schedules a re-render to happen on the next animation frame.
@@ -865,10 +865,10 @@ Here's the types that are available from this package for use in TypeScript:
 ```ts
 import type {
   CaptionsFileFormat,
-  CaptionsOverlayRenderer,
-  CaptionsOverlayTrack,
   CaptionsParser,
   CaptionsParserInit,
+  CaptionsRenderer,
+  CaptionsRendererTrack,
   ParseByteStreamOptions,
   ParseCaptionsOptions,
   ParsedCaptionsResult,

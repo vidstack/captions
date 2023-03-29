@@ -1,7 +1,7 @@
-import { CaptionsOverlayRenderer, VTTCue, VTTRegion } from '../src';
+import { CaptionsRenderer, VTTCue, VTTRegion } from '../src';
 
 const overlay = document.getElementById('overlay')!;
-const renderer = new CaptionsOverlayRenderer(overlay);
+const renderer = new CaptionsRenderer(overlay);
 
 const cues = [
   new VTTCue(0, 10, 'Cue A...'),
