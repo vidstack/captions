@@ -3,38 +3,40 @@
 [![package-badge]][package]
 [![discord-badge]][discord]
 
-Some introduction...
+Captions parsing and rendering library built for the modern web.
 
 **Features**
 
-- 0 deps
-- built with typescript
-- modern apis (readablestream/fetch response)
-- chunked streaming support + easy callback hooks
-- 5kb modular + treeshabkel (parsing/render split) parsers are lazy loaded
-- spec-compliant
-- in-order rendering
-- auto-collision detection to avoid overlaps or out of bounds
-- easy styling via css and variables
-- supports vtt,srt,ssa/ass
-- flexible error tolerance (strict)
-- VTT regions and roll up captions
-- timed karaoke-style captions
-- parser and renderer server-side support
-- custom rendering via tokens
-- ...?
+- 🚯 0 dependencies.
+- 💪 Built with TypeScript.
+- 🪶 5kB total + modular (parser/renderer split) + tree-shaking support.
+- 💤 Parsers are lazy loaded on-demand.
+- 🚄 Efficiently load and apply styles in parallel via CSS files.
+- 🗂️ Supports VTT, SRT, and SSA/ASS.
+- ⬆️ Roll-up captions via VTT regions.
+- 🧰 Modern `fetch` and `ReadableStream` APIs.
+- 📡 Chunked text and response streaming support.
+- 📝 WebVTT spec-compliant settings and rendering.
+- 🎤 Timed text-tracks for karaoke-style captions.
+- 🛠️ Supports custom captions parser and cue renderer.
+- 💥 Collision detection to avoid overlapping cues.
+- 🛑 Adjustable error-tolerance with strict and non-strict modes.
+- 🖥️ Works in the browser and server-side (string renderer).
+- 🎨 Easy customization via CSS .
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)][stackblitz-demo]
 
 ⏭️ **[Skip to Installation](#installation)**
 
 ⏭️ **[Skip to API](#api)**
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)][stackblitz-demo]
 
 ## Motivation
 
 Intro into why I built this?
 
 **Are native captions good enough?**
+
+Simply put, no.
 
 no -> accessibility + customization + consistency + features (karaoke/regions)
 custom rendering
@@ -237,8 +239,8 @@ const stream = new ReadableStream<string>({
   },
 });
 
-// You can await the parse result.
-parseTextStream(stream, {
+// `ParsedCaptionsResult`
+const result = await parseTextStream(stream, {
   onCue(cue) {
     // ...
   },
@@ -253,8 +255,8 @@ The `parseResponse` function accepts a [`Response`](https://developer.mozilla.or
 ```ts
 import { ParseErrorCode, parseResponse } from 'media-captions';
 
-// You can await the parse result.
-parseResponse(fetch('/media/subs/english.vtt'), {
+// `ParsedCaptionsResult`
+const result = await parseResponse(fetch('/media/subs/english.vtt'), {
   onCue(cue) {
     // ...
   },
@@ -293,8 +295,7 @@ const byteStream = new ReadableStream<Uint8Array>({
   // ...
 });
 
-// You can await the parse result.
-parseByteStream(byteStream, {
+const result = await parseByteStream(byteStream, {
   encoding: 'utf8',
   onCue(cue) {
     // ...
@@ -778,6 +779,8 @@ Here's the types that are available from this package for use in TypeScript:
 ```ts
 import type {
   CaptionsFileFormat,
+  CaptionsOverlayRenderer,
+  CaptionsOverlayTrack,
   CaptionsParser,
   CaptionsParserInit,
   ParseByteStreamOptions,
