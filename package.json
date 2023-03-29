@@ -11,7 +11,8 @@
   },
   "files": [
     "*.d.ts",
-    "dist/"
+    "dist/",
+    "styles/"
   ],
   "scripts": {
     "dev": "pnpm clean && tsup --watch & pnpm run types -w",
