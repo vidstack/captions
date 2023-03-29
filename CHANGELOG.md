@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.3](https://github.com/vidstack/media-captions/compare/v0.0.2...v0.0.3) (2023-03-29)
+
+
+### Bug Fixes
+
+* include styles in package files ([ea8d600](https://github.com/vidstack/media-captions/commit/ea8d600742bf4bd5e13e960d0a597ee03d8b054b))
+
 ### 0.0.2 (2023-03-29)
 
 
