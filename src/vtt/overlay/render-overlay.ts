@@ -49,14 +49,16 @@ export class CaptionsOverlayRenderer {
     this._resizeObserver.observe(overlay);
   }
 
-  setup(regions: VTTRegion[], cues: VTTCue[]) {
+  changeTrack({ regions, cues }: CaptionsOverlayTrack) {
     this.reset();
 
-    for (const region of regions) {
-      const el = this._createRegionElement(region);
-      if (el) {
-        this._regions.set(region.id, el);
-        this.overlay.append(el);
+    if (regions) {
+      for (const region of regions) {
+        const el = this._createRegionElement(region);
+        if (el) {
+          this._regions.set(region.id, el);
+          this.overlay.append(el);
+        }
       }
     }
 
@@ -276,4 +278,10 @@ export class CaptionsOverlayRenderer {
 export interface CaptionsOverlayRendererInit {
   /* Text direction. */
   dir?: 'ltr' | 'rtl';
+}
+
+export interface CaptionsOverlayTrack {
+  id?: string;
+  regions?: VTTRegion[];
+  cues: VTTCue[];
 }

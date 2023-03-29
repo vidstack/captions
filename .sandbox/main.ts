@@ -12,7 +12,10 @@ const cues = [
 const region = new VTTRegion();
 cues[1].region = region;
 
-renderer.setup([region], cues);
+renderer.changeTrack({
+  regions: [region],
+  cues,
+});
 
 const input = document.getElementById('current-time')! as HTMLInputElement;
 input.addEventListener('change', () => {

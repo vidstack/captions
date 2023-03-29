@@ -24,14 +24,11 @@ Some introduction...
 - custom rendering via tokens
 - ...?
 
-**Examples**
-
-- [HTML Video](https://stackblitz.com/edit/media-captions?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor)
-- [React + Next.js](https://stackblitz.com/edit/media-captions-next?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor)
-
 ⏭️ **[Skip to Installation](#installation)**
 
 ⏭️ **[Skip to API](#api)**
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)][stackblitz-demo]
 
 ## Motivation
 
@@ -548,8 +545,8 @@ const video = document.querySelector('video')!,
   captions = document.querySelector('#captions')!,
   renderer = new CaptionsOverlayRenderer(captions);
 
-parseResponse(fetch('/media/subs/english.vtt')).then(({ regions, cues }) => {
-  renderer.setup(regions, cues);
+parseResponse(fetch('/media/subs/english.vtt')).then((result) => {
+  renderer.changeTrack(result);
 });
 
 video.addEventListener('timeupdate', () => {
@@ -564,11 +561,10 @@ video.addEventListener('timeupdate', () => {
 
 **Methods**
 
-- `setup(regions: VTTRegion[], cues: VTTCue[])`: Resets the renderer and prepares new regions
-  and cues. This should be called on text track change.
+- `changeTrack(track: CaptionsOverlayTrack)`: Resets the renderer and prepares new regions and cues.
 - `addCue(cue: VTTCue)`: Add a new cue to the renderer.
 - `removeCue(cue: VTTCue)`: Remove a cue from the renderer.
-- `update(forceUpdate: boolean)`: Schedule a re-render.
+- `update(forceUpdate: boolean)`: Schedules a re-render to happen on the next animation frame.
 - `reset()`: Reset the renderer and clear all internal state including region and cue DOM nodes.
 - `destroy()`: Reset the renderer and destroy internal observers and event listeners.
 
@@ -628,10 +624,12 @@ by browsers. You can learn more about it on
 [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API) or by reading the
 [W3 specification](https://www.w3.org/TR/webvtt1).
 
-WebVTT file is a plain-text file that looks something like this:
+WebVTT is a plain-text file that looks something like this:
 
 ```text
 WEBVTT
+Kind: Language
+Language: en-US
 
 REGION id:foo width:100 lines:3 viewportanchor:0%,0% regionanchor:0%,0% scroll:up
 
@@ -642,6 +640,10 @@ Hello, Joe!
 2
 00:02 --> 00:04 region:foo
 Hello, Jane!
+```
+
+```ts
+parseResponse(fetch('/subs/english.vtt'), { type: 'vtt' });
 ```
 
 > **Warning**
@@ -708,6 +710,10 @@ Hello, Joe!
 Hello, Jane!
 ```
 
+```ts
+parseResponse(fetch('/subs/english.srt'), { type: 'srt' });
+```
+
 Note that SRT timestamps use a comma `,` to separate the milliseconds unit unlike VTT which uses
 a dot `.`.
 
@@ -737,6 +743,10 @@ Dialogue: 0:00:06,\t0:00:09.20, Three!
 Continue dialogue on a new line.
 ```
 
+```ts
+parseResponse(fetch('/subs/english.ssa'), { type: 'ssa' });
+```
+
 The following features are supported:
 
 - Multiple styles blocks and all format fields (e.g., PrimaryColour, Bold, ScaleX, etc.).
@@ -759,7 +769,7 @@ or animations using CSS (see [Styling](#styling)).
 We recommend using [SubtitlesOctopus](https://github.com/libass/JavascriptSubtitlesOctopus) for
 SSA/ASS captions as it supports most features and is a performant WASM wrapper of
 [libass](https://github.com/libass/libass). You'll need to fall back to this implementation on
-iOS Safari (iPhone) as custom captions are not possible.
+iOS Safari (iPhone) as custom captions are not supported there.
 
 ## Types
 
@@ -792,3 +802,4 @@ Media Captions is [MIT licensed](./LICENSE).
 [package-badge]: https://img.shields.io/npm/v/media-captions?style=flat-square
 [discord]: https://discord.com/invite/7RGU7wvsu9
 [discord-badge]: https://img.shields.io/discord/742612686679965696?color=%235865F2&label=%20&logo=discord&logoColor=white&style=flat-square
+[stackblitz-demo]: https://stackblitz.com/edit/media-captions?embed=1&file=index.ts&hideExplorer=1&hideNavigation=1&view=editor
