@@ -51,12 +51,12 @@
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "test": "./dist/dev/index.js",
-      "require": "./dist/server/index.cjs",
-      "node": "./dist/server/index.js",
-      "deno": "./dist/server/index.js",
-      "development": "./dist/dev/index.js",
-      "default": "./dist/prod/index.js"
+      "test": "./dist/dev.js",
+      "require": "./dist/server.cjs",
+      "node": "./dist/server.js",
+      "deno": "./dist/server.js",
+      "development": "./dist/dev.js",
+      "default": "./dist/prod.js"
     },
     "./styles/*": "./styles/*",
     "./package.json": "./package.json"
