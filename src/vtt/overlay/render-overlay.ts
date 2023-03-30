@@ -2,7 +2,7 @@ import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
 import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTRegion } from '../vtt-region';
-import { createBox, updateBoxDimensions, type Box } from './box';
+import { createBox, moveBox, STARTING_BOX, type Box } from './box';
 import { computeCuePosition, computeCuePositionAlignment, positionCue } from './position-cue';
 import { positionRegion } from './position-region';
 
@@ -51,21 +51,8 @@ export class CaptionsRenderer {
 
   changeTrack({ regions, cues }: CaptionsRendererTrack) {
     this.reset();
-
-    if (regions) {
-      for (const region of regions) {
-        const el = this._createRegionElement(region);
-        if (el) {
-          this._regions.set(region.id, el);
-          this.overlay.append(el);
-        }
-      }
-    }
-
-    for (const cue of cues) {
-      this._cues.set(cue, null);
-    }
-
+    this._buildRegions(regions);
+    for (const cue of cues) this._cues.set(cue, null);
     this.update();
   }
 
@@ -102,20 +89,17 @@ export class CaptionsRenderer {
   }
 
   private _resize() {
-    cancelAnimationFrame(this._resizeRafID);
+    if (this._resizeRafID >= 0) return;
     this._resizeRafID = requestAnimationFrame(() => {
       this._updateOverlay();
-      this.update(true);
       this._resizeRafID = -1;
     });
   }
 
   private _updateOverlay() {
-    const rect = this.overlay.getBoundingClientRect();
-    setCSSVar(this.overlay, 'overlay-width', rect.width + 'px');
-    setCSSVar(this.overlay, 'overlay-height', rect.height + 'px');
-    if (!this._overlayBox) this._overlayBox = createBox(this.overlay);
-    else updateBoxDimensions(this._overlayBox, this.overlay);
+    this._overlayBox = createBox(this.overlay);
+    setCSSVar(this.overlay, 'overlay-width', this._overlayBox.width + 'px');
+    setCSSVar(this.overlay, 'overlay-height', this._overlayBox.height + 'px');
   }
 
   private _render(forceUpdate = false) {
@@ -198,6 +182,17 @@ export class CaptionsRenderer {
 
     updateTimedVTTCueNodes(this.overlay, this._currentTime);
     this._activeCues = activeCues;
+  }
+
+  private _buildRegions(regions?: VTTRegion[]) {
+    if (!regions) return;
+    for (const region of regions) {
+      const el = this._createRegionElement(region);
+      if (el) {
+        this._regions.set(region.id, el);
+        this.overlay.append(el);
+      }
+    }
   }
 
   private _createRegionElement(region: VTTRegion): HTMLElement | null {

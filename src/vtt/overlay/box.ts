@@ -105,17 +105,17 @@ export function calcBoxIntersectPercentage(boxA: Box, boxB: Box): number {
 
 export function createCSSBox(container: Box, box: Box) {
   return {
-    top: box.top - container.top,
-    left: box.left - container.left,
-    right: container.right - box.right,
-    bottom: container.bottom - box.bottom,
+    top: (box.top - container.top) / container.height,
+    left: (box.left - container.left) / container.width,
+    right: (box.right - container.right) / container.width,
+    bottom: (box.bottom - container.bottom) / container.height,
   };
 }
 
 export function setBoxCSSVars(el: HTMLElement, container: Box, box: Box, prefix: string) {
   const cssBox = createCSSBox(container, box);
   for (const pos of ['top', 'left', 'right', 'bottom']) {
-    setCSSVar(el, `${prefix}-${pos}`, cssBox[pos] + 'px');
+    setCSSVar(el, `${prefix}-${pos}`, Math.abs(cssBox[pos]) * 100 + '%');
   }
 }
 
