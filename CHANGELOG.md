@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/vidstack/media-captions/compare/v0.0.5...v0.0.6) (2023-03-30)
+
+
+### Bug Fixes
+
+* do not hold more than 100 cue dom nodes in memory ([1d57f58](https://github.com/vidstack/media-captions/commit/1d57f58d55495a0a18224440967cea5c5a103f68))
+* position boxes using percentages to be responsive ([9e099fa](https://github.com/vidstack/media-captions/commit/9e099fa52b724d833e2126722bac7bb0bd908f50))
+
 ### [0.0.5](https://github.com/vidstack/media-captions/compare/v0.0.4...v0.0.5) (2023-03-29)
 
 
