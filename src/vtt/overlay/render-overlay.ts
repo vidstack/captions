@@ -170,6 +170,13 @@ export class CaptionsRenderer {
         (regionEl || this.overlay).append(cueEl);
         forceUpdate = true;
       }
+
+      if (this._cues.size > 100) {
+        const keys = Array.from(this._cues.keys()).slice(0, 50);
+        for (let i = 0; i < keys.length; i++) {
+          this._cues.delete(keys[i]);
+        }
+      }
     }
 
     if (forceUpdate) {
