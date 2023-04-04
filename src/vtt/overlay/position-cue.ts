@@ -2,7 +2,9 @@ import { getLineHeight } from '../../utils/style';
 import type { VTTCue } from '../vtt-cue';
 import {
   avoidBoxCollisions,
+  BOX_SIDES,
   createBox,
+  createCSSBox,
   moveBox,
   setBoxCSSVars,
   STARTING_BOX,
@@ -11,15 +13,30 @@ import {
   type DirectionalAxis,
 } from './box';
 
+const POSITION_OVERRIDE = Symbol(__DEV__ ? 'POSITION_OVERRIDE' : 0);
+
 // Adapted from: https://github.com/videojs/vtt.js
-export function positionCue(container: Box, cue: VTTCue, cueEl: HTMLElement, boxes: Box[]): Box {
-  let line = computeCueLine(cue),
-    cueBox: Box = { ...(cueEl[STARTING_BOX] ??= createBox(cueEl)) },
+export function positionCue(
+  container: Box,
+  cue: VTTCue,
+  displayEl: HTMLElement,
+  boxes: Box[],
+): Box {
+  let cueEl = displayEl.firstElementChild!,
+    line = computeCueLine(cue),
+    displayBox: Box,
     axis: DirectionalAxis[] = [];
 
-  updateBoxDimensions(cueBox, cueEl);
+  if (!displayEl[STARTING_BOX]) {
+    displayEl[STARTING_BOX] = createStartingBox(container, displayEl);
+  }
 
-  if (cue.snapToLines) {
+  displayBox = resolveStartingBox(container, { ...displayEl[STARTING_BOX] });
+  updateBoxDimensions(container, displayBox, displayEl);
+
+  if (displayEl[POSITION_OVERRIDE]) {
+    axis = [displayEl[POSITION_OVERRIDE] === 'top' ? '+y' : '-y', '+x', '-x'];
+  } else if (cue.snapToLines) {
     let size: string;
     switch (cue.vertical) {
       case '':
@@ -36,7 +53,7 @@ export function positionCue(container: Box, cue: VTTCue, cueEl: HTMLElement, box
         break;
     }
 
-    let step = getLineHeight(cueEl.firstElementChild!),
+    let step = getLineHeight(cueEl),
       position = step * Math.round(line),
       maxPosition = container[size] + step,
       initialAxis = axis[0];
@@ -51,16 +68,20 @@ export function positionCue(container: Box, cue: VTTCue, cueEl: HTMLElement, box
       axis = axis.reverse();
     }
 
-    moveBox(cueBox, initialAxis, position);
+    moveBox(displayBox, initialAxis, position);
   } else {
     const isHorizontal = cue.vertical === '',
       posAxis = isHorizontal ? '+y' : '+x',
-      size = isHorizontal ? cueBox.height : cueBox.width;
-
-    moveBox(cueBox, posAxis, ((isHorizontal ? container.height : container.width) * line) / 100);
+      size = isHorizontal ? displayBox.height : displayBox.width;
 
     moveBox(
-      cueBox,
+      displayBox,
+      posAxis,
+      ((isHorizontal ? container.height : container.width) * line) / 100,
+    );
+
+    moveBox(
+      displayBox,
       posAxis,
       cue.lineAlign === 'center' ? size / 2 : cue.lineAlign === 'end' ? size : 0,
     );
@@ -68,10 +89,52 @@ export function positionCue(container: Box, cue: VTTCue, cueEl: HTMLElement, box
     axis = isHorizontal ? ['-y', '+y', '-x', '+x'] : ['-x', '+x', '-y', '+y'];
   }
 
-  avoidBoxCollisions(container, cueBox, boxes, axis);
-  setBoxCSSVars(cueEl, container, cueBox, 'cue');
+  displayBox = avoidBoxCollisions(container, displayBox, boxes, axis);
+  setBoxCSSVars(displayEl, container, displayBox, 'cue');
 
-  return updateBoxDimensions(cueBox, cueEl.firstElementChild!);
+  return displayBox;
+}
+
+function createStartingBox(container: Box, cueEl: HTMLElement) {
+  const box = createBox(cueEl),
+    pos = getStyledPositions(cueEl);
+
+  cueEl[POSITION_OVERRIDE] = false;
+
+  if (pos.top) {
+    const top = container.top + pos.top;
+    box.top = top;
+    box.bottom = top + box.height;
+    cueEl[POSITION_OVERRIDE] = 'top';
+  }
+
+  if (pos.bottom) {
+    const bottom = container.bottom - pos.bottom;
+    box.top = bottom - box.height;
+    box.bottom = bottom;
+    cueEl[POSITION_OVERRIDE] = 'bottom';
+  }
+
+  if (pos.left) box.left = container.left + pos.left;
+  if (pos.right) box.right = container.right - pos.right;
+
+  return createCSSBox(container, box);
+}
+
+function getStyledPositions(el: HTMLElement) {
+  const positions = {};
+  for (const side of BOX_SIDES) {
+    positions[side] = parseFloat(el.style.getPropertyValue(`--cue-${side}`));
+  }
+  return positions as Omit<Box, 'width' | 'height'>;
+}
+
+function resolveStartingBox(container: Box, box: Box) {
+  box.top = container.top + container.height * box.top;
+  box.left = container.left + container.width * box.left;
+  box.right = container.right - container.width * box.right;
+  box.bottom = container.bottom - container.height * box.bottom;
+  return box;
 }
 
 export function computeCueLine(cue: VTTCue): number {

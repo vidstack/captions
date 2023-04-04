@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   define: {
     __DEV__: 'true',
-    __SERVER__: 'false',
+    __SERVER__: 'true',
   },
   resolve: {
     alias: {

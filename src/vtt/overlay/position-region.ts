@@ -34,9 +34,12 @@ export function positionRegion(
   }
 
   setCSSVar(regionEl, 'region-height', height + 'px');
+
   let box = { ...(regionEl[STARTING_BOX] ??= createBox(regionEl)) };
-  updateBoxDimensions(box, regionEl);
+  updateBoxDimensions(container, box, regionEl);
+
   box = avoidBoxCollisions(container, box, boxes, REGION_AXIS);
   setBoxCSSVars(regionEl, container, box, 'region');
+
   return box;
 }

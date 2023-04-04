@@ -39,17 +39,22 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
   expect(cues[0].startTime).toBe(5.01);
   expect(cues[0].endTime).toBe(7.02);
   expect(cues[0].text).toBe('Hello, world!');
+  delete cues[0].style!['--cue-text-shadow'];
   expect(cues[0].style).toMatchInlineSnapshot(`
     {
-      "--cue-bg-color": "rgba(0,0,0,1)",
+      "--cue-bg-color": "none",
+      "--cue-bottom": "10px",
       "--cue-color": "rgba(255,255,255,1)",
-      "--cue-margin-bottom": "0%",
-      "--cue-margin-left": "0%",
-      "--cue-margin-right": "0%",
-      "--cue-outline": "2px solid",
+      "--cue-left": "10px",
+      "--cue-line-height": "normal",
+      "--cue-padding-y": "0",
+      "--cue-right": "10px",
+      "--cue-text-align": "center",
       "--cue-transform": "scaleX(1) scaleY(1) rotate(0deg)",
+      "--cue-white-space": "normal",
+      "--cue-width": "auto",
       "font-family": "Arial",
-      "font-size": "36px",
+      "font-size": "calc(36 / var(--overlay-height))",
       "letter-spacing": "0px",
     }
   `);
@@ -57,17 +62,22 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
   expect(cues[1].startTime).toBe(4205.01);
   expect(cues[1].endTime).toBe(4808);
   expect(cues[1].text).toBe('Never!\nThis is text on a new line.\nAnd, another line.');
+  delete cues[1].style!['--cue-text-shadow'];
   expect(cues[1].style).toMatchInlineSnapshot(`
     {
-      "--cue-bg-color": "rgba(0,0,0,1)",
+      "--cue-bg-color": "none",
+      "--cue-bottom": "10px",
       "--cue-color": "rgba(255,255,255,1)",
-      "--cue-margin-bottom": "0%",
-      "--cue-margin-left": "0%",
-      "--cue-margin-right": "0%",
-      "--cue-outline": "2px solid",
+      "--cue-left": "10px",
+      "--cue-line-height": "normal",
+      "--cue-padding-y": "0",
+      "--cue-right": "10px",
+      "--cue-text-align": "center",
       "--cue-transform": "scaleX(1) scaleY(1) rotate(0deg)",
+      "--cue-white-space": "normal",
+      "--cue-width": "auto",
       "font-family": "Arial",
-      "font-size": "24px",
+      "font-size": "calc(24 / var(--overlay-height))",
       "font-style": "italic",
       "font-weight": "bold",
       "letter-spacing": "0px",

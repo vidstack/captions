@@ -31,12 +31,11 @@ export function createBox(box: Box | Element): Box {
   return { ...box };
 }
 
-export function updateBoxDimensions(box: Box, el: Element) {
+export function updateBoxDimensions(container: Box, box: Box, el: Element) {
   box.width = el.clientWidth;
   box.height = el.clientHeight;
-  box.right = box.left + box.width;
-  box.bottom = box.top + box.height;
-  return box;
+  box.right = Math.min(container.right, box.left + box.width);
+  box.bottom = Math.min(container.bottom, box.top + box.height);
 }
 
 export function moveBox(box: Box, axis: DirectionalAxis, delta: number): void {
@@ -107,15 +106,17 @@ export function createCSSBox(container: Box, box: Box) {
   return {
     top: (box.top - container.top) / container.height,
     left: (box.left - container.left) / container.width,
-    right: (box.right - container.right) / container.width,
-    bottom: (box.bottom - container.bottom) / container.height,
+    right: (container.right - box.right) / container.width,
+    bottom: (container.bottom - box.bottom) / container.height,
   };
 }
 
+export const BOX_SIDES = ['top', 'left', 'right', 'bottom'] as const;
+
 export function setBoxCSSVars(el: HTMLElement, container: Box, box: Box, prefix: string) {
   const cssBox = createCSSBox(container, box);
-  for (const pos of ['top', 'left', 'right', 'bottom']) {
-    setCSSVar(el, `${prefix}-${pos}`, Math.abs(cssBox[pos]) * 100 + '%');
+  for (const side of BOX_SIDES) {
+    setCSSVar(el, `${prefix}-${side}`, Math.abs(cssBox[side]) * 100 + '%');
   }
 }
 
@@ -126,45 +127,27 @@ export function avoidBoxCollisions(
   axis: DirectionalAxis[],
 ): Box {
   let percentage = 1,
-    collisionBox: Box | null = null,
     positionedBox: Box | undefined,
-    startBox = createBox(box);
+    startBox = { ...box };
 
   for (let i = 0; i < axis.length; i++) {
-    collisionBox = null;
-
     while (
       isBoxOutOfBounds(container, box, axis[i]) ||
-      (isWithinBox(container, box) && (collisionBox = isAnyBoxCollision(box, boxes)))
+      (isWithinBox(container, box) && isAnyBoxCollision(box, boxes))
     ) {
-      moveBox(box, axis[i], calcBoxMoveDelta(axis[i], box, collisionBox) + 8);
-      collisionBox = null;
+      moveBox(box, axis[i], 1);
     }
 
     if (isWithinBox(container, box)) return box;
 
     const intersection = calcBoxIntersectPercentage(container, box);
     if (percentage > intersection) {
-      positionedBox = createBox(box);
+      positionedBox = { ...box };
       percentage = intersection;
     }
 
-    box = createBox(startBox);
+    box = { ...startBox };
   }
 
   return positionedBox || startBox;
-}
-
-function calcBoxMoveDelta(axis: DirectionalAxis, box: Box, avoid: Box | null) {
-  if (!avoid) return 0;
-  switch (axis) {
-    case '+x':
-      return avoid.right - box.right;
-    case '-x':
-      return box.left - avoid.left;
-    case '+y':
-      return avoid.bottom - box.top;
-    case '-y':
-      return avoid.top - box.top;
-  }
 }

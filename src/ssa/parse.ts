@@ -107,6 +107,14 @@ export class SSAParser implements CaptionsParser {
   protected _parseStyles(values: string[]) {
     let name = 'Default',
       styles: Record<string, any> = {},
+      outlineX: number | undefined,
+      align: 'start' | 'center' | 'end' = 'center',
+      vertical: 'top' | 'center' | 'bottom' = 'bottom',
+      marginV: number | undefined,
+      outlineY = 1.2,
+      outlineColor: string | undefined,
+      bgColor: string | undefined | null,
+      borderStyle = 3,
       transform: string[] = [];
 
     for (let i = 0; i < this._format!.length; i++) {
@@ -120,19 +128,21 @@ export class SSAParser implements CaptionsParser {
           styles['font-family'] = value;
           break;
         case 'Fontsize':
-          styles['font-size'] = value + 'px';
+          styles['font-size'] = `calc(${value} / var(--overlay-height))`;
           break;
         case 'PrimaryColour':
           const color = parseColor(value);
           if (color) styles['--cue-color'] = color;
           break;
-        case 'BackColour':
-          const bgColor = parseColor(value);
-          if (bgColor) styles['--cue-bg-color'] = bgColor;
+        case 'BorderStyle':
+          borderStyle = parseInt(value, 10);
           break;
-        case 'OutlineColor':
-          const outlineColor = parseColor(value);
-          if (outlineColor) styles['outline-color'] = outlineColor;
+        case 'BackColour':
+          bgColor = parseColor(value);
+          break;
+        case 'OutlineColour':
+          const _outlineColor = parseColor(value);
+          if (_outlineColor) outlineColor = _outlineColor;
           break;
         case 'Bold':
           if (parseInt(value)) styles['font-weight'] = 'bold';
@@ -161,58 +171,74 @@ export class SSAParser implements CaptionsParser {
         case 'Angle':
           transform.push(`rotate(${value}deg)`);
           break;
+        case 'Shadow':
+          outlineY = parseInt(value, 10) * 1.2;
+          break;
         case 'MarginL':
-          styles['--cue-margin-left'] = value + '%';
+          styles['--cue-width'] = 'auto';
+          styles['--cue-left'] = parseFloat(value) + 'px';
           break;
         case 'MarginR':
-          styles['--cue-margin-right'] = value + '%';
+          styles['--cue-width'] = 'auto';
+          styles['--cue-right'] = parseFloat(value) + 'px';
           break;
         case 'MarginV':
-          styles['--cue-margin-bottom'] = value + '%';
+          marginV = parseFloat(value);
           break;
         case 'Outline':
-          styles['--cue-outline'] = `${value}px solid`;
+          outlineX = parseInt(value, 10);
           break;
         case 'Alignment':
-          switch (parseInt(value, 10)) {
+          const alignment = parseInt(value, 10);
+          if (alignment >= 4) vertical = alignment >= 7 ? 'top' : 'center';
+          switch (alignment % 3) {
             case 1:
-              styles._line = 100;
-              styles._align = 'start';
+              align = 'start';
               break;
             case 2:
-              styles._line = 100;
-              styles._align = 'center';
+              align = 'center';
               break;
             case 3:
-              styles._line = 100;
-              styles._align = 'end';
-              break;
-            case 5:
-              styles._line = 0;
-              styles._align = 'start';
-              break;
-            case 6:
-              styles._line = 0;
-              styles._align = 'center';
-              break;
-            case 7:
-              styles._line = 0;
-              styles._align = 'end';
-              break;
-            case 9:
-              styles._line = 50;
-              styles._align = 'start';
-              break;
-            case 10:
-              styles._line = 50;
-              styles._align = 'center';
-              break;
-            case 11:
-              styles._line = 50;
-              styles._align = 'end';
+              align = 'end';
               break;
           }
       }
+    }
+
+    styles._vertical = vertical;
+    styles['--cue-white-space'] = 'normal';
+    styles['--cue-line-height'] = 'normal';
+    styles['--cue-text-align'] = align;
+
+    if (vertical === 'center') {
+      styles[`--cue-top`] = '50%';
+      transform.push('translateY(-50%)');
+    } else {
+      styles[`--cue-${vertical}`] = (marginV || 0) + 'px';
+    }
+
+    if (borderStyle === 1) {
+      styles['--cue-padding-y'] = '0';
+    }
+
+    if (borderStyle === 1 || bgColor) {
+      styles['--cue-bg-color'] = borderStyle === 1 ? 'none' : bgColor;
+    }
+
+    if (borderStyle === 3 && outlineColor) {
+      styles['--cue-outline'] = `${outlineX}px solid ${outlineColor}`;
+    }
+
+    if (borderStyle === 1 && typeof outlineX === 'number') {
+      const color = bgColor ?? '#000';
+      styles['--cue-text-shadow'] = [
+        outlineColor && buildTextShadow(outlineX * 1.2, outlineY * 1.2, outlineColor),
+        outlineColor
+          ? buildTextShadow(outlineX * (outlineX / 2), outlineY * (outlineX / 2), color)
+          : buildTextShadow(outlineX, outlineY, color),
+      ]
+        .filter(Boolean)
+        .join(', ');
     }
 
     if (transform.length) styles['--cue-transform'] = transform.join(' ');
@@ -229,17 +255,24 @@ export class SSAParser implements CaptionsParser {
       styles = { ...(this._styles[fields.Style] || {}) },
       voice = fields.Name ? `<v ${fields.Name}>` : '';
 
-    if (styles._align) {
-      cue.align = styles._align;
-      cue.line = styles._line;
-      cue.snapToLines = false;
-      delete styles._line;
-      delete styles._align;
+    const vertical = styles._vertical,
+      marginLeft = fields.MarginL && parseFloat(fields.MarginL),
+      marginRight = fields.MarginR && parseFloat(fields.MarginR),
+      marginV = fields.MarginV && parseFloat(fields.MarginV);
+
+    if (marginLeft) {
+      styles['--cue-width'] = 'auto';
+      styles['--cue-left'] = marginLeft + 'px';
     }
 
-    if (fields.MarginL) styles['--cue-margin-left'] = fields.MarginL + '%';
-    if (fields.MarginR) styles['--cue-margin-right'] = fields.MarginR + '%';
-    if (fields.MarginV) styles['--cue-margin-bottom'] = fields.MarginV + '%';
+    if (marginRight) {
+      styles['--cue-width'] = 'auto';
+      styles['--cue-right'] = marginRight + 'px';
+    }
+
+    if (marginV && vertical !== 'center') {
+      styles[`--cue-${vertical}`] = marginV + 'px';
+    }
 
     cue.text =
       voice +
@@ -249,6 +282,7 @@ export class SSAParser implements CaptionsParser {
         .replace(STYLE_FUNCTION_RE, '')
         .replace(NEW_LINE_RE, '\n');
 
+    delete styles._vertical;
     if (Object.keys(styles).length) cue.style = styles;
     return cue;
   }
@@ -304,6 +338,25 @@ function parseColor(color: string) {
   }
 
   return null;
+}
+
+function buildTextShadow(x: number, y: number, color: string) {
+  const noOfShadows = Math.ceil(2 * Math.PI * x);
+
+  let textShadow = '';
+
+  for (let i = 0; i < noOfShadows; i++) {
+    const theta = (2 * Math.PI * i) / noOfShadows;
+    textShadow +=
+      x * Math.cos(theta) +
+      'px ' +
+      y * Math.sin(theta) +
+      'px 0 ' +
+      color +
+      (i == noOfShadows - 1 ? '' : ',');
+  }
+
+  return textShadow;
 }
 
 export default function createSSAParser() {

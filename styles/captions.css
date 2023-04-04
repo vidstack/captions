@@ -27,21 +27,21 @@
   position: absolute;
   direction: ltr;
   overflow: visible;
+  contain: content;
   top: var(--cue-top);
   left: var(--cue-left);
   right: var(--cue-right);
   bottom: var(--cue-bottom);
   width: var(--cue-width, auto);
   height: var(--cue-height, auto);
-  margin-top: var(--cue-margin-top);
-  margin-left: var(--cue-margin-left);
-  margin-right: var(--cue-margin-right);
-  margin-bottom: var(--cue-margin-bottom);
   box-sizing: border-box;
+  transform: var(--cue-transform);
   text-align: var(--cue-text-align);
   writing-mode: var(--cue-writing-mode, unset);
   white-space: pre-line;
   unicode-bidi: plaintext;
+  min-width: min-content;
+  min-height: min-content;
 }
 
 :where([data-dir='rtl'] [part='cue-display']) {
@@ -50,18 +50,16 @@
 
 :where([part='captions'] [part='cue']) {
   display: inline-block;
+  contain: content;
   padding: var(--cue-padding-y) var(--cue-padding-x);
   line-height: var(--cue-line-height);
   background-color: var(--cue-bg-color);
   box-sizing: border-box;
   color: var(--cue-color);
-  outline: var(--cue-outline);
-  outline-color: inherit;
   box-shadow: var(--cue-box-shadow);
-  transform: var(--cue-transform);
-  white-space: pre-wrap;
-  min-width: min-content;
-  min-height: min-content;
+  white-space: var(--cue-white-space, pre-wrap);
+  outline: var(--cue-outline);
+  text-shadow: var(--cue-text-shadow);
 }
 
 :where([part='captions'] [part='cue-display'][data-vertical] [part='cue']) {

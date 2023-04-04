@@ -2,7 +2,7 @@ import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
 import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTRegion } from '../vtt-region';
-import { createBox, type Box } from './box';
+import { BOX_SIDES, createBox, type Box } from './box';
 import { computeCuePosition, computeCuePositionAlignment, positionCue } from './position-cue';
 import { positionRegion } from './position-region';
 
@@ -154,13 +154,6 @@ export class CaptionsRenderer {
         (regionEl || this.overlay).append(cueEl);
         forceUpdate = true;
       }
-
-      if (this._cues.size > 100) {
-        const keys = Array.from(this._cues.keys()).slice(0, 50);
-        for (let i = 0; i < keys.length; i++) {
-          this._cues.delete(keys[i]);
-        }
-      }
     }
 
     if (forceUpdate) {
@@ -239,18 +232,20 @@ export class CaptionsRenderer {
           : 'vertical-rl',
       );
 
-      let maxSize = position;
-      if (positionAlignment === 'line-left') {
-        maxSize = 100 - position;
-      } else if (positionAlignment === 'center' && position <= 50) {
-        maxSize = position * 2;
-      } else if (positionAlignment === 'center' && position > 50) {
-        maxSize = (100 - position) * 2;
-      }
+      if (!cue.style?.['--cue-width']) {
+        let maxSize = position;
+        if (positionAlignment === 'line-left') {
+          maxSize = 100 - position;
+        } else if (positionAlignment === 'center' && position <= 50) {
+          maxSize = position * 2;
+        } else if (positionAlignment === 'center' && position > 50) {
+          maxSize = (100 - position) * 2;
+        }
 
-      const size = cue.size < maxSize ? cue.size : maxSize;
-      if (cue.vertical === '') setCSSVar(display, 'cue-width', size + '%');
-      else setCSSVar(display, 'cue-height', size + '%');
+        const size = cue.size < maxSize ? cue.size : maxSize;
+        if (cue.vertical === '') setCSSVar(display, 'cue-width', size + '%');
+        else setCSSVar(display, 'cue-height', size + '%');
+      }
     } else {
       setCSSVar(
         display,
