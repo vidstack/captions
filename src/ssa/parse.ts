@@ -9,6 +9,7 @@ const FORMAT_START_RE = /*#__PURE__*/ /^Format:[\s\t]*/,
   DIALOGUE_START_RE = /*#__PURE__*/ /^Dialogue:[\s\t]*/,
   FORMAT_SPLIT_RE = /*#__PURE__*/ /[\s\t]*,[\s\t]*/,
   STYLE_FUNCTION_RE = /*#__PURE__*/ /\{[^}]+\}/g,
+  NEW_LINE_RE = /\\N/g,
   STYLES_SECTION_START_RE = /*#__PURE__*/ /^\[(.*)[\s\t]?Styles\]$/,
   EVENTS_SECTION_START_RE = /*#__PURE__*/ /^\[(.*)[\s\t]?Events\]$/;
 
@@ -66,7 +67,7 @@ export class SSAParser implements CaptionsParser {
               this._handleError(this._errorBuilder?._missingFormat('Dialogue', lineCount));
             }
           } else if (this._cue) {
-            this._cue.text += '\n' + line.replace(STYLE_FUNCTION_RE, '');
+            this._cue.text += '\n' + line.replace(STYLE_FUNCTION_RE, '').replace(NEW_LINE_RE, '\n');
           } else if (FORMAT_START_RE.test(line)) {
             this._format = line.replace(FORMAT_START_RE, '').split(FORMAT_SPLIT_RE);
           } else if (STYLES_SECTION_START_RE.test(line)) {
@@ -245,7 +246,8 @@ export class SSAParser implements CaptionsParser {
       values
         .slice(this._format!.length - 1)
         .join(', ')
-        .replace(STYLE_FUNCTION_RE, '');
+        .replace(STYLE_FUNCTION_RE, '')
+        .replace(NEW_LINE_RE, '\n');
 
     if (Object.keys(styles).length) cue.style = styles;
     return cue;
