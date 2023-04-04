@@ -1,11 +1,13 @@
 import { TextCue } from './text-cue';
 import type { VTTRegion } from './vtt-region';
 
+const CueBase = __SERVER__ ? TextCue : window.VTTCue;
+
 /**
  * @see {@link https://www.w3.org/TR/webvtt1/#model-cues}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/VTTCue}
  */
-export class VTTCue extends TextCue {
+export class VTTCue extends CueBase {
   /**
    * A `VTTRegion` object describing the video's sub-region that the cue will be drawn onto,
    * or `null` if none is assigned.
