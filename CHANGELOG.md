@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.7](https://github.com/vidstack/media-captions/compare/v0.0.6...v0.0.7) (2023-04-05)
+
+
+### Bug Fixes
+
+* correctly apply ass position and outline styling ([71c58ee](https://github.com/vidstack/media-captions/commit/71c58ee994e798e4f1e273b70ab8a8feaf339e03))
+* extend native `VTTCue` otherwise browser will reject ([dc256a8](https://github.com/vidstack/media-captions/commit/dc256a8b5cf90919091a794288c18ed9c5b22c72))
+* replace `\N` with line break in ass captions text ([a6f0517](https://github.com/vidstack/media-captions/commit/a6f051743426f7466b0e8abe14d10d896dfc2a71))
+
 ### [0.0.6](https://github.com/vidstack/media-captions/compare/v0.0.5...v0.0.6) (2023-03-30)
 
 
