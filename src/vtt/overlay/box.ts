@@ -15,27 +15,19 @@ export interface Box {
   height: number;
 }
 
-export function createBox(box: Box | Element): Box {
-  if (box instanceof Element) {
-    const rect = box.getBoundingClientRect() as unknown as Box;
+export function createBox(box: Box | HTMLElement): Box {
+  if (box instanceof HTMLElement) {
     return {
-      top: rect.top,
-      width: rect.width,
-      height: rect.height,
-      left: rect.left,
-      right: rect.right,
-      bottom: rect.bottom,
+      top: box.offsetTop,
+      width: box.clientWidth,
+      height: box.clientHeight,
+      left: box.offsetLeft,
+      right: box.offsetLeft + box.clientWidth,
+      bottom: box.offsetTop + box.clientHeight,
     };
   }
 
   return { ...box };
-}
-
-export function updateBoxDimensions(container: Box, box: Box, el: Element) {
-  box.width = el.clientWidth;
-  box.height = el.clientHeight;
-  box.right = Math.min(container.right, box.left + box.width);
-  box.bottom = Math.min(container.bottom, box.top + box.height);
 }
 
 export function moveBox(box: Box, axis: DirectionalAxis, delta: number): void {
@@ -59,13 +51,8 @@ export function moveBox(box: Box, axis: DirectionalAxis, delta: number): void {
   }
 }
 
-export function isBoxCollision(boxA: Box, boxB: Box): boolean {
-  return (
-    boxA.left <= boxB.right &&
-    boxA.right >= boxB.left &&
-    boxA.top <= boxB.bottom &&
-    boxA.bottom >= boxB.top
-  );
+export function isBoxCollision(a: Box, b: Box): boolean {
+  return a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
 }
 
 export function isAnyBoxCollision(box: Box, boxes: Box[]): Box | null {
@@ -75,40 +62,45 @@ export function isAnyBoxCollision(box: Box, boxes: Box[]): Box | null {
 
 export function isWithinBox(container: DOMRect | Box, box: Box): boolean {
   return (
-    box.top >= container.top &&
-    box.bottom <= container.bottom &&
-    box.left >= container.left &&
-    box.right <= container.right
+    box.top >= 0 && box.bottom <= container.height && box.left >= 0 && box.right <= container.width
   );
 }
 
 export function isBoxOutOfBounds(container: Box, box: Box, axis: DirectionalAxis): boolean {
   switch (axis) {
     case '+x':
-      return box.left < container.left;
+      return box.left < 0;
     case '-x':
-      return box.right > container.right;
+      return box.right > container.width;
     case '+y':
-      return box.top < container.top;
+      return box.top < 0;
     case '-y':
-      return box.bottom > container.bottom;
+      return box.bottom > container.height;
   }
 }
 
-export function calcBoxIntersectPercentage(boxA: Box, boxB: Box): number {
-  const x = Math.max(0, Math.min(boxA.right, boxB.right) - Math.max(boxA.left, boxB.left)),
-    y = Math.max(0, Math.min(boxA.bottom, boxB.bottom) - Math.max(boxA.top, boxB.top)),
+export function calcBoxIntersectPercentage(container: Box, box: Box): number {
+  const x = Math.max(0, Math.min(container.width, box.right) - Math.max(0, box.left)),
+    y = Math.max(0, Math.min(container.height, box.bottom) - Math.max(0, box.top)),
     intersectArea = x * y;
-  return intersectArea / (boxA.height * boxA.width);
+  return intersectArea / (container.height * container.width);
 }
 
 export function createCSSBox(container: Box, box: Box) {
   return {
-    top: (box.top - container.top) / container.height,
-    left: (box.left - container.left) / container.width,
-    right: (container.right - box.right) / container.width,
-    bottom: (container.bottom - box.bottom) / container.height,
+    top: box.top / container.height,
+    left: box.left / container.width,
+    right: (container.width - box.right) / container.width,
+    bottom: (container.height - box.bottom) / container.height,
   };
+}
+
+export function resolveRelativeBox(container: Box, box: Box): Box {
+  box.top = box.top * container.height;
+  box.left = box.left * container.width;
+  box.right = container.width - box.right * container.width;
+  box.bottom = container.height - box.bottom * container.height;
+  return box;
 }
 
 export const BOX_SIDES = ['top', 'left', 'right', 'bottom'] as const;
@@ -116,7 +108,7 @@ export const BOX_SIDES = ['top', 'left', 'right', 'bottom'] as const;
 export function setBoxCSSVars(el: HTMLElement, container: Box, box: Box, prefix: string) {
   const cssBox = createCSSBox(container, box);
   for (const side of BOX_SIDES) {
-    setCSSVar(el, `${prefix}-${side}`, Math.abs(cssBox[side]) * 100 + '%');
+    setCSSVar(el, `${prefix}-${side}`, cssBox[side] * 100 + '%');
   }
 }
 

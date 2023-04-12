@@ -50,7 +50,6 @@
 
 :where([part='captions'] [part='cue']) {
   display: inline-block;
-  contain: content;
   padding: var(--cue-padding-y) var(--cue-padding-x);
   line-height: var(--cue-line-height);
   background-color: var(--cue-bg-color);

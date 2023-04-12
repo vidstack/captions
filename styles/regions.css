@@ -2,7 +2,7 @@
   position: absolute;
   display: inline-flex;
   flex-flow: column;
-  justify-content: start;
+  justify-content: flex-start;
   width: var(--region-width);
   height: var(--region-height);
   min-height: 0px;
@@ -47,10 +47,11 @@
   height: var(--cue-height, auto);
   text-align: var(--cue-text-align);
   unicode-bidi: plaintext;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 :where([part='captions'] [part='region'] [part='cue']) {
   position: relative;
+  padding: calc(var(--cue-padding-y) / 2) var(--cue-padding-x);
   border-radius: 0px;
 }

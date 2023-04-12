@@ -6,9 +6,9 @@ import {
   createBox,
   createCSSBox,
   moveBox,
+  resolveRelativeBox,
   setBoxCSSVars,
   STARTING_BOX,
-  updateBoxDimensions,
   type Box,
   type DirectionalAxis,
 } from './box';
@@ -31,8 +31,7 @@ export function positionCue(
     displayEl[STARTING_BOX] = createStartingBox(container, displayEl);
   }
 
-  displayBox = resolveStartingBox(container, { ...displayEl[STARTING_BOX] });
-  updateBoxDimensions(container, displayBox, displayEl);
+  displayBox = resolveRelativeBox(container, { ...displayEl[STARTING_BOX] });
 
   if (displayEl[POSITION_OVERRIDE]) {
     axis = [displayEl[POSITION_OVERRIDE] === 'top' ? '+y' : '-y', '+x', '-x'];
@@ -102,39 +101,32 @@ function createStartingBox(container: Box, cueEl: HTMLElement) {
   cueEl[POSITION_OVERRIDE] = false;
 
   if (pos.top) {
-    const top = container.top + pos.top;
+    const top = (pos.top / 100) * container.height;
     box.top = top;
     box.bottom = top + box.height;
     cueEl[POSITION_OVERRIDE] = 'top';
   }
 
   if (pos.bottom) {
-    const bottom = container.bottom - pos.bottom;
+    const bottom = container.height - (pos.bottom / 100) * container.height;
     box.top = bottom - box.height;
     box.bottom = bottom;
     cueEl[POSITION_OVERRIDE] = 'bottom';
   }
 
-  if (pos.left) box.left = container.left + pos.left;
-  if (pos.right) box.right = container.right - pos.right;
+  if (pos.left) box.left = (pos.left / 100) * container.width;
+  if (pos.right) box.right = container.width - (pos.right / 100) * container.width;
 
   return createCSSBox(container, box);
 }
 
+/* Assuming percentage only here. */
 function getStyledPositions(el: HTMLElement) {
   const positions = {};
   for (const side of BOX_SIDES) {
     positions[side] = parseFloat(el.style.getPropertyValue(`--cue-${side}`));
   }
   return positions as Omit<Box, 'width' | 'height'>;
-}
-
-function resolveStartingBox(container: Box, box: Box) {
-  box.top = container.top + container.height * box.top;
-  box.left = container.left + container.width * box.left;
-  box.right = container.right - container.width * box.right;
-  box.bottom = container.bottom - container.height * box.bottom;
-  return box;
 }
 
 export function computeCueLine(cue: VTTCue): number {

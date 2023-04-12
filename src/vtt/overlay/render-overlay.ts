@@ -2,7 +2,7 @@ import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
 import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTRegion } from '../vtt-region';
-import { BOX_SIDES, createBox, type Box } from './box';
+import { createBox, type Box } from './box';
 import { computeCuePosition, computeCuePositionAlignment, positionCue } from './position-cue';
 import { positionRegion } from './position-region';
 
@@ -93,6 +93,7 @@ export class CaptionsRenderer {
     this._resizeRafID = requestAnimationFrame(() => {
       this._updateOverlay();
       this._resizeRafID = -1;
+      if (this._regions.size) this._render(true);
     });
   }
 

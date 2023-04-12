@@ -13,8 +13,3 @@ export function setPartAttr(el: Element, name: string) {
 export function getLineHeight(el: Element) {
   return parseFloat(getComputedStyle(el).lineHeight) || 0;
 }
-
-export function getPaddingY(el: Element) {
-  const style = getComputedStyle(el);
-  return parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) || 0;
-}

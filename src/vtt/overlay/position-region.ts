@@ -1,16 +1,17 @@
-import { getLineHeight, getPaddingY, setCSSVar } from '../../utils/style';
+import { setCSSVar } from '../../utils/style';
 import type { VTTRegion } from '../vtt-region';
 import {
   avoidBoxCollisions,
   createBox,
+  createCSSBox,
+  resolveRelativeBox,
   setBoxCSSVars,
   STARTING_BOX,
-  updateBoxDimensions,
   type Box,
   type DirectionalAxis,
 } from './box';
 
-const REGION_AXIS: DirectionalAxis[] = ['+y', '-y', '-x', '+x'];
+const REGION_AXIS: DirectionalAxis[] = ['-y', '+y', '-x', '+x'];
 
 export function positionRegion(
   container: Box,
@@ -18,25 +19,26 @@ export function positionRegion(
   regionEl: HTMLElement,
   boxes: Box[],
 ) {
-  let height = 0,
-    cueEl = regionEl.querySelector('[part="cue"]')!,
-    cueLineHeight = getLineHeight(cueEl),
-    cuePaddingY = getPaddingY(cueEl),
-    cueMarginTop = parseFloat(getComputedStyle(cueEl).marginTop) || 0,
-    cues = Array.from(regionEl.querySelectorAll('[part="cue"]')),
-    remainingLines = region.lines;
+  let cues = Array.from(regionEl.querySelectorAll('[part="cue-display"]')) as HTMLElement[],
+    height = 0,
+    limit = Math.max(0, cues.length - region.lines);
 
-  for (let i = cues.length - 1; i >= 0; i--) {
-    const newLines = Math.round((cues[i].clientHeight - cuePaddingY) / cueLineHeight);
-    remainingLines -= newLines;
-    if (remainingLines >= 0) height += cues[i].clientHeight + cueMarginTop;
-    else break;
+  for (let i = cues.length - 1; i >= limit; i--) {
+    height += cues[i].offsetHeight;
   }
 
   setCSSVar(regionEl, 'region-height', height + 'px');
 
-  let box = { ...(regionEl[STARTING_BOX] ??= createBox(regionEl)) };
-  updateBoxDimensions(container, box, regionEl);
+  if (!regionEl[STARTING_BOX]) {
+    regionEl[STARTING_BOX] = createCSSBox(container, createBox(regionEl));
+  }
+
+  let box: Box = { ...regionEl[STARTING_BOX] };
+  box = resolveRelativeBox(container, box);
+  box.width = regionEl.clientWidth;
+  box.height = height;
+  box.right = box.left + box.width;
+  box.bottom = box.top + height;
 
   box = avoidBoxCollisions(container, box, boxes, REGION_AXIS);
   setBoxCSSVars(regionEl, container, box, 'region');
