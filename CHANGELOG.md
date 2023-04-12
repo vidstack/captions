@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.8](https://github.com/vidstack/media-captions/compare/v0.0.7...v0.0.8) (2023-04-12)
+
+
+### Bug Fixes
+
+* position everything relative to container to avoid scroll issues ([91ded03](https://github.com/vidstack/media-captions/commit/91ded032fd00722d8f33e9e64d262796cfc80f5f))
+
 ### [0.0.7](https://github.com/vidstack/media-captions/compare/v0.0.6...v0.0.7) (2023-04-05)
 
 
