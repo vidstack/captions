@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.9](https://github.com/vidstack/media-captions/compare/v0.0.8...v0.0.9) (2023-04-14)
+
+
+### Bug Fixes
+
+* ssa/ass margin setting should be px not % ([9329761](https://github.com/vidstack/media-captions/commit/93297617a23533336bf5acd0df3cd01b0e836dc6))
+
 ### [0.0.8](https://github.com/vidstack/media-captions/compare/v0.0.7...v0.0.8) (2023-04-12)
 
 
