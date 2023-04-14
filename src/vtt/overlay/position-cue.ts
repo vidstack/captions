@@ -101,26 +101,24 @@ function createStartingBox(container: Box, cueEl: HTMLElement) {
   cueEl[POSITION_OVERRIDE] = false;
 
   if (pos.top) {
-    const top = (pos.top / 100) * container.height;
-    box.top = top;
-    box.bottom = top + box.height;
+    box.top = pos.top;
+    box.bottom = pos.top + box.height;
     cueEl[POSITION_OVERRIDE] = 'top';
   }
 
   if (pos.bottom) {
-    const bottom = container.height - (pos.bottom / 100) * container.height;
+    const bottom = container.height - pos.bottom;
     box.top = bottom - box.height;
     box.bottom = bottom;
     cueEl[POSITION_OVERRIDE] = 'bottom';
   }
 
-  if (pos.left) box.left = (pos.left / 100) * container.width;
-  if (pos.right) box.right = container.width - (pos.right / 100) * container.width;
+  if (pos.left) box.left = pos.left;
+  if (pos.right) box.right = container.width - pos.right;
 
   return createCSSBox(container, box);
 }
 
-/* Assuming percentage only here. */
 function getStyledPositions(el: HTMLElement) {
   const positions = {};
   for (const side of BOX_SIDES) {
