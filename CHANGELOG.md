@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.10](https://github.com/vidstack/media-captions/compare/v0.0.9...v0.0.10) (2023-04-16)
+
+
+### Bug Fixes
+
+* safely detect vtt settings line ([c6f088d](https://github.com/vidstack/media-captions/commit/c6f088d82df4c68e1c309155400ab07bd7662a55))
+
 ### [0.0.9](https://github.com/vidstack/media-captions/compare/v0.0.8...v0.0.9) (2023-04-14)
 
 
