@@ -301,7 +301,7 @@ export function parseVTTTimestamp(timestamp: string): number | null {
   const hours = match[1] ? parseInt(match[1], 10) : 0,
     minutes = parseInt(match[2], 10),
     seconds = parseInt(match[3], 10),
-    milliseconds = match[4] ? parseInt(match[4], 10) : 0,
+    milliseconds = match[4] ? parseInt(match[4].padEnd(3, '0'), 10) : 0,
     total = hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
 
   if (hours < 0 || minutes < 0 || seconds < 0 || milliseconds < 0 || minutes > 59 || seconds > 59) {

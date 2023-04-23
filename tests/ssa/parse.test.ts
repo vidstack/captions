@@ -36,8 +36,8 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
   expect(cues).toHaveLength(6);
   expect(errors).toHaveLength(0);
 
-  expect(cues[0].startTime).toBe(5.01);
-  expect(cues[0].endTime).toBe(7.02);
+  expect(cues[0].startTime).toBe(5.1);
+  expect(cues[0].endTime).toBe(7.2);
   expect(cues[0].text).toBe('Hello, world!');
   delete cues[0].style!['--cue-text-shadow'];
   expect(cues[0].style).toMatchInlineSnapshot(`
@@ -59,7 +59,7 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
     }
   `);
 
-  expect(cues[1].startTime).toBe(4205.01);
+  expect(cues[1].startTime).toBe(4205.1);
   expect(cues[1].endTime).toBe(4808);
   expect(cues[1].text).toBe('Never!\nThis is text on a new line.\nAnd, another line.');
   delete cues[1].style!['--cue-text-shadow'];
@@ -86,22 +86,22 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
   `);
 
   expect(cues[2].startTime).toBe(4);
-  expect(cues[2].endTime).toBe(7.02);
+  expect(cues[2].endTime).toBe(7.2);
   expect(cues[2].text).toBe('One!');
   expect(cues[2].style).toBeUndefined();
 
   expect(cues[3].startTime).toBe(5);
-  expect(cues[3].endTime).toBe(8.02);
+  expect(cues[3].endTime).toBe(8.2);
   expect(cues[3].text).toBe('Two!');
   expect(cues[3].style).toBeUndefined();
 
   expect(cues[4].startTime).toBe(6);
-  expect(cues[4].endTime).toBe(9.02);
+  expect(cues[4].endTime).toBe(9.2);
   expect(cues[4].text).toBe('Three!\nNew line of text on three.');
   expect(cues[4].style).toBeUndefined();
 
   expect(cues[5].startTime).toBe(8);
-  expect(cues[5].endTime).toBe(9.02);
+  expect(cues[5].endTime).toBe(9.2);
   expect(cues[5].text).toBe('Four!');
   expect(cues[5].style).toBeUndefined();
 });
@@ -150,4 +150,19 @@ Dialogue: 0:00:05.10,0:00:07.20,Hello, world!
       [Error: format missing for \`Style\` block on line 3],
     ]
   `);
+});
+
+test('GOOD: parse timestamp milliseconds correctly', async () => {
+  const { errors, cues } = await parseText(
+    `
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:03.67,0:00:06.04,Default,,0,0,0,,Hello, world!
+`,
+    { type: 'ssa' },
+  );
+
+  expect(errors).toHaveLength(0);
+  expect(cues[0].startTime).toBe(3.67);
+  expect(cues[0].endTime).toBe(6.04);
 });
