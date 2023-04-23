@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.11](https://github.com/vidstack/media-captions/compare/v0.0.10...v0.0.11) (2023-04-23)
+
+
+### Bug Fixes
+
+* parse ms with less than 3 digits correctly ([484123e](https://github.com/vidstack/media-captions/commit/484123e347f0aee263e0251e37af6871c54c13b4)), closes [#1](https://github.com/vidstack/media-captions/issues/1)
+
 ### [0.0.10](https://github.com/vidstack/media-captions/compare/v0.0.9...v0.0.10) (2023-04-16)
 
 
