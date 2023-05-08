@@ -43,6 +43,9 @@ export class CaptionsRenderer {
   constructor(overlay: HTMLElement, init?: CaptionsRendererInit) {
     this.overlay = overlay;
     this.dir = init?.dir ?? 'ltr';
+    overlay.setAttribute('translate', 'yes');
+    overlay.setAttribute('aria-live', 'off');
+    overlay.setAttribute('aria-atomic', 'true');
     setPartAttr(overlay, 'captions');
     this._updateOverlay();
     this._resizeObserver = new ResizeObserver(this._resize.bind(this));
