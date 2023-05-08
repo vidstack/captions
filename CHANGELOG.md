@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.12](https://github.com/vidstack/media-captions/compare/v0.0.11...v0.0.12) (2023-05-08)
+
+
+### Bug Fixes
+
+* add required aria attrs on overlay element ([568677e](https://github.com/vidstack/media-captions/commit/568677e4e271ac599debb9a2dda2a9411a0ddea4))
+
 ### [0.0.11](https://github.com/vidstack/media-captions/compare/v0.0.10...v0.0.11) (2023-04-23)
 
 
