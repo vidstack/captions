@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.13](https://github.com/vidstack/media-captions/compare/v0.0.12...v0.0.13) (2023-05-13)
+
+
+### Bug Fixes
+
+* only parse known properties on settings line ([58025f0](https://github.com/vidstack/media-captions/commit/58025f08df008cb23789f34a1d56b4abba754b71))
+
 ### [0.0.12](https://github.com/vidstack/media-captions/compare/v0.0.11...v0.0.12) (2023-05-08)
 
 
