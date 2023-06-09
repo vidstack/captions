@@ -3,7 +3,7 @@ import { debounce } from '../../utils/timing';
 import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTRegion } from '../vtt-region';
-import { createBox, type Box } from './box';
+import { createBox, STARTING_BOX, type Box } from './box';
 import { computeCuePosition, computeCuePositionAlignment, positionCue } from './position-cue';
 import { positionRegion } from './position-region';
 
@@ -92,6 +92,15 @@ export class CaptionsRenderer {
   protected _resize = debounce(() => {
     this._isResizing = false;
     this._updateOverlay();
+
+    for (const el of this._regions.values()) {
+      el[STARTING_BOX] = null;
+    }
+
+    for (const el of this._cues.values()) {
+      if (el) el[STARTING_BOX] = null;
+    }
+
     this._render(true);
   }, 50);
 
@@ -178,14 +187,12 @@ export class CaptionsRenderer {
     if (!regions) return;
     for (const region of regions) {
       const el = this._createRegionElement(region);
-      if (el) {
-        this._regions.set(region.id, el);
-        this.overlay.append(el);
-      }
+      this._regions.set(region.id, el);
+      this.overlay.append(el);
     }
   }
 
-  private _createRegionElement(region: VTTRegion): HTMLElement | null {
+  private _createRegionElement(region: VTTRegion): HTMLElement {
     const el = document.createElement('div');
 
     setPartAttr(el, 'region');
