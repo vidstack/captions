@@ -615,7 +615,7 @@ video.addEventListener('timeupdate', () => {
 - `changeTrack(track: CaptionsRendererTrack)`: Resets the renderer and prepares new regions and cues.
 - `addCue(cue: VTTCue)`: Add a new cue to the renderer.
 - `removeCue(cue: VTTCue)`: Remove a cue from the renderer.
-- `update(forceUpdate: boolean)`: Schedules a re-render to happen on the next animation frame.
+- `update(forceUpdate: boolean)`: Schedules a re-render to happen.
 - `reset()`: Reset the renderer and clear all internal state including region and cue DOM nodes.
 - `destroy()`: Reset the renderer and destroy internal observers and event listeners.
 

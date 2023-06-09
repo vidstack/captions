@@ -14,8 +14,7 @@ export class CaptionsRenderer {
   private _currentTime = 0;
   private _dir: 'ltr' | 'rtl' = 'ltr';
   private _activeCues: VTTCue[] = [];
-
-  private _updateRafID = -1;
+  private _isResizing = false;
 
   private readonly _resizeObserver: ResizeObserver;
   private readonly _regions = new Map<string, HTMLElement>();
@@ -70,16 +69,10 @@ export class CaptionsRenderer {
   }
 
   update(forceUpdate = false) {
-    if (this._updateRafID >= 0) return;
-    this._updateRafID = requestAnimationFrame(() => {
-      this._render(forceUpdate);
-      this._updateRafID = -1;
-    });
+    this._render(forceUpdate);
   }
 
   reset() {
-    cancelAnimationFrame(this._updateRafID);
-    this._updateRafID = -1;
     this._cues.clear();
     this._regions.clear();
     this._activeCues = [];
@@ -92,14 +85,14 @@ export class CaptionsRenderer {
   }
 
   private _resizing() {
-    this.overlay.style.visibility = 'hidden';
+    this._isResizing = true;
     this._resize();
   }
 
   protected _resize = debounce(() => {
-    this.overlay.style.removeProperty('visibility');
+    this._isResizing = false;
     this._updateOverlay();
-    if (this._regions.size) this._render(true);
+    this._render(true);
   }, 300);
 
   private _updateOverlay() {
@@ -109,7 +102,7 @@ export class CaptionsRenderer {
   }
 
   private _render(forceUpdate = false) {
-    if (!this._cues.size) return;
+    if (!this._cues.size || this._isResizing) return;
 
     let cue: VTTCue,
       activeCues = [...this._cues.keys()]
@@ -150,9 +143,7 @@ export class CaptionsRenderer {
 
       const regionEl = this._hasRegion(cue) && this._regions.get(cue.region!.id);
       if (regionEl && !regionEl.hasAttribute('data-active')) {
-        requestAnimationFrame(() => {
-          setDataAttr(regionEl, 'active');
-        });
+        requestAnimationFrame(() => setDataAttr(regionEl, 'active'));
         forceUpdate = true;
       }
 

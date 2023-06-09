@@ -1,10 +1,11 @@
-export function debounce<T extends (...args: any[]) => void>(fn: T, delay): T {
+export function debounce<Fn extends (...args: any[]) => void>(fn: Fn, delay): Fn {
   let timeout: any = null,
-    args: any[] = [];
+    args: any[] | undefined;
 
   function run() {
     clear();
-    fn(...args);
+    fn(...args!);
+    args = undefined;
   }
 
   function clear() {
@@ -12,9 +13,11 @@ export function debounce<T extends (...args: any[]) => void>(fn: T, delay): T {
     timeout = null;
   }
 
-  return function debounced() {
+  function debounce() {
     args = [].slice.call(arguments);
     clear();
     timeout = setTimeout(run, delay);
-  } as T;
+  }
+
+  return debounce as Fn;
 }
