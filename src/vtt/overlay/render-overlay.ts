@@ -93,7 +93,7 @@ export class CaptionsRenderer {
     this._isResizing = false;
     this._updateOverlay();
     this._render(true);
-  }, 300);
+  }, 50);
 
   private _updateOverlay() {
     this._overlayBox = createBox(this.overlay);
