@@ -1,4 +1,5 @@
 import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
+import { debounce } from '../../utils/timing';
 import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTRegion } from '../vtt-region';
@@ -14,7 +15,6 @@ export class CaptionsRenderer {
   private _dir: 'ltr' | 'rtl' = 'ltr';
   private _activeCues: VTTCue[] = [];
 
-  private _resizeRafID = -1;
   private _updateRafID = -1;
 
   private readonly _resizeObserver: ResizeObserver;
@@ -48,7 +48,7 @@ export class CaptionsRenderer {
     overlay.setAttribute('aria-atomic', 'true');
     setPartAttr(overlay, 'captions');
     this._updateOverlay();
-    this._resizeObserver = new ResizeObserver(this._resize.bind(this));
+    this._resizeObserver = new ResizeObserver(this._resizing.bind(this));
     this._resizeObserver.observe(overlay);
   }
 
@@ -91,14 +91,16 @@ export class CaptionsRenderer {
     this._resizeObserver.disconnect();
   }
 
-  private _resize() {
-    if (this._resizeRafID >= 0) return;
-    this._resizeRafID = requestAnimationFrame(() => {
-      this._updateOverlay();
-      this._resizeRafID = -1;
-      if (this._regions.size) this._render(true);
-    });
+  private _resizing() {
+    this.overlay.style.visibility = 'hidden';
+    this._resize();
   }
+
+  protected _resize = debounce(() => {
+    this.overlay.style.removeProperty('visibility');
+    this._updateOverlay();
+    if (this._regions.size) this._render(true);
+  }, 300);
 
   private _updateOverlay() {
     this._overlayBox = createBox(this.overlay);
