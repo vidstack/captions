@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.15](https://github.com/vidstack/media-captions/compare/v0.0.14...v0.0.15) (2023-06-09)
+
+
+### Bug Fixes
+
+* clear starting boxes on resize update ([9a3cb80](https://github.com/vidstack/media-captions/commit/9a3cb805b59cb87791546c74b10356a0d75fadf6))
+
 ### [0.0.14](https://github.com/vidstack/media-captions/compare/v0.0.13...v0.0.14) (2023-06-09)
 
 
