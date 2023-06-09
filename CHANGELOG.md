@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.14](https://github.com/vidstack/media-captions/compare/v0.0.13...v0.0.14) (2023-06-09)
+
+
+### Bug Fixes
+
+* debounce resize updates ([5428cec](https://github.com/vidstack/media-captions/commit/5428cec9f051f97e0a5acc0ceb37cedb58aee83f))
+* reduce resize debounce delay ([3a91714](https://github.com/vidstack/media-captions/commit/3a917144afb3cb32e8d7822e68bcd9ba62b4b4b5))
+* sync updates ([f57aa66](https://github.com/vidstack/media-captions/commit/f57aa6673212a93434428534bbd073c69483f9e2))
+
 ### [0.0.13](https://github.com/vidstack/media-captions/compare/v0.0.12...v0.0.13) (2023-05-13)
 
 
