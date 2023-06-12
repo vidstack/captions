@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.16](https://github.com/vidstack/media-captions/compare/v0.0.15...v0.0.16) (2023-06-12)
+
+
+### Bug Fixes
+
+* use rollup for cleaner build output ([72b02be](https://github.com/vidstack/media-captions/commit/72b02be6ed89d4a6e59c9ed4fcc2e3baae9899ef))
+
 ### [0.0.15](https://github.com/vidstack/media-captions/compare/v0.0.14...v0.0.15) (2023-06-09)
 
 
