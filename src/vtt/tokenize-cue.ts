@@ -1,4 +1,4 @@
-import { parseVTTTimestamp } from './parse';
+import { parseVTTTimestamp } from './parse-vtt';
 import type { VTTCue } from './vtt-cue';
 
 const DIGIT_RE = /*#__PURE__*/ /[0-9]/,

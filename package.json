@@ -15,8 +15,8 @@
     "styles/"
   ],
   "scripts": {
-    "dev": "pnpm clean && tsup --watch & pnpm run types -w",
-    "build": "tsup",
+    "dev": "pnpm clean && rollup -c -w & pnpm run types -w",
+    "build": "pnpm clean && rollup -c && pnpm types",
     "types": "tsc -p tsconfig.build.json",
     "clean": "rimraf dist",
     "format": "prettier src --write --loglevel warn",
@@ -24,15 +24,17 @@
     "test:watch": "vitest --watch --single-thread",
     "sandbox": "node ./.sandbox/launch.js",
     "release": "pnpm validate && standard-version && git push --follow-tags origin main && npm publish",
-    "validate": "pnpm test && pnpm clean && pnpm build && pnpm types"
+    "validate": "pnpm test && pnpm build"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^3.7.0",
+    "esbuild": "^0.18.1",
     "prettier": "^2.8.4",
     "rimraf": "^4.4.1",
+    "rollup": "^3.25.1",
+    "rollup-plugin-esbuild": "^5.0.0",
     "standard-version": "^9.5.0",
     "tslib": "^2.5.0",
-    "tsup": "^6.7.0",
     "typescript": "^5.0.0",
     "undici": "^5.21.0",
     "vite": "^4.2.0",
@@ -52,7 +54,6 @@
     ".": {
       "types": "./dist/types/index.d.ts",
       "test": "./dist/dev.js",
-      "require": "./dist/server.cjs",
       "node": "./dist/server.js",
       "deno": "./dist/server.js",
       "development": "./dist/dev.js",

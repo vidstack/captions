@@ -7,7 +7,7 @@ export * from './vtt/text-cue';
 export * from './vtt/vtt-header';
 export * from './vtt/vtt-cue';
 export * from './vtt/vtt-region';
-export { parseVTTTimestamp } from './vtt/parse';
+export { parseVTTTimestamp } from './vtt/parse-vtt';
 
 export * from './vtt/tokenize-cue';
 export * from './vtt/render-cue';
