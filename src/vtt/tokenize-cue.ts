@@ -1,5 +1,5 @@
-import { parseVTTTimestamp } from './parse-vtt';
 import type { VTTCue } from './vtt-cue';
+import { parseVTTTimestamp } from './vtt-parser';
 
 const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
   MULTI_SPACE_RE = /*#__PURE__*/ /[\s\t]+/,

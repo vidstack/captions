@@ -1,6 +1,6 @@
 import type { CaptionsParser } from '../parse/types';
-import { VTTBlock, VTTParser } from '../vtt/parse-vtt';
 import { VTTCue } from '../vtt/vtt-cue';
+import { VTTBlock, VTTParser } from '../vtt/vtt-parser';
 
 const MILLISECOND_SEP_RE = /,/g,
   TIMESTAMP_SEP = '-->';

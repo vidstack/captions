@@ -27,14 +27,14 @@ export async function parseTextStream(
   if (typeof type === 'string') {
     switch (type) {
       case 'srt':
-        factory = (await import('../srt/parse-srt')).default;
+        factory = (await import('../srt/srt-parser')).default;
         break;
       case 'ssa':
       case 'ass':
-        factory = (await import('../ssa/parse-ssa')).default;
+        factory = (await import('../ssa/ssa-parser')).default;
         break;
       default:
-        factory = (await import('../vtt/parse-vtt')).default;
+        factory = (await import('../vtt/vtt-parser')).default;
     }
   } else {
     factory = type;

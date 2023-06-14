@@ -1,8 +1,8 @@
 import type { ParseErrorBuilder } from '../parse/errors';
 import type { ParseError } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit } from '../parse/types';
-import { parseVTTTimestamp } from '../vtt/parse-vtt';
 import { VTTCue } from '../vtt/vtt-cue';
+import { parseVTTTimestamp } from '../vtt/vtt-parser';
 
 const FORMAT_START_RE = /*#__PURE__*/ /^Format:[\s\t]*/,
   STYLE_START_RE = /*#__PURE__*/ /^Style:[\s\t]*/,

@@ -2,7 +2,10 @@ lockfileVersion: 5.4
 
 specifiers:
   '@ianvs/prettier-plugin-sort-imports': ^3.7.0
+  acorn: ^8.8.2
+  acorn-walk: ^8.2.0
   esbuild: ^0.18.1
+  magic-string: ^0.30.0
   prettier: ^2.8.4
   rimraf: ^4.4.1
   rollup: ^3.25.1
@@ -16,7 +19,10 @@ specifiers:
 
 devDependencies:
   '@ianvs/prettier-plugin-sort-imports': 3.7.1_prettier@2.8.4
+  acorn: 8.8.2
+  acorn-walk: 8.2.0
   esbuild: 0.18.1
+  magic-string: 0.30.0
   prettier: 2.8.4
   rimraf: 4.4.1
   rollup: 3.25.1
@@ -1691,6 +1697,13 @@ packages:
   /lru-cache/7.18.3:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
+    dev: true
+
+  /magic-string/0.30.0:
+    resolution: {integrity: sha512-LA+31JYDJLs82r2ScLrlz1GjSgu66ZV518eyWT+S8VhyQn/JL0u9MeBOvQMGYiPk1DBiSN9DDMOcXvigJZaViQ==}
+    engines: {node: '>=12'}
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.4.14
     dev: true
 
   /map-obj/1.0.1:

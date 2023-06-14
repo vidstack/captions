@@ -1,5 +1,6 @@
+import { transform } from 'esbuild';
 import { defineConfig } from 'rollup';
-import esbuild from 'rollup-plugin-esbuild';
+import esbuildPlugin from 'rollup-plugin-esbuild';
 
 export default defineConfig([
   // dev
@@ -12,7 +13,12 @@ export default defineConfig([
 
 /** @returns {import('rollup').RollupOptions} */
 function define({ dev = false, server = false }) {
-  const alias = server ? 'server' : dev ? 'dev' : 'prod';
+  /** @type {Record<string, string | false>} */
+  let mangleCache = {};
+
+  const alias = server ? 'server' : dev ? 'dev' : 'prod',
+    shouldMangle = !dev && !server;
+
   return {
     input: {
       [alias]: 'src/index.ts',
@@ -24,16 +30,35 @@ function define({ dev = false, server = false }) {
       chunkFileNames: `${alias}/[name].js`,
     },
     plugins: [
-      esbuild({
-        target: server ? 'node16' : 'esnext',
+      esbuildPlugin({
+        target: server ? 'node18' : 'esnext',
         platform: server ? 'node' : 'browser',
         tsconfig: 'tsconfig.build.json',
+        minify: false,
         define: {
           __DEV__: dev ? 'true' : 'false',
           __SERVER__: server ? 'true' : 'false',
         },
-        mangleProps: !dev && !server ? /^_/ : undefined,
       }),
+      shouldMangle && {
+        name: 'mangle',
+        async transform(code) {
+          const result = await transform(code, {
+            target: 'esnext',
+            minify: false,
+            mangleProps: /^_/,
+            mangleCache,
+            loader: 'ts',
+          });
+
+          mangleCache = {
+            ...mangleCache,
+            ...result.mangleCache,
+          };
+
+          return result.code;
+        },
+      },
     ],
   };
 }
