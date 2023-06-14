@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.17](https://github.com/vidstack/media-captions/compare/v0.0.16...v0.0.17) (2023-06-14)
+
+
+### Bug Fixes
+
+* use mangle cache ([fe00c85](https://github.com/vidstack/media-captions/commit/fe00c8546d079def129662098b708d6bdd4f88d5))
+
 ### [0.0.16](https://github.com/vidstack/media-captions/compare/v0.0.15...v0.0.16) (2023-06-12)
 
 
