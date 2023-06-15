@@ -1,6 +1,6 @@
 {
   "name": "media-captions",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Media captions parser and renderer.",
   "license": "MIT",
   "type": "module",
