@@ -1,4 +1,4 @@
-import { transform } from 'esbuild';
+import { transformSync } from 'esbuild';
 import { defineConfig } from 'rollup';
 import esbuildPlugin from 'rollup-plugin-esbuild';
 
@@ -13,17 +13,18 @@ export default defineConfig([
 
 /** @returns {import('rollup').RollupOptions} */
 function define({ dev = false, server = false }) {
-  /** @type {Record<string, string | false>} */
-  let mangleCache = {};
-
   const alias = server ? 'server' : dev ? 'dev' : 'prod',
     shouldMangle = !dev && !server;
+
+  /** @type {Record<string, string | false>} */
+  let mangleCache = {};
 
   return {
     input: {
       [alias]: 'src/index.ts',
     },
     treeshake: true,
+    maxParallelFileOps: shouldMangle ? 1 : 20,
     output: {
       format: 'esm',
       dir: 'dist',
@@ -42,8 +43,8 @@ function define({ dev = false, server = false }) {
       }),
       shouldMangle && {
         name: 'mangle',
-        async transform(code) {
-          const result = await transform(code, {
+        transform(code) {
+          const result = transformSync(code, {
             target: 'esnext',
             minify: false,
             mangleProps: /^_/,
