@@ -7,7 +7,7 @@ export function setDataAttr(el: Element, name: string, value: string | true | nu
 }
 
 export function setPartAttr(el: Element, name: string) {
-  el.setAttribute('part', name);
+  el.setAttribute('data-part', name);
 }
 
 export function getLineHeight(el: Element) {

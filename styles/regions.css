@@ -1,4 +1,4 @@
-:where([part='captions'] [part='region']) {
+:where([data-part='captions'] [data-part='region']) {
   position: absolute;
   display: inline-flex;
   flex-flow: column;
@@ -29,18 +29,18 @@
   box-sizing: border-box;
 }
 
-:where([part='captions'] [part='region'][data-active]) {
+:where([data-part='captions'] [data-part='region'][data-active]) {
 }
 
-:where([part='captions'] [part='region'][data-scroll='up']) {
+:where([data-part='captions'] [data-part='region'][data-scroll='up']) {
   justify-content: end;
 }
 
-:where([part='captions'] [part='region'][data-active][data-scroll='up']) {
+:where([data-part='captions'] [data-part='region'][data-active][data-scroll='up']) {
   transition: top 0.433s;
 }
 
-:where([part='captions'] [part='region'] > [part='cue-display']) {
+:where([data-part='captions'] [data-part='region'] > [data-part='cue-display']) {
   position: relative;
   width: auto;
   left: var(--cue-offset);
@@ -50,7 +50,7 @@
   margin-top: 1px;
 }
 
-:where([part='captions'] [part='region'] [part='cue']) {
+:where([data-part='captions'] [data-part='region'] [data-part='cue']) {
   position: relative;
   padding: calc(var(--cue-padding-y) / 2) var(--cue-padding-x);
   border-radius: 0px;

@@ -412,7 +412,7 @@ const template = createVTTCueTemplate(cue);
 template.cue; // original `VTTCue`
 template.content; // `DocumentFragment`
 
-// <span title="Joe" part="voice">Hello world!</span>
+// <span title="Joe" data-part="voice">Hello world!</span>
 const cueHTML = template.content.cloneNode(true);
 ```
 
@@ -426,7 +426,7 @@ import { renderVTTCueString, VTTCue } from 'media-captions';
 
 const cue = new VTTCue(0, 10, '<v Joe>Hello world!');
 
-// Output: <span title="Joe" part="voice">Hello world!</span>
+// Output: <span title="Joe" data-part="voice">Hello world!</span>
 const content = renderVTTCueString(cue);
 ```
 
@@ -436,10 +436,10 @@ The second argument accepts the current playback time to add the correct `data-p
 ```ts
 const cue = new VTTCue(0, 320, 'Hello my name is <5:20>Joe!');
 
-// Output: Hello my name is <span part="timed" data-time="80" data-future>Joe!</span>
+// Output: Hello my name is <span data-part="timed" data-time="80" data-future>Joe!</span>
 renderVTTCueString(cue, 310);
 
-// Output: Hello my name is <span part="timed" data-time="80" data-past>Joe!</span>
+// Output: Hello my name is <span data-part="timed" data-time="80" data-past>Joe!</span>
 renderVTTCueString(cue, 321);
 ```
 
@@ -530,7 +530,7 @@ import { renderVTTTokensString, tokenizeVTTCue, VTTCue } from 'media-captions';
 const cue = new VTTCue(0, 10, '<v Joe>Hello world!');
 const tokens = tokenizeVTTCue(cue);
 
-// Output: <span title="Joe" part="voice">Hello world!</span>
+// Output: <span title="Joe" data-part="voice">Hello world!</span>
 const result = renderVTTTokensString(tokens);
 ```
 
@@ -556,8 +556,8 @@ This can be used when working with karaoke-style captions:
 const cue = new VTTCue(300, 308, '<05:00>Timed...<05:05>Text!');
 
 // Timed text nodes that would be updated at 303 seconds:
-// <span part="timed" data-time="300" data-past>Timed...</span>
-// <span part="timed" data-time="305" data-future>Text!</span>
+// <span data-part="timed" data-time="300" data-past>Timed...</span>
+// <span data-part="timed" data-time="305" data-future>Text!</span>
 ```
 
 ## `CaptionsRenderer`
@@ -637,37 +637,37 @@ easily customized with CSS. Here are all the parts you can select and customize:
   --cue-padding-y: calc(var(--cue-font-size) * 0.4);
 }
 
-#captions [part='region'] {
+#captions [data-part='region'] {
 }
 
-#captions [part='region'][data-active] {
+#captions [data-part='region'][data-active] {
 }
 
-#captions [part='region'][data-scroll='up'] {
+#captions [data-part='region'][data-scroll='up'] {
 }
 
-#captions [part='cue-display'] {
+#captions [data-part='cue-display'] {
 }
 
-#captions [part='cue'] {
+#captions [data-part='cue'] {
 }
 
-#captions [part='cue'][data-id='...'] {
+#captions [data-part='cue'][data-id='...'] {
 }
 
-#captions [part='voice'] {
+#captions [data-part='voice'] {
 }
 
-#captions [part='voice'][title='Joe'] {
+#captions [data-part='voice'][title='Joe'] {
 }
 
-#captions [part='timed'] {
+#captions [data-part='timed'] {
 }
 
-#captions [part='timed'][data-past] {
+#captions [data-part='timed'][data-past] {
 }
 
-#captions [part='timed'][data-future] {
+#captions [data-part='timed'][data-future] {
 }
 ```
 

@@ -19,7 +19,7 @@ export function positionRegion(
   regionEl: HTMLElement,
   boxes: Box[],
 ) {
-  let cues = Array.from(regionEl.querySelectorAll('[part="cue-display"]')) as HTMLElement[],
+  let cues = Array.from(regionEl.querySelectorAll('[data-part="cue-display"]')) as HTMLElement[],
     height = 0,
     limit = Math.max(0, cues.length - region.lines);
 

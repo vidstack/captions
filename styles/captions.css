@@ -1,4 +1,4 @@
-:where([part='captions']) {
+:where([data-part='captions']) {
   --overlay-padding: 1%;
   --cue-color: white;
   --cue-bg-color: rgba(0, 0, 0, 0.8);
@@ -23,7 +23,7 @@
   word-break: break-word;
 }
 
-:where([part='captions'] > [part='cue-display']) {
+:where([data-part='captions'] > [data-part='cue-display']) {
   position: absolute;
   direction: ltr;
   overflow: visible;
@@ -44,11 +44,11 @@
   min-height: min-content;
 }
 
-:where([data-dir='rtl'] [part='cue-display']) {
+:where([data-dir='rtl'] [data-part='cue-display']) {
   direction: rtl;
 }
 
-:where([part='captions'] [part='cue']) {
+:where([data-part='captions'] [data-part='cue']) {
   display: inline-block;
   padding: var(--cue-padding-y) var(--cue-padding-x);
   line-height: var(--cue-line-height);
@@ -61,6 +61,6 @@
   text-shadow: var(--cue-text-shadow);
 }
 
-:where([part='captions'] [part='cue-display'][data-vertical] [part='cue']) {
+:where([data-part='captions'] [data-part='cue-display'][data-vertical] [data-part='cue']) {
   padding: var(--cue-padding-x) var(--cue-padding-y);
 }
