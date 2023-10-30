@@ -58,8 +58,6 @@
     ".": {
       "types": "./dist/types/index.d.ts",
       "test": "./dist/dev.js",
-      "node": "./dist/server.js",
-      "deno": "./dist/server.js",
       "development": "./dist/dev.js",
       "default": "./dist/prod.js"
     },

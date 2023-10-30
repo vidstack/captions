@@ -1,9 +1,10 @@
+import { IS_SERVER } from '../utils/env';
 import { setDataAttr } from '../utils/style';
 import { tokenizeVTTCue, type VTTNode } from './tokenize-cue';
 import type { VTTCue } from './vtt-cue';
 
 export function createVTTCueTemplate(cue: VTTCue): VTTCueTemplate {
-  if (__SERVER__) {
+  if (IS_SERVER) {
     throw Error(
       '[media-captions] called `createVTTCueTemplate` on the server - use `renderVTTCueString`',
     );
@@ -65,7 +66,7 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
 }
 
 export function updateTimedVTTCueNodes(root: Element, currentTime: number) {
-  if (__SERVER__) return;
+  if (IS_SERVER) return;
   for (const el of root.querySelectorAll('[data-part="timed"]')) {
     const time = Number(el.getAttribute('data-time'));
     if (Number.isNaN(time)) continue;

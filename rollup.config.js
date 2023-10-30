@@ -7,14 +7,12 @@ export default defineConfig([
   define({ dev: true }),
   // prod
   define({ dev: false }),
-  // server
-  define({ dev: true, server: true }),
 ]);
 
 /** @returns {import('rollup').RollupOptions} */
-function define({ dev = false, server = false }) {
-  const alias = server ? 'server' : dev ? 'dev' : 'prod',
-    shouldMangle = !dev && !server;
+function define({ dev = false }) {
+  const alias = dev ? 'dev' : 'prod',
+    shouldMangle = !dev;
 
   /** @type {Record<string, string | false>} */
   let mangleCache = {};
@@ -32,13 +30,12 @@ function define({ dev = false, server = false }) {
     },
     plugins: [
       esbuildPlugin({
-        target: server ? 'node18' : 'esnext',
-        platform: server ? 'node' : 'browser',
+        target: 'esnext',
+        platform: 'neutral',
         tsconfig: 'tsconfig.build.json',
         minify: false,
         define: {
           __DEV__: dev ? 'true' : 'false',
-          __SERVER__: server ? 'true' : 'false',
         },
       }),
       shouldMangle && {

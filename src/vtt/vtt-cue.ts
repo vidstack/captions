@@ -1,7 +1,8 @@
+import { IS_SERVER } from '../utils/env';
 import { TextCue } from './text-cue';
 import type { VTTRegion } from './vtt-region';
 
-const CueBase = __SERVER__ ? TextCue : window.VTTCue;
+const CueBase = IS_SERVER ? TextCue : window.VTTCue;
 
 /**
  * @see {@link https://www.w3.org/TR/webvtt1/#model-cues}
