@@ -1,3 +1,12 @@
+## [1.0.1](https://github.com/vidstack/media-captions/compare/v0.0.18...v1.0.1) (2023-10-30)
+
+### Bug Fixes
+
+- ensure default bundles are ssr-friendly ([d92cbfe](https://github.com/vidstack/media-captions/commit/d92cbfefdd42aeafec6fe0cf0da7228bd1e4ba8a))
+- rename `part` attribute to `data-part` ([e608998](https://github.com/vidstack/media-captions/commit/e608998b1e9eb22d26876ddcc0d547c9c9302caf))
+
+### Bug Fixes
+
 # Changelog
 
 # [1.0.0](https://github.com/vidstack/media-captions/compare/v0.0.18...v1.0.0) (2023-09-28)
