@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/vidstack/media-captions/compare/v0.0.18...v1.0.2) (2023-11-19)
+
+### Bug Fixes
+
+- webpack parse error in regions anchor calc ([77d7c41](https://github.com/vidstack/media-captions/commit/77d7c41c053d2375c9e72adeec5865a9ff4c71dd))
+
 ## [1.0.1](https://github.com/vidstack/media-captions/compare/v0.0.18...v1.0.1) (2023-10-30)
 
 ### Bug Fixes
