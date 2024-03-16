@@ -6,6 +6,7 @@
   "type": "module",
   "types": "dist/types/index.d.ts",
   "sideEffects": false,
+  "jsdelivr": "./dist/prod.js",
   "engines": {
     "node": ">=16"
   },
