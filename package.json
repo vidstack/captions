@@ -4,6 +4,7 @@
   "description": "Media captions parser and renderer.",
   "license": "MIT",
   "type": "module",
+  "main": "./dist/prod.js",
   "types": "dist/types/index.d.ts",
   "sideEffects": false,
   "jsdelivr": "./dist/prod.js",
