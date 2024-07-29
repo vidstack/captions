@@ -1,3 +1,16 @@
+## [1.0.4](https://github.com/vidstack/media-captions/compare/v0.0.18...v1.0.4) (2024-07-29)
+
+
+### Bug Fixes
+
+* add `jsdelivr` key to package ([adc57e0](https://github.com/vidstack/media-captions/commit/adc57e088f965335c701b6590e244de46b6f2219))
+* add main field to package.json ([452fa16](https://github.com/vidstack/media-captions/commit/452fa1639b51a779a95b9d3b0219d7192131a826))
+* ensure default bundles are ssr-friendly ([d92cbfe](https://github.com/vidstack/media-captions/commit/d92cbfefdd42aeafec6fe0cf0da7228bd1e4ba8a))
+* rename `part` attribute to `data-part` ([e608998](https://github.com/vidstack/media-captions/commit/e608998b1e9eb22d26876ddcc0d547c9c9302caf))
+* webpack parse error in regions anchor calc ([77d7c41](https://github.com/vidstack/media-captions/commit/77d7c41c053d2375c9e72adeec5865a9ff4c71dd))
+
+
+
 ## [1.0.3](https://github.com/vidstack/media-captions/compare/v0.0.18...v1.0.3) (2024-03-16)
 
 
