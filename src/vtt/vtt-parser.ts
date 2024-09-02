@@ -115,8 +115,11 @@ export class VTTParser implements CaptionsParser {
   protected _parseHeader(line: string, lineCount: number) {
     if (lineCount > 1) {
       if (SETTING_SEP_RE.test(line)) {
-        const [key, value] = line.split(SETTING_SEP_RE);
-        if (key) this._metadata[key] = (value || '').replace(SPACE_RE, '');
+        // get index of first separator
+        const firstSepIndex = line.match(SETTING_SEP_RE)!.index!;
+        const key = line.substring(0, firstSepIndex).trim();
+        const value = line.substring(firstSepIndex + 1).trim();
+        this._metadata[key] = value;
       }
     } else if (line.startsWith(HEADER_MAGIC)) {
       this._block = VTTBlock.Header;
