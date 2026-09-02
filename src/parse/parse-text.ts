@@ -33,6 +33,20 @@ export async function parseTextStream(
       case 'ass':
         factory = (await import('../ssa/ssa-parser')).default;
         break;
+      case 'ttml':
+      case 'dfxp':
+      case 'xml':
+        factory = (await import('../ttml/ttml-parser')).default;
+        break;
+      case 'scc':
+        factory = (await import('../scc/scc-parser')).default;
+        break;
+      case 'lrc':
+        factory = (await import('../lrc/lrc-parser')).default;
+        break;
+      case 'sbv':
+        factory = (await import('../sbv/sbv-parser')).default;
+        break;
       default:
         factory = (await import('../vtt/vtt-parser')).default;
     }

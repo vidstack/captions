@@ -32,7 +32,7 @@ export async function parseResponse(
   }
 
   const contentType = res.headers.get('content-type') || '',
-    type = contentType.match(/text\/(.*?)(?:;|$)/)?.[1] as CaptionsFileFormat | undefined,
+    type = inferCaptionsFormat(contentType, res.url),
     encoding = contentType.match(/charset=(.*?)(?:;|$)/)?.[1];
 
   return parseByteStream(res.body, { type, encoding, ...options });
@@ -44,4 +44,52 @@ export async function parseByteStream(
 ): Promise<ParsedCaptionsResult> {
   const textStream = stream.pipeThrough(new TextLineTransformStream(encoding));
   return parseTextStream(textStream, options);
+}
+
+const MIME_FORMATS: [RegExp, CaptionsFileFormat][] = [
+  [/vtt/i, 'vtt'],
+  [/subrip|srt/i, 'srt'],
+  [/ttml|dfxp|ttaf/i, 'ttml'],
+  [/x-ssa|\bssa\b|\bass\b|substation/i, 'ssa'],
+  [/scc|scenarist/i, 'scc'],
+  [/lrc/i, 'lrc'],
+  [/sbv/i, 'sbv'],
+];
+
+const EXTENSION_FORMATS: Record<string, CaptionsFileFormat> = {
+  vtt: 'vtt',
+  srt: 'srt',
+  ssa: 'ssa',
+  ass: 'ass',
+  ttml: 'ttml',
+  dfxp: 'ttml',
+  xml: 'ttml',
+  scc: 'scc',
+  lrc: 'lrc',
+  sbv: 'sbv',
+};
+
+/**
+ * Infers the captions format from a response `Content-Type` header, falling back to the URL
+ * file extension. Returns `undefined` when neither is recognised so the VTT parser is used.
+ */
+export function inferCaptionsFormat(
+  contentType: string,
+  url?: string,
+): CaptionsFileFormat | undefined {
+  const mime = contentType.split(';')[0].trim();
+
+  if (mime && !/^(text\/plain|application\/octet-stream|application\/xml|text\/xml)$/i.test(mime)) {
+    for (const [re, format] of MIME_FORMATS) if (re.test(mime)) return format;
+  }
+
+  if (url) {
+    const extension = url
+      .split(/[?#]/)[0]
+      .match(/\.([a-z0-9]+)$/i)?.[1]
+      .toLowerCase();
+    if (extension && EXTENSION_FORMATS[extension]) return EXTENSION_FORMATS[extension];
+  }
+
+  return undefined;
 }
