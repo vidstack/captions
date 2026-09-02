@@ -1,7 +1,7 @@
 import type { ParseErrorBuilder } from '../parse/errors';
 import type { ParseError } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit, EmbeddedFont } from '../parse/types';
-import { VTTCue } from '../vtt/vtt-cue';
+import { VTTCue, type CueLayout, type CueTextStyle } from '../vtt/vtt-cue';
 import { parseVTTTimestamp } from '../vtt/vtt-parser';
 import { decodeUUEncodedFont } from './fonts';
 
@@ -57,6 +57,8 @@ interface SSAStyle {
   marginR: number;
   marginV: number;
   alpha?: number;
+  /** `\\pos(x, y)` override in script pixels. */
+  pos?: { x: number; y: number };
 }
 
 /** Open inline formatting tags, innermost last. */
@@ -325,8 +327,8 @@ export class SSAParser implements CaptionsParser {
 
     // Only emit styles when the dialogue resolved to a defined style or used positioning
     // override tags, otherwise leave rendering to the WebVTT defaults.
-    const hasOverrides = style.alignment !== initialAlignment || cue.style?.__posX !== undefined;
-    cue.style = baseStyle || hasOverrides ? this._buildCueStyle(cue, style) : undefined;
+    const hasOverrides = style.alignment !== initialAlignment || style.pos !== undefined;
+    if (baseStyle || hasOverrides) this._applyStyle(cue, style);
     this._cueStyle = style;
 
     return cue;
@@ -406,9 +408,7 @@ export class SSAParser implements CaptionsParser {
             const coords = arg.replace(/[()]/g, '').split(',');
             const x = parseFloat(coords[0]),
               y = parseFloat(coords[1]);
-            if (!Number.isNaN(x) && !Number.isNaN(y)) {
-              cue.style = { ...cue.style, __posX: x + '', __posY: y + '' };
-            }
+            if (!Number.isNaN(x) && !Number.isNaN(y)) style.pos = { x, y };
             break;
           }
           case 'k':
@@ -440,106 +440,105 @@ export class SSAParser implements CaptionsParser {
   }
 
   /**
-   * Builds the CSS custom properties applied to the cue display element. All script pixel values
-   * are converted to percentages of the play resolution so they scale with the overlay.
+   * Maps a resolved SSA style onto the cue's structured `layout` and `textStyle`. Script pixel
+   * values are converted to percentages of the play resolution so they scale with the overlay.
    */
-  protected _buildCueStyle(cue: VTTCue, style: SSAStyle): Record<string, string> {
-    const css: Record<string, string> = {},
+  protected _applyStyle(cue: VTTCue, style: SSAStyle) {
+    const layout: CueLayout = {},
+      text: CueTextStyle = {},
       transform: string[] = [],
-      pctX = (px: number) => `${round((px / this._playResX) * 100)}%`,
-      pctY = (px: number) => `${round((px / this._playResY) * 100)}%`,
+      pctX = (px: number) => round((px / this._playResX) * 100),
+      pctY = (px: number) => round((px / this._playResY) * 100),
       // Lengths relative to the overlay height so they scale exactly like the video.
       lenY = (px: number) => `calc(var(--overlay-height) * ${round(px / this._playResY, 5)})`;
 
-    if (style.fontName) css['font-family'] = `"${style.fontName.replace(/"/g, '')}", sans-serif`;
-    if (style.fontSize) css['font-size'] = lenY(style.fontSize);
-    if (style.primaryColor) css['--cue-color'] = style.primaryColor;
-    if (style.bold) css['font-weight'] = 'bold';
-    if (style.italic) css['font-style'] = 'italic';
+    if (style.fontName) text.fontFamily = `"${style.fontName.replace(/"/g, '')}", sans-serif`;
+    if (style.fontSize) text.fontSize = lenY(style.fontSize);
+    if (style.primaryColor) text.color = style.primaryColor;
+    if (style.bold) text.fontWeight = 'bold';
+    if (style.italic) text.fontStyle = 'italic';
 
     const decorations = [style.underline && 'underline', style.strikeOut && 'line-through'].filter(
       Boolean,
     );
-    if (decorations.length) css['text-decoration'] = decorations.join(' ');
+    if (decorations.length) text.textDecoration = decorations.join(' ');
 
-    if (style.spacing) css['letter-spacing'] = lenY(style.spacing);
-    if (style.alpha !== undefined) css['opacity'] = style.alpha + '';
+    if (style.spacing) text.letterSpacing = lenY(style.spacing);
+    if (style.alpha !== undefined) text.opacity = style.alpha + '';
     if (style.scaleX && style.scaleX !== 100) transform.push(`scaleX(${style.scaleX / 100})`);
     if (style.scaleY && style.scaleY !== 100) transform.push(`scaleY(${style.scaleY / 100})`);
     // ASS rotates counter-clockwise, CSS rotates clockwise.
     if (style.angle) transform.push(`rotate(${-style.angle}deg)`);
 
-    css['--cue-white-space'] = 'pre-wrap';
-    css['--cue-line-height'] = 'normal';
+    text.whiteSpace = 'pre-wrap';
+    text.lineHeight = 'normal';
     // Boxes hug the text like libass so unrelated cues do not collide across the whole width.
-    css['--cue-width'] = 'max-content';
+    layout.width = 'max-content';
 
     const horizontal = (style.alignment - 1) % 3, // 0 left, 1 center, 2 right
       vertical = Math.floor((style.alignment - 1) / 3); // 0 bottom, 1 middle, 2 top
 
-    css['--cue-text-align'] = horizontal === 0 ? 'left' : horizontal === 2 ? 'right' : 'center';
+    text.textAlign = horizontal === 0 ? 'left' : horizontal === 2 ? 'right' : 'center';
 
-    const posX = cue.style?.__posX,
-      posY = cue.style?.__posY;
-
-    if (posX !== undefined && posY !== undefined) {
-      css['--cue-left'] = pctX(parseFloat(posX));
-      css['--cue-top'] = pctY(parseFloat(posY));
-      if (horizontal === 1) transform.push('translateX(-50%)');
-      else if (horizontal === 2) transform.push('translateX(-100%)');
-      if (vertical === 0) transform.push('translateY(-100%)');
-      else if (vertical === 1) transform.push('translateY(-50%)');
+    if (style.pos) {
+      layout.left = pctX(style.pos.x);
+      layout.top = pctY(style.pos.y);
+      layout.translate = {};
+      if (horizontal === 1) layout.translate.x = -0.5;
+      else if (horizontal === 2) layout.translate.x = -1;
+      if (vertical === 0) layout.translate.y = -1;
+      else if (vertical === 1) layout.translate.y = -0.5;
       // Explicitly positioned cues are not subject to collision avoidance (matches libass).
-      css.__fixed = '1';
+      layout.fixed = true;
     } else {
       const left = (style.marginL / this._playResX) * 100,
         right = (style.marginR / this._playResX) * 100;
 
-      css['--cue-max-width'] = `${round(Math.max(0, 100 - left - right))}%`;
+      layout.maxWidth = round(Math.max(0, 100 - left - right));
 
       if (horizontal === 0) {
-        css['--cue-left'] = `${round(left)}%`;
+        layout.left = round(left);
       } else if (horizontal === 2) {
-        css['--cue-right'] = `${round(right)}%`;
+        layout.right = round(right);
       } else {
-        css['--cue-left'] = `${round((left + (100 - right)) / 2)}%`;
-        transform.push('translateX(-50%)');
+        layout.left = round((left + (100 - right)) / 2);
+        layout.translate = { x: -0.5 };
       }
 
       if (vertical === 2) {
-        css['--cue-top'] = pctY(style.marginV);
+        layout.top = pctY(style.marginV);
       } else if (vertical === 1) {
-        css['--cue-top'] = '50%';
-        transform.push('translateY(-50%)');
+        layout.top = 50;
+        layout.translate = { ...layout.translate, y: -0.5 };
       } else {
-        css['--cue-bottom'] = pctY(style.marginV);
+        layout.bottom = pctY(style.marginV);
       }
     }
 
     if (style.borderStyle === 3) {
       // Opaque box.
-      if (style.backColor) css['--cue-bg-color'] = style.backColor;
+      if (style.backColor) text.backgroundColor = style.backColor;
       if (style.outline && style.outlineColor) {
-        css['--cue-outline'] = `${lenY(style.outline)} solid ${style.outlineColor}`;
+        text.outline = `${lenY(style.outline)} solid ${style.outlineColor}`;
       }
     } else {
       // Outline + drop shadow.
-      css['--cue-bg-color'] = 'transparent';
-      css['--cue-padding-y'] = '0';
+      text.backgroundColor = 'transparent';
+      text.paddingY = '0';
       if (style.outline && style.outlineColor) {
         // Stroke is centered on the glyph edge so it needs to be twice the outline width.
-        css['--cue-text-stroke'] = `${lenY(style.outline * 2)} ${style.outlineColor}`;
+        text.textStroke = `${lenY(style.outline * 2)} ${style.outlineColor}`;
       }
       if (style.shadow) {
         const shadowColor = style.backColor || 'rgba(0,0,0,0.8)';
-        css['--cue-text-shadow'] = `${lenY(style.shadow)} ${lenY(style.shadow)} 0 ${shadowColor}`;
+        text.textShadow = `${lenY(style.shadow)} ${lenY(style.shadow)} 0 ${shadowColor}`;
       }
     }
 
-    if (transform.length) css['--cue-transform'] = transform.join(' ');
-    if (cue.layer) css['--cue-z-index'] = cue.layer + '';
+    if (transform.length) text.transform = transform.join(' ');
 
-    return css;
+    cue.layout = layout;
+    cue.textStyle = text;
   }
 
   protected _buildFields(values: string[]) {

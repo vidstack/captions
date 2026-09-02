@@ -142,18 +142,57 @@ test('places region cues inside their region element', async () => {
   expect(regionEl.querySelector('[data-part="cue"]')).toBeNull();
 });
 
-test('applies cue styles, layer, and skips internal hints', () => {
+test('maps layout, text style, layer, and raw styles to CSS', () => {
   const { overlay, renderer } = setup();
   const cue = new VTTCue(0, 10, 'Styled');
   cue.layer = 3;
-  cue.style = { '--cue-color': 'red', '--cue-width': 'auto', __posX: '1' };
+  cue.layout = {
+    left: 50,
+    bottom: 5,
+    width: 'max-content',
+    maxWidth: 80,
+    translate: { x: -0.5 },
+    fixed: true,
+  };
+  cue.textStyle = {
+    color: 'red',
+    fontWeight: 'bold',
+    textAlign: 'left',
+    transform: 'rotate(5deg)',
+  };
+  cue.style = { '--cue-padding-x': '0' };
   renderer.changeTrack({ cues: [cue] });
   renderer.currentTime = 1;
 
   const el = displayed(overlay)[0];
+  expect(el.style.getPropertyValue('--cue-left')).toBe('50%');
+  expect(el.style.getPropertyValue('--cue-bottom')).toBe('5%');
+  expect(el.style.getPropertyValue('--cue-width')).toBe('max-content');
+  expect(el.style.getPropertyValue('--cue-max-width')).toBe('80%');
+  expect(el.style.getPropertyValue('--cue-transform')).toBe('translateX(-50%) rotate(5deg)');
+  expect(el.hasAttribute('data-fixed')).toBe(true);
   expect(el.style.getPropertyValue('--cue-color')).toBe('red');
+  expect(el.style.getPropertyValue('font-weight')).toBe('bold');
+  expect(el.style.getPropertyValue('--cue-text-align')).toBe('left');
   expect(el.style.getPropertyValue('--cue-z-index')).toBe('3');
-  expect(el.style.getPropertyValue('__posX')).toBe('');
+  expect(el.style.getPropertyValue('--cue-padding-x')).toBe('0');
+});
+
+test('cues round-trip through JSON', () => {
+  const region = new VTTRegion();
+  region.id = 'r';
+  const cue = new VTTCue(1, 2, '<b>x</b>');
+  Object.assign(cue, { id: 'c1', line: 5, align: 'start', layer: 2 });
+  cue.region = region;
+  cue.layout = { top: 10, fixed: true };
+  cue.textStyle = { color: 'lime' };
+
+  const json = JSON.parse(JSON.stringify(cue));
+  expect(json.region).toBe('r');
+  const copy = VTTCue.from(json, [region]);
+  expect(copy).not.toBe(cue);
+  expect(copy.region).toBe(region);
+  expect(copy.toJSON()).toEqual(cue.toJSON());
 });
 
 test('updates timed text nodes as time advances', () => {

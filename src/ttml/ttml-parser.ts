@@ -827,7 +827,7 @@ export class TTMLParser implements CaptionsParser {
     }
 
     const fontSize = toCSSFontSize(style.fontSize, this._cellRows, this._rootHeight);
-    if (fontSize) cue.style = { ...cue.style, 'font-size': fontSize };
+    if (fontSize) cue.textStyle = { ...cue.textStyle, fontSize };
 
     this._cues.push(cue);
     this._init.onCue?.(cue);

@@ -33,7 +33,7 @@ export function measureCue(container: Box, cue: VTTCue, displayEl: HTMLElement):
   let cache: CueMeasureCache | null = displayEl[LAYOUT_CACHE];
 
   if (!cache) {
-    cache = displayEl[LAYOUT_CACHE] = createMeasureCache(container, displayEl, cue.vertical === '');
+    cache = displayEl[LAYOUT_CACHE] = createMeasureCache(container, displayEl, cue);
   }
 
   return {
@@ -64,12 +64,9 @@ export function writeCueBox(container: Box, displayEl: HTMLElement, box: Box) {
   setBoxCSSVars(displayEl, container, written, 'cue');
 }
 
-function createMeasureCache(
-  container: Box,
-  displayEl: HTMLElement,
-  isHorizontal: boolean,
-): CueMeasureCache {
-  const box = createBox(displayEl),
+function createMeasureCache(container: Box, displayEl: HTMLElement, cue: VTTCue): CueMeasureCache {
+  const isHorizontal = cue.vertical === '',
+    box = createBox(displayEl),
     pos = getStyledPositions(container, displayEl),
     cueEl = displayEl.firstElementChild ?? displayEl;
 
@@ -94,10 +91,15 @@ function createMeasureCache(
 
   // Fold percentage translations (e.g., `translateX(-50%)` for centred SSA cues) into the visual
   // box so collisions are detected where the cue is actually painted.
+  // Prefer the structured layout; fall back to parsing raw `--cue-transform` styles.
   const transform = displayEl.style.getPropertyValue('--cue-transform'),
-    tx = parseFloat(transform.match(TRANSLATE_X_RE)?.[1] ?? '0') || 0,
-    ty = parseFloat(transform.match(TRANSLATE_Y_RE)?.[1] ?? '0') || 0,
-    translate = { x: (tx / 100) * box.width, y: (ty / 100) * box.height };
+    fx =
+      cue.layout?.translate?.x ??
+      (parseFloat(transform.match(TRANSLATE_X_RE)?.[1] ?? '0') || 0) / 100,
+    fy =
+      cue.layout?.translate?.y ??
+      (parseFloat(transform.match(TRANSLATE_Y_RE)?.[1] ?? '0') || 0) / 100,
+    translate = { x: fx * box.width, y: fy * box.height };
 
   moveBox(box, '+x', translate.x);
   moveBox(box, '+y', translate.y);

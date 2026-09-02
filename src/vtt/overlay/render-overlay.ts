@@ -6,6 +6,7 @@ import type { VTTHeaderMetadata } from '../vtt-header';
 import type { VTTRegion } from '../vtt-region';
 import { transformVTTStyle } from '../vtt-style';
 import { createBox, LAYOUT_CACHE, type Box } from './box';
+import { applyCueLayout, applyCueTextStyle, buildCueTransform } from './cue-style';
 import { layoutItems, type LayoutInput } from './layout';
 import {
   computeCuePosition,
@@ -285,7 +286,11 @@ export class CaptionsRenderer {
    * per render: measure (reads), layout (pure math), write (CSS variables).
    */
   private _layout(activeCues: VTTCue[]) {
-    const container = this._overlayBox,
+    const container = this._overlayBox;
+    // Hidden or unmeasured overlays have no size; skip until the next resize gives us one.
+    if (!container.width || !container.height) return;
+
+    const
       seen = new Set<VTTRegion | VTTCue>(),
       targets: { el: HTMLElement; region: VTTRegion | null; cue: VTTCue }[] = [];
 
@@ -366,13 +371,15 @@ export class CaptionsRenderer {
     if (cue.vertical !== '') setDataAttr(display, 'vertical');
     setCSSVar(display, 'cue-text-align', cue.align);
     if (cue.layer) setCSSVar(display, 'cue-z-index', cue.layer);
-    if (cue.style?.__fixed) setDataAttr(display, 'fixed');
 
+    applyCueLayout(display, cue.layout);
+    applyCueTextStyle(display, cue.textStyle);
+    const transform = buildCueTransform(cue.layout, cue.textStyle);
+    if (transform) setCSSVar(display, 'cue-transform', transform);
+
+    // Raw CSS escape hatch (properties or `--cue-*` custom properties).
     if (cue.style) {
-      for (const prop of Object.keys(cue.style)) {
-        // Internal hints (e.g., SSA `\pos`) are prefixed with `__` and are not CSS.
-        if (!prop.startsWith('__')) display.style.setProperty(prop, cue.style[prop]);
-      }
+      for (const prop of Object.keys(cue.style)) display.style.setProperty(prop, cue.style[prop]);
     }
 
     // https://www.w3.org/TR/webvtt1/#processing-cue-settings
@@ -387,7 +394,7 @@ export class CaptionsRenderer {
             : 'vertical-rl',
       );
 
-      if (!cue.style?.['--cue-width']) {
+      if (cue.layout?.width === undefined && !cue.style?.['--cue-width']) {
         let maxSize = position;
         if (positionAlignment === 'line-left') {
           maxSize = 100 - position;
@@ -449,7 +456,7 @@ function orderForPositioning(cues: VTTCue[]): VTTCue[] {
     bottom: VTTCue[] = [];
 
   for (const cue of cues) {
-    if (cue.style?.__fixed) fixed.push(cue);
+    if (cue.layout?.fixed) fixed.push(cue);
     else if (isTopAnchored(cue)) top.push(cue);
     else bottom.push(cue);
   }
@@ -458,7 +465,11 @@ function orderForPositioning(cues: VTTCue[]): VTTCue[] {
 }
 
 function isTopAnchored(cue: VTTCue): boolean {
-  if (cue.line === 'auto') return !!cue.style?.['--cue-top'] && !cue.style['--cue-bottom'];
+  if (cue.line === 'auto') {
+    const top = cue.layout?.top ?? cue.style?.['--cue-top'],
+      bottom = cue.layout?.bottom ?? cue.style?.['--cue-bottom'];
+    return top !== undefined && bottom === undefined;
+  }
   if (cue.snapToLines) return cue.line >= 0;
   return cue.lineAlign === 'end' ? cue.line <= 50 : cue.line < 50;
 }

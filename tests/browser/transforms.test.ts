@@ -27,12 +27,7 @@ async function show(cues: ReturnType<typeof cue>[]) {
 
 test('centred cues using translateX(-50%) stay centred after positioning', async () => {
   const centred = cue(0, 10, 'Centred via transform');
-  centred.style = {
-    '--cue-left': '50%',
-    '--cue-width': 'max-content',
-    '--cue-bottom': '5%',
-    '--cue-transform': 'translateX(-50%)',
-  };
+  centred.layout = { left: 50, width: 'max-content', bottom: 5, translate: { x: -0.5 } };
   await show([centred]);
 
   const box = rect(cueDisplays(fixture.overlay)[0]),
@@ -45,12 +40,12 @@ test('centred cues using translateX(-50%) stay centred after positioning', async
 
 test('fixed cues are anchored exactly and never moved by collisions', async () => {
   const fixed = cue(0, 10, 'Fixed anchor');
-  fixed.style = {
-    '--cue-left': '50%',
-    '--cue-top': '50%',
-    '--cue-width': 'max-content',
-    '--cue-transform': 'translateX(-50%) translateY(-50%)',
-    __fixed: '1',
+  fixed.layout = {
+    left: 50,
+    top: 50,
+    width: 'max-content',
+    translate: { x: -0.5, y: -0.5 },
+    fixed: true,
   };
   const other = cue(0, 10, 'Other cue', { snapToLines: false, line: 50, lineAlign: 'center' });
   await show([fixed, other]);
@@ -71,6 +66,7 @@ test('collision boxes account for translated cues', async () => {
   const a = cue(0, 10, 'Translated A'),
     b = cue(0, 10, 'Translated B');
   for (const c of [a, b]) {
+    // Raw `--cue-*` styles remain supported as an escape hatch.
     c.style = {
       '--cue-left': '50%',
       '--cue-width': 'max-content',

@@ -39,71 +39,83 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
   expect(cues[0].startTime).toBe(5.1);
   expect(cues[0].endTime).toBe(7.2);
   expect(cues[0].text).toBe('Hello, world!');
-  delete cues[0].style!['--cue-text-shadow'];
-  expect(cues[0].style).toMatchInlineSnapshot(`
+  expect({ layout: cues[0].layout, textStyle: cues[0].textStyle }).toMatchInlineSnapshot(`
     {
-      "--cue-bg-color": "transparent",
-      "--cue-bottom": "3.472%",
-      "--cue-color": "rgba(255,255,255,1)",
-      "--cue-left": "50%",
-      "--cue-line-height": "normal",
-      "--cue-max-width": "94.792%",
-      "--cue-padding-y": "0",
-      "--cue-text-align": "center",
-      "--cue-text-stroke": "calc(var(--overlay-height) * 0.01389) rgba(0,0,0,1)",
-      "--cue-transform": "translateX(-50%)",
-      "--cue-white-space": "pre-wrap",
-      "--cue-width": "max-content",
-      "font-family": ""Arial", sans-serif",
-      "font-size": "calc(var(--overlay-height) * 0.125)",
+      "layout": {
+        "bottom": 3.472,
+        "left": 50,
+        "maxWidth": 94.792,
+        "translate": {
+          "x": -0.5,
+        },
+        "width": "max-content",
+      },
+      "textStyle": {
+        "backgroundColor": "transparent",
+        "color": "rgba(255,255,255,1)",
+        "fontFamily": ""Arial", sans-serif",
+        "fontSize": "calc(var(--overlay-height) * 0.125)",
+        "lineHeight": "normal",
+        "paddingY": "0",
+        "textAlign": "center",
+        "textShadow": "calc(var(--overlay-height) * 0.00694) calc(var(--overlay-height) * 0.00694) 0 rgba(0,0,0,1)",
+        "textStroke": "calc(var(--overlay-height) * 0.01389) rgba(0,0,0,1)",
+        "whiteSpace": "pre-wrap",
+      },
     }
   `);
 
   expect(cues[1].startTime).toBe(4205.1);
   expect(cues[1].endTime).toBe(4808);
   expect(cues[1].text).toBe('Never!\nThis is text on a new line.\nAnd, another line.');
-  delete cues[1].style!['--cue-text-shadow'];
-  expect(cues[1].style).toMatchInlineSnapshot(`
+  expect({ layout: cues[1].layout, textStyle: cues[1].textStyle }).toMatchInlineSnapshot(`
     {
-      "--cue-bg-color": "transparent",
-      "--cue-bottom": "3.472%",
-      "--cue-color": "rgba(255,255,255,1)",
-      "--cue-left": "50%",
-      "--cue-line-height": "normal",
-      "--cue-max-width": "94.792%",
-      "--cue-padding-y": "0",
-      "--cue-text-align": "center",
-      "--cue-text-stroke": "calc(var(--overlay-height) * 0.01389) rgba(0,0,0,1)",
-      "--cue-transform": "translateX(-50%)",
-      "--cue-white-space": "pre-wrap",
-      "--cue-width": "max-content",
-      "font-family": ""Arial", sans-serif",
-      "font-size": "calc(var(--overlay-height) * 0.08333)",
-      "font-style": "italic",
-      "font-weight": "bold",
-      "text-decoration": "underline line-through",
+      "layout": {
+        "bottom": 3.472,
+        "left": 50,
+        "maxWidth": 94.792,
+        "translate": {
+          "x": -0.5,
+        },
+        "width": "max-content",
+      },
+      "textStyle": {
+        "backgroundColor": "transparent",
+        "color": "rgba(255,255,255,1)",
+        "fontFamily": ""Arial", sans-serif",
+        "fontSize": "calc(var(--overlay-height) * 0.08333)",
+        "fontStyle": "italic",
+        "fontWeight": "bold",
+        "lineHeight": "normal",
+        "paddingY": "0",
+        "textAlign": "center",
+        "textDecoration": "underline line-through",
+        "textShadow": "calc(var(--overlay-height) * 0.00694) calc(var(--overlay-height) * 0.00694) 0 rgba(0,0,0,1)",
+        "textStroke": "calc(var(--overlay-height) * 0.01389) rgba(0,0,0,1)",
+        "whiteSpace": "pre-wrap",
+      },
     }
   `);
 
   expect(cues[2].startTime).toBe(4);
   expect(cues[2].endTime).toBe(7.2);
   expect(cues[2].text).toBe('One!');
-  expect(cues[2].style).toBeUndefined();
+  expect(cues[2].layout).toBeUndefined();
 
   expect(cues[3].startTime).toBe(5);
   expect(cues[3].endTime).toBe(8.2);
   expect(cues[3].text).toBe('Two!');
-  expect(cues[3].style).toBeUndefined();
+  expect(cues[3].layout).toBeUndefined();
 
   expect(cues[4].startTime).toBe(6);
   expect(cues[4].endTime).toBe(9.2);
   expect(cues[4].text).toBe('Three!\nNew line of text on three.');
-  expect(cues[4].style).toBeUndefined();
+  expect(cues[4].layout).toBeUndefined();
 
   expect(cues[5].startTime).toBe(8);
   expect(cues[5].endTime).toBe(9.2);
   expect(cues[5].text).toBe('Four!');
-  expect(cues[5].style).toBeUndefined();
+  expect(cues[5].layout).toBeUndefined();
 });
 
 test('BAD: events block missing format line', async () => {

@@ -73,7 +73,18 @@ export class VTTCue extends CueBase {
    */
   align: 'start' | 'center' | 'end' | 'left' | 'right' = 'center';
   /**
-   * Additional styles associated with the cue.
+   * Explicit box placement produced by parsers of formats with absolute positioning (SSA/ASS,
+   * TTML). Overrides the WebVTT line/position algorithm where set.
+   */
+  layout?: CueLayout;
+  /**
+   * Presentational styling produced by parsers (SSA/ASS styles, TTML `tts:*`). The renderer maps
+   * these to CSS; custom renderers can read them directly.
+   */
+  textStyle?: CueTextStyle;
+  /**
+   * Raw CSS declarations (properties or `--cue-*` custom properties) applied to the cue display
+   * element. Escape hatch for consumers; parsers use `layout` and `textStyle` instead.
    */
   style?: Record<string, string>;
   /**
@@ -81,4 +92,127 @@ export class VTTCue extends CueBase {
    * top.
    */
   layer?: number;
+
+  /** Plain, structured-cloneable representation (e.g., for Workers or caching). */
+  toJSON(): VTTCueInit {
+    return cueToJSON(this);
+  }
+
+  /** Rebuilds a cue from `toJSON()` output. Regions are resolved by id from `regions`. */
+  static from(init: VTTCueInit, regions?: VTTRegion[] | Record<string, VTTRegion>): VTTCue {
+    return cueFromJSON(init, regions);
+  }
+}
+
+/**
+ * Explicit cue box placement. Offsets are percentages of the overlay, sizes are percentages or
+ * CSS sizing keywords, and the translation is a fraction of the cue box itself (so `x: -0.5`
+ * with `left: 50` centres the box).
+ */
+export interface CueLayout {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+  /** `'auto'` fills the span between the edges, `'max-content'` hugs the text. */
+  width?: number | 'auto' | 'max-content';
+  maxWidth?: number;
+  translate?: { x?: number; y?: number };
+  /** Never moved by collision avoidance, but other cues avoid it (e.g., SSA `\\pos`). */
+  fixed?: boolean;
+}
+
+/** Presentational cue styling. Values are CSS values. */
+export interface CueTextStyle {
+  color?: string;
+  backgroundColor?: string;
+  fontFamily?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  textDecoration?: string;
+  letterSpacing?: string;
+  lineHeight?: string;
+  opacity?: string;
+  textAlign?: 'left' | 'center' | 'right' | 'start' | 'end';
+  whiteSpace?: string;
+  /** `<width> <color>`, painted behind the glyphs. */
+  textStroke?: string;
+  textShadow?: string;
+  /** Box outline for opaque-box styles. */
+  outline?: string;
+  /** Vertical padding override (e.g., `0` for outline-only styles). */
+  paddingY?: string;
+  /** Extra transforms (scale/rotate) applied after the layout translation. */
+  transform?: string;
+}
+
+export interface VTTCueInit {
+  id?: string;
+  startTime: number;
+  endTime: number;
+  text: string;
+  /** Region id, resolved by `VTTCue.from`. */
+  region?: string | null;
+  vertical?: VTTCue['vertical'];
+  snapToLines?: boolean;
+  line?: VTTCue['line'];
+  lineAlign?: VTTCue['lineAlign'];
+  position?: VTTCue['position'];
+  positionAlign?: VTTCue['positionAlign'];
+  size?: number;
+  align?: VTTCue['align'];
+  layout?: CueLayout;
+  textStyle?: CueTextStyle;
+  style?: Record<string, string>;
+  layer?: number;
+}
+
+export function cueToJSON(cue: VTTCue): VTTCueInit {
+  const init: VTTCueInit = {
+    id: cue.id,
+    startTime: cue.startTime,
+    endTime: cue.endTime,
+    text: cue.text,
+    region: cue.region ? cue.region.id : null,
+    vertical: cue.vertical,
+    snapToLines: cue.snapToLines,
+    line: cue.line,
+    lineAlign: cue.lineAlign,
+    position: cue.position,
+    positionAlign: cue.positionAlign,
+    size: cue.size,
+    align: cue.align,
+  };
+  if (cue.layout) init.layout = cue.layout;
+  if (cue.textStyle) init.textStyle = cue.textStyle;
+  if (cue.style) init.style = cue.style;
+  if (cue.layer !== undefined) init.layer = cue.layer;
+  return init;
+}
+
+export function cueFromJSON(
+  init: VTTCueInit,
+  regions?: VTTRegion[] | Record<string, VTTRegion>,
+): VTTCue {
+  const cue = new VTTCue(init.startTime, init.endTime, init.text);
+  if (init.id) cue.id = init.id;
+  if (init.vertical !== undefined) cue.vertical = init.vertical;
+  if (init.snapToLines !== undefined) cue.snapToLines = init.snapToLines;
+  if (init.line !== undefined) cue.line = init.line;
+  if (init.lineAlign) cue.lineAlign = init.lineAlign;
+  if (init.position !== undefined) cue.position = init.position;
+  if (init.positionAlign) cue.positionAlign = init.positionAlign;
+  if (init.size !== undefined) cue.size = init.size;
+  if (init.align) cue.align = init.align;
+  if (init.layout) cue.layout = init.layout;
+  if (init.textStyle) cue.textStyle = init.textStyle;
+  if (init.style) cue.style = init.style;
+  if (init.layer !== undefined) cue.layer = init.layer;
+  if (init.region && regions) {
+    cue.region = Array.isArray(regions)
+      ? (regions.find((region) => region.id === init.region) ?? null)
+      : (regions[init.region] ?? null);
+  }
+  return cue;
 }

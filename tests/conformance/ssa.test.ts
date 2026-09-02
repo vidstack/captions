@@ -42,17 +42,17 @@ async function parse(text: string) {
 describe('script info', () => {
   test('PlayRes scales font size, margins, and outline', async () => {
     const { cues } = await parse(ass([DEFAULT], [dialogue('x')]));
-    expect(cues[0].style?.['font-size']).toBe('calc(var(--overlay-height) * 0.06667)');
-    expect(cues[0].style?.['--cue-bottom']).toBe('1.389%');
-    expect(cues[0].style?.['--cue-max-width']).toBe('98.438%');
-    expect(cues[0].style?.['--cue-text-stroke']).toBe(
+    expect(cues[0].textStyle?.fontSize).toBe('calc(var(--overlay-height) * 0.06667)');
+    expect(cues[0].layout?.bottom).toBe(1.389);
+    expect(cues[0].layout?.maxWidth).toBe(98.438);
+    expect(cues[0].textStyle?.textStroke).toBe(
       'calc(var(--overlay-height) * 0.00556) rgba(0,0,0,1)',
     );
   });
 
   test('defaults to 384x288 when PlayRes is missing', async () => {
     const { cues } = await parse(ass([DEFAULT], [dialogue('x')], []));
-    expect(cues[0].style?.['font-size']).toBe('calc(var(--overlay-height) * 0.16667)');
+    expect(cues[0].textStyle?.fontSize).toBe('calc(var(--overlay-height) * 0.16667)');
   });
 
   test('WrapStyle 2 turns soft breaks into hard breaks', async () => {
@@ -81,9 +81,9 @@ describe('colours', () => {
     const { cues } = await parse(
       ass(styles, [dialogue('a', 'A'), dialogue('b', 'B'), dialogue('c', 'C')]),
     );
-    expect(cues[0].style?.['--cue-color']).toBe('rgba(0,128,255,0.498)');
-    expect(cues[1].style?.['--cue-color']).toBe('rgba(255,0,0,1)');
-    expect(cues[2].style?.['--cue-color']).toBe('rgba(255,255,255,1)');
+    expect(cues[0].textStyle?.color).toBe('rgba(0,128,255,0.498)');
+    expect(cues[1].textStyle?.color).toBe('rgba(255,0,0,1)');
+    expect(cues[2].textStyle?.color).toBe('rgba(255,255,255,1)');
   });
 
   test('inline colour tags produce hex colour classes', async () => {
@@ -98,23 +98,23 @@ describe('colours', () => {
 });
 
 describe('alignment', () => {
-  const cases: Array<[number, string, string | undefined]> = [
-    [1, 'left', '--cue-bottom'],
-    [2, 'center', '--cue-bottom'],
-    [3, 'right', '--cue-bottom'],
-    [4, 'left', '--cue-top'],
-    [5, 'center', '--cue-top'],
-    [6, 'right', '--cue-top'],
-    [7, 'left', '--cue-top'],
-    [8, 'center', '--cue-top'],
-    [9, 'right', '--cue-top'],
+  const cases: Array<[number, string, string]> = [
+    [1, 'left', 'bottom'],
+    [2, 'center', 'bottom'],
+    [3, 'right', 'bottom'],
+    [4, 'left', 'top'],
+    [5, 'center', 'top'],
+    [6, 'right', 'top'],
+    [7, 'left', 'top'],
+    [8, 'center', 'top'],
+    [9, 'right', 'top'],
   ];
 
   test.each(cases)('numpad alignment %i -> %s', async (an, align, side) => {
     const { cues } = await parse(ass([DEFAULT], [dialogue(`{\\an${an}}x`)]));
-    expect(cues[0].style?.['--cue-text-align']).toBe(align);
-    expect(cues[0].style?.[side!]).toBeDefined();
-    if (an >= 4 && an <= 6) expect(cues[0].style?.['--cue-top']).toBe('50%');
+    expect(cues[0].textStyle?.textAlign).toBe(align);
+    expect(cues[0].layout?.[side as 'top' | 'bottom']).toBeDefined();
+    if (an >= 4 && an <= 6) expect(cues[0].layout?.top).toBe(50);
   });
 
   test('legacy \\a values use the SSA v4.00 scheme', async () => {
@@ -128,10 +128,10 @@ describe('alignment', () => {
         ],
       ),
     );
-    expect(cues[0].style?.['--cue-top']).toBe('1.389%');
-    expect(cues[1].style?.['--cue-top']).toBe('50%');
-    expect(cues[2].style?.['--cue-text-align']).toBe('left');
-    expect(cues[2].style?.['--cue-bottom']).toBeDefined();
+    expect(cues[0].layout?.top).toBe(1.389);
+    expect(cues[1].layout?.top).toBe(50);
+    expect(cues[2].textStyle?.textAlign).toBe('left');
+    expect(cues[2].layout?.bottom).toBeDefined();
   });
 
   test('[V4 Styles] alignment column uses the legacy scheme too', async () => {
@@ -146,8 +146,8 @@ describe('alignment', () => {
       '',
     ].join('\n');
     const { cues } = await parse(text);
-    expect(cues[0].style?.['--cue-top']).toBeDefined();
-    expect(cues[0].style?.['--cue-text-align']).toBe('center');
+    expect(cues[0].layout?.top).toBeDefined();
+    expect(cues[0].textStyle?.textAlign).toBe('center');
   });
 });
 
@@ -158,7 +158,7 @@ describe('events', () => {
     );
     expect(cues[0].layer).toBeUndefined();
     expect(cues[1].layer).toBe(3);
-    expect(cues[1].style?.['--cue-z-index']).toBe('3');
+    expect(cues[1].layer).toBe(3);
   });
 
   test('Name becomes a voice span with angle brackets stripped', async () => {
@@ -172,8 +172,9 @@ describe('events', () => {
     const { cues } = await parse(
       ass([DEFAULT], [dialogue('x', 'Missing'), dialogue('y', '*Default')]),
     );
-    expect(cues[0].style).toBeUndefined();
-    expect(cues[1].style?.['--cue-color']).toBe('rgba(255,255,255,1)');
+    expect(cues[0].layout).toBeUndefined();
+    expect(cues[0].textStyle).toBeUndefined();
+    expect(cues[1].textStyle?.color).toBe('rgba(255,255,255,1)');
   });
 
   test('per-dialogue margins override the style margins', async () => {
@@ -181,9 +182,9 @@ describe('events', () => {
       ass([DEFAULT], ['Dialogue: 0,0:00:01.00,0:00:05.00,Default,,128,0,72,,x']),
     );
     // MarginR of 0 means "use the style margin" per the ASS spec.
-    expect(cues[0].style?.['--cue-left']).toBe('54.609%');
-    expect(cues[0].style?.['--cue-max-width']).toBe('89.219%');
-    expect(cues[0].style?.['--cue-bottom']).toBe('10%');
+    expect(cues[0].layout?.left).toBe(54.609);
+    expect(cues[0].layout?.maxWidth).toBe(89.219);
+    expect(cues[0].layout?.bottom).toBe(10);
   });
 
   test('Comment events are skipped and field order follows the Format line', async () => {
@@ -243,11 +244,12 @@ describe('override tags', () => {
 
   test('\\pos produces a fixed, translated cue', async () => {
     const { cues } = await parse(ass([DEFAULT], [dialogue('{\\pos(640,360)}x')]));
-    expect(cues[0].style).toMatchObject({
-      '--cue-left': '50%',
-      '--cue-top': '50%',
-      '--cue-transform': 'translateX(-50%) translateY(-100%)',
-      __fixed: '1',
+    expect(cues[0].layout).toEqual({
+      width: 'max-content',
+      left: 50,
+      top: 50,
+      translate: { x: -0.5, y: -1 },
+      fixed: true,
     });
   });
 
