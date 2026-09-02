@@ -1,6 +1,6 @@
 import { IS_SERVER } from '../utils/env';
 import { setDataAttr } from '../utils/style';
-import { tokenizeVTTCue, type VTTNode } from './tokenize-cue';
+import { tokenizeVTTCue, type VTTBlockNode, type VTTNode } from './tokenize-cue';
 import type { VTTCue } from './vtt-cue';
 
 const CLASS_TOKEN_RE = /[^\w-]+/g;
@@ -13,7 +13,7 @@ export function createVTTCueTemplate(cue: VTTCue): VTTCueTemplate {
   }
 
   const template = document.createElement('template');
-  template.innerHTML = renderVTTCueString(cue);
+  template.content.append(renderVTTTokensDOM(tokenizeVTTCue(cue)));
   return { cue, content: template.content };
 }
 
@@ -27,39 +27,53 @@ export function renderVTTCueString(cue: VTTCue, currentTime = 0): string {
 }
 
 /**
+ * Attributes for a block token, shared by the string and DOM renderers. Values are raw (not
+ * escaped); `''` means a boolean attribute.
+ */
+export function getVTTTokenAttributes(
+  token: VTTBlockNode,
+  currentTime = 0,
+): Record<string, string> {
+  const attrs: Record<string, string> = {};
+
+  if (token.class) {
+    const classList = sanitizeClassList(token.class);
+    if (classList) attrs.class = classList;
+  }
+
+  if (token.type === 'v' && token.voice) {
+    attrs.title = token.voice;
+    attrs['data-part'] = 'voice';
+  } else if (token.type === 'lang' && token.lang) {
+    attrs.lang = token.lang;
+  } else if (token.type === 'timestamp') {
+    attrs['data-part'] = 'timed';
+    attrs['data-time'] = token.time + '';
+    if (token.time > currentTime) attrs['data-future'] = '';
+    if (token.time < currentTime) attrs['data-past'] = '';
+  }
+
+  const style = `${token.color ? `color: ${token.color};` : ''}${
+    token.bgColor ? `background-color: ${token.bgColor};` : ''
+  }`;
+  if (style) attrs.style = style;
+
+  return attrs;
+}
+
+/**
  * Renders VTT tokens to a HTML string. All text and attribute values are escaped, so the output
  * is safe to assign to `innerHTML` even when the cue text comes from an untrusted captions file.
  */
 export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): string {
-  let attrs: Record<string, string | number | boolean | undefined>,
-    result = '';
+  let result = '';
 
   for (const token of tokens) {
     if (token.type === 'text') {
       result += escapeHTML(token.data);
     } else {
-      const isTimestamp = token.type === 'timestamp';
-
-      attrs = {};
-      attrs.class = token.class && sanitizeClassList(token.class);
-      attrs.title = token.type === 'v' && token.voice;
-      attrs.lang = token.type === 'lang' && token.lang;
-      attrs['data-part'] = token.type === 'v' && 'voice';
-
-      if (isTimestamp) {
-        attrs['data-part'] = 'timed';
-        attrs['data-time'] = token.time;
-        attrs['data-future'] = token.time > currentTime;
-        attrs['data-past'] = token.time < currentTime;
-      }
-
-      attrs.style = `${token.color ? `color: ${token.color};` : ''}${
-        token.bgColor ? `background-color: ${token.bgColor};` : ''
-      }`;
-
-      const attributes = Object.entries(attrs)
-        .filter((v) => v[1])
-        .map((v) => `${v[0]}="${v[1] === true ? '' : escapeAttribute(v[1] + '')}"`)
+      const attributes = Object.entries(getVTTTokenAttributes(token, currentTime))
+        .map(([name, value]) => `${name}="${escapeAttribute(value)}"`)
         .join(' ');
 
       result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${renderVTTTokensString(
@@ -69,6 +83,54 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
     }
   }
 
+  return result;
+}
+
+/**
+ * Renders VTT tokens directly to DOM nodes. No HTML is parsed, so this works under strict CSP and
+ * Trusted Types policies that forbid `innerHTML`, and the escaping surface disappears entirely.
+ * This is what `CaptionsRenderer` uses.
+ */
+export function renderVTTTokensDOM(
+  tokens: VTTNode[],
+  currentTime = 0,
+  doc: Document = document,
+): DocumentFragment {
+  const fragment = doc.createDocumentFragment();
+  appendVTTTokens(fragment, tokens, currentTime, doc);
+  return fragment;
+}
+
+function appendVTTTokens(parent: Node, tokens: VTTNode[], currentTime: number, doc: Document) {
+  for (const token of tokens) {
+    if (token.type === 'text') {
+      parent.appendChild(doc.createTextNode(token.data));
+      continue;
+    }
+
+    const el = doc.createElement(token.tagName),
+      attrs = getVTTTokenAttributes(token, currentTime);
+
+    for (const name of Object.keys(attrs)) {
+      if (name === 'style') {
+        if (token.color) el.style.color = token.color;
+        if (token.bgColor) el.style.backgroundColor = token.bgColor;
+      } else {
+        el.setAttribute(name, attrs[name]);
+      }
+    }
+
+    appendVTTTokens(el, token.children, currentTime, doc);
+    parent.appendChild(el);
+  }
+}
+
+/** Plain text of the tokens (tags stripped), e.g. for screen reader announcements. */
+export function renderVTTTokensText(tokens: VTTNode[]): string {
+  let result = '';
+  for (const token of tokens) {
+    result += token.type === 'text' ? token.data : renderVTTTokensText(token.children);
+  }
   return result;
 }
 

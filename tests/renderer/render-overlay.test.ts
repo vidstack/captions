@@ -292,3 +292,49 @@ test('evicts ended cues after the retention window', () => {
   renderer.currentTime = 5.5;
   expect(renderer.track.cues.map((c) => c.text)).toEqual(['recent']);
 });
+
+test('renders cue content as DOM nodes without HTML parsing', () => {
+  const { overlay, renderer } = setup();
+  renderer.changeTrack({
+    cues: [new VTTCue(0, 10, '<v Bob>Hi <b.x>there</b> <00:00:05.000>later')],
+  });
+  renderer.currentTime = 1;
+  const cueEl = overlay.querySelector('[data-part="cue"]')!;
+  const voice = cueEl.firstElementChild!;
+  expect(voice.tagName).toBe('SPAN');
+  expect(voice.getAttribute('title')).toBe('Bob');
+  expect(voice.querySelector('b')?.className).toBe('x');
+  expect(voice.querySelector('[data-part="timed"]')?.hasAttribute('data-future')).toBe(true);
+});
+
+test('dispatches enter and exit events on cues', () => {
+  const { renderer } = setup();
+  const a = new VTTCue(0, 5, 'A'),
+    b = new VTTCue(3, 8, 'B'),
+    events: string[] = [];
+  for (const cue of [a, b]) {
+    cue.addEventListener('enter', () => events.push(`enter:${cue.text}`));
+    cue.addEventListener('exit', () => events.push(`exit:${cue.text}`));
+  }
+  renderer.changeTrack({ cues: [a, b] });
+  renderer.currentTime = 1;
+  renderer.currentTime = 4;
+  renderer.currentTime = 6;
+  renderer.currentTime = 9;
+  expect(events).toEqual(['enter:A', 'enter:B', 'exit:A', 'exit:B']);
+});
+
+test('announces entering cues in a hidden live region when enabled', () => {
+  const overlay = document.createElement('div');
+  document.body.append(overlay);
+  const renderer = new CaptionsRenderer(overlay, { announce: true });
+  renderer.changeTrack({ cues: [new VTTCue(0, 5, '<b>Hello</b> &amp; welcome')] });
+  renderer.currentTime = 1;
+
+  const announcer = overlay.nextElementSibling as HTMLElement;
+  expect(announcer.getAttribute('data-part')).toBe('announcer');
+  expect(announcer.getAttribute('aria-live')).toBe('polite');
+  expect(announcer.textContent).toBe('Hello & welcome');
+  renderer.destroy();
+  expect(document.querySelector('[data-part="announcer"]')).toBeNull();
+});

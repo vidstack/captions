@@ -1,7 +1,8 @@
 import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
 import { debounce } from '../../utils/timing';
 import { CueTrack } from '../cue-track';
-import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
+import { renderVTTTokensDOM, renderVTTTokensText, updateTimedVTTCueNodes } from '../render-cue';
+import { tokenizeVTTCue } from '../tokenize-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTHeaderMetadata } from '../vtt-header';
 import type { VTTRegion } from '../vtt-region';
@@ -39,6 +40,7 @@ export class CaptionsRenderer {
   private _unsubscribe: (() => void) | null = null;
 
   private _styleEl: HTMLStyleElement | null = null;
+  private _announcer: HTMLElement | null = null;
   private static _scopeId = 0;
 
   /* Text direction. */
@@ -74,6 +76,7 @@ export class CaptionsRenderer {
     this.overlay = overlay;
     this.dir = init?.dir ?? 'ltr';
     this._retention = init?.retention;
+    if (init?.announce) this._createAnnouncer(init.announce === true ? 'polite' : init.announce);
     overlay.setAttribute('translate', 'yes');
     overlay.setAttribute('aria-live', 'off');
     overlay.setAttribute('aria-atomic', 'true');
@@ -146,6 +149,8 @@ export class CaptionsRenderer {
   destroy() {
     this.reset();
     this._resizeObserver.disconnect();
+    this._announcer?.remove();
+    this._announcer = null;
   }
 
   private _resizing() {
@@ -172,6 +177,28 @@ export class CaptionsRenderer {
     this._overlayBox = createBox(this.overlay);
     setCSSVar(this.overlay, 'overlay-width', this._overlayBox.width + 'px');
     setCSSVar(this.overlay, 'overlay-height', this._overlayBox.height + 'px');
+  }
+
+  /**
+   * The visual overlay is `aria-live="off"` because sighted users read it, and duplicating the
+   * audio for screen reader users is usually unwanted. When announcements are enabled a separate
+   * visually hidden live region receives the plain text of cues as they appear.
+   */
+  private _createAnnouncer(mode: 'polite' | 'assertive') {
+    const el = document.createElement('div');
+    setPartAttr(el, 'announcer');
+    el.setAttribute('aria-live', mode);
+    el.setAttribute('aria-atomic', 'true');
+    el.style.cssText =
+      'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;';
+    this.overlay.insertAdjacentElement('afterend', el);
+    this._announcer = el;
+  }
+
+  private _announce(cues: VTTCue[]) {
+    if (!this._announcer) return;
+    const text = cues.map((cue) => renderVTTTokensText(tokenizeVTTCue(cue)).trim()).filter(Boolean);
+    if (text.length) this._announcer.textContent = text.join('\n');
   }
 
   private _applyMetadata(metadata?: VTTHeaderMetadata) {
@@ -260,7 +287,19 @@ export class CaptionsRenderer {
     if (forceUpdate) this._layout(activeCues);
 
     updateTimedVTTCueNodes(this.overlay, this._currentTime);
+
+    // Cue lifecycle events (mirrors the native TextTrackCue `enter`/`exit`).
+    const previous = this._activeCues;
     this._activeCues = activeCues;
+    const entered: VTTCue[] = [];
+    for (const cue of previous) if (!activeSet.has(cue)) cue.dispatchEvent(new Event('exit'));
+    for (const cue of activeCues) {
+      if (!previous.includes(cue)) {
+        entered.push(cue);
+        cue.dispatchEvent(new Event('enter'));
+      }
+    }
+    if (entered.length) this._announce(entered);
 
     if (this._retention !== undefined) this._track.evict(this._currentTime);
   }
@@ -416,7 +455,7 @@ export class CaptionsRenderer {
     setPartAttr(el, 'cue');
     if (cue.id) setDataAttr(el, 'id', cue.id);
 
-    el.innerHTML = renderVTTCueString(cue, this._currentTime);
+    el.append(renderVTTTokensDOM(tokenizeVTTCue(cue), this._currentTime));
     display.append(el);
 
     return display;
@@ -465,6 +504,11 @@ export interface CaptionsRendererInit {
    * streams so memory stays bounded; leave unset for whole-file tracks.
    */
   retention?: number;
+  /**
+   * Announce cue text to assistive technology through a visually hidden live region placed after
+   * the overlay. `true` is `'polite'`.
+   */
+  announce?: boolean | 'polite' | 'assertive';
 }
 
 export interface CaptionsRendererTrack {
