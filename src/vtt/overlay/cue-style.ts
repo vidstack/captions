@@ -17,6 +17,7 @@ export function applyCueLayout(el: HTMLElement, layout: CueLayout | undefined) {
     );
   }
   if (layout.maxWidth !== undefined) setCSSVar(el, 'cue-max-width', layout.maxWidth + '%');
+  if (layout.height !== undefined) setCSSVar(el, 'cue-height', layout.height + '%');
   if (layout.fixed) setDataAttr(el, 'fixed');
 }
 
@@ -42,6 +43,8 @@ const TEXT_STYLE_VARS: Partial<Record<keyof CueTextStyle, string>> = {
 };
 
 const TEXT_STYLE_PROPS: Partial<Record<keyof CueTextStyle, string>> = {
+  backgroundImage: 'background-image',
+  animation: 'animation',
   fontFamily: 'font-family',
   fontSize: 'font-size',
   fontWeight: 'font-weight',
@@ -56,7 +59,7 @@ export function applyCueTextStyle(el: HTMLElement, textStyle: CueTextStyle | und
   if (!textStyle) return;
   for (const key of Object.keys(textStyle) as (keyof CueTextStyle)[]) {
     const value = textStyle[key];
-    if (value === undefined || key === 'transform') continue;
+    if (value === undefined || key === 'transform' || key === 'className') continue;
     if (TEXT_STYLE_VARS[key]) setCSSVar(el, TEXT_STYLE_VARS[key]!, value);
     else if (TEXT_STYLE_PROPS[key]) el.style.setProperty(TEXT_STYLE_PROPS[key]!, value);
   }

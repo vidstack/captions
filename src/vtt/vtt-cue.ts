@@ -117,6 +117,8 @@ export interface CueLayout {
   /** `'auto'` fills the span between the edges, `'max-content'` hugs the text. */
   width?: number | 'auto' | 'max-content';
   maxWidth?: number;
+  /** Explicit height as a percentage of the overlay (e.g., image cues). */
+  height?: number;
   translate?: { x?: number; y?: number };
   /** Never moved by collision avoidance, but other cues avoid it (e.g., SSA `\\pos`). */
   fixed?: boolean;
@@ -145,6 +147,12 @@ export interface CueTextStyle {
   paddingY?: string;
   /** Extra transforms (scale/rotate) applied after the layout translation. */
   transform?: string;
+  /** CSS `background-image` (e.g., IMSC image cues as data URLs). */
+  backgroundImage?: string;
+  /** CSS `animation` shorthand; `media-captions-fade-in` and `media-captions-wipe-in` keyframes ship in the stylesheet. */
+  animation?: string;
+  /** Extra class names for the cue element (e.g., CEA-708 pen sizes `pen-small`, `pen-large`). */
+  className?: string;
 }
 
 export interface VTTCueInit {

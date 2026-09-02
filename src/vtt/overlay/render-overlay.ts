@@ -454,6 +454,7 @@ export class CaptionsRenderer {
     const el = document.createElement('div');
     setPartAttr(el, 'cue');
     if (cue.id) setDataAttr(el, 'id', cue.id);
+    if (cue.textStyle?.className) el.className = cue.textStyle.className;
 
     el.append(renderVTTTokensDOM(tokenizeVTTCue(cue), this._currentTime));
     display.append(el);

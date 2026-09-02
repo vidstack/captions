@@ -332,6 +332,15 @@ function createBlockNode(type: string): VTTBlockNode {
 }
 
 /**
+ * Extends the named character reference table (e.g., with the full HTML table from
+ * `media-captions/entities`). Names in `legacy` also decode without a trailing `;`.
+ */
+export function registerHTMLEntities(entities: Record<string, string>, legacy?: Iterable<string>) {
+  Object.assign(HTML_ENTITIES, entities);
+  if (legacy) for (const name of legacy) LEGACY_ENTITIES.add(name);
+}
+
+/**
  * Decodes named and numeric HTML character references in WebVTT cue text.
  */
 export function replaceHTMLEntities(text: string) {

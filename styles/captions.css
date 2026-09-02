@@ -155,4 +155,34 @@
     --cue-text-shadow: none;
     --cue-text-stroke: 0;
   }
+
+  /* CEA-708 pen sizes and display effects. */
+  :where([data-part='captions'] [data-part='cue'] .pen-small) {
+    font-size: 0.8em;
+  }
+
+  :where([data-part='captions'] [data-part='cue'] .pen-large) {
+    font-size: 1.25em;
+  }
+
+  :where([data-part='captions'] [data-part='cue']) {
+    background-image: var(--cue-bg-image, none);
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+
+  @keyframes media-captions-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes media-captions-wipe-in {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
 }
