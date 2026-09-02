@@ -46,6 +46,11 @@
 }
 
 :where([data-part='captions'] [data-part='region'] [data-part='cue']) {
+  /* Roll-up lines must not reflow earlier lines when new text arrives. */
+  text-wrap: stable;
+}
+
+:where([data-part='captions'] [data-part='region'] [data-part='cue']) {
   position: relative;
   padding: calc(var(--cue-padding-y) / 2) var(--cue-padding-x);
   border-radius: 0px;
