@@ -1,5 +1,6 @@
 import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
 import { debounce } from '../../utils/timing';
+import { CueTrack } from '../cue-track';
 import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTHeaderMetadata } from '../vtt-header';
@@ -32,10 +33,10 @@ export class CaptionsRenderer {
   private readonly _resizeObserver: ResizeObserver;
   private readonly _regions = new Map<string, HTMLElement>();
   private readonly _cues = new Map<VTTCue, HTMLElement | null>();
+  private readonly _retention: number | undefined;
 
-  // Sorted cue index so finding active cues is O(log n + active) instead of a full scan.
-  private _sortedCues: VTTCue[] | null = null;
-  private _maxEndTimes: number[] = [];
+  private _track = new CueTrack();
+  private _unsubscribe: (() => void) | null = null;
 
   private _styleEl: HTMLStyleElement | null = null;
   private static _scopeId = 0;
@@ -64,9 +65,15 @@ export class CaptionsRenderer {
     return this._activeCues;
   }
 
+  /** The track being rendered. Add, update, or remove cues on it directly for live content. */
+  get track(): CueTrack {
+    return this._track;
+  }
+
   constructor(overlay: HTMLElement, init?: CaptionsRendererInit) {
     this.overlay = overlay;
     this.dir = init?.dir ?? 'ltr';
+    this._retention = init?.retention;
     overlay.setAttribute('translate', 'yes');
     overlay.setAttribute('aria-live', 'off');
     overlay.setAttribute('aria-atomic', 'true');
@@ -81,22 +88,43 @@ export class CaptionsRenderer {
     this._applyMetadata(metadata);
     this._applyStyles(styles);
     this._buildRegions(regions);
-    for (const cue of cues) this._cues.set(cue, null);
-    this._sortedCues = null;
+    this.attachTrack(
+      cues instanceof CueTrack ? cues : new CueTrack(cues, { retention: this._retention }),
+    );
+  }
+
+  /**
+   * Renders cues from the given track and follows its changes. Cues added, updated (e.g., a live
+   * cue whose end time becomes known), or removed on the track are reflected on the next update.
+   */
+  attachTrack(track: CueTrack) {
+    this._unsubscribe?.();
+    for (const el of this._cues.values()) el?.remove();
+    this._cues.clear();
+    this._activeCues = [];
+
+    this._track = track;
+    this._unsubscribe = track.on((cue, type) => {
+      if (type === 'clear') {
+        for (const el of this._cues.values()) el?.remove();
+        this._cues.clear();
+      } else if (type === 'remove' || type === 'update') {
+        // Drop the element so updated cues are re-rendered with their new content.
+        this._cues.get(cue!)?.remove();
+        this._cues.delete(cue!);
+      }
+      this.update(true);
+    });
+
     this.update();
   }
 
   addCue(cue: VTTCue) {
-    this._cues.set(cue, null);
-    this._sortedCues = null;
-    this.update();
+    this._track.add(cue);
   }
 
   removeCue(cue: VTTCue) {
-    this._cues.get(cue)?.remove();
-    this._cues.delete(cue);
-    this._sortedCues = null;
-    this.update();
+    this._track.remove(cue);
   }
 
   update(forceUpdate = false) {
@@ -104,10 +132,12 @@ export class CaptionsRenderer {
   }
 
   reset() {
+    this._unsubscribe?.();
+    this._unsubscribe = null;
+    this._track = new CueTrack();
     this._cues.clear();
     this._regions.clear();
     this._activeCues = [];
-    this._sortedCues = null;
     this._styleEl = null;
     this.overlay.textContent = '';
     this.overlay.removeAttribute('lang');
@@ -176,59 +206,11 @@ export class CaptionsRenderer {
     this.overlay.append(this._styleEl);
   }
 
-  private _buildIndex() {
-    const sorted = [...this._cues.keys()].sort((cueA, cueB) =>
-      cueA.startTime !== cueB.startTime
-        ? cueA.startTime - cueB.startTime
-        : cueA.endTime - cueB.endTime,
-    );
-
-    const maxEndTimes: number[] = new Array(sorted.length);
-    let maxEnd = -Infinity;
-    for (let i = 0; i < sorted.length; i++) {
-      maxEnd = Math.max(maxEnd, sorted[i].endTime);
-      maxEndTimes[i] = maxEnd;
-    }
-
-    this._sortedCues = sorted;
-    this._maxEndTimes = maxEndTimes;
-  }
-
-  private _findActiveCues(time: number): VTTCue[] {
-    if (!this._sortedCues) this._buildIndex();
-
-    const cues = this._sortedCues!,
-      maxEndTimes = this._maxEndTimes;
-
-    // Binary search for the last cue that has started.
-    let lo = 0,
-      hi = cues.length - 1,
-      last = -1;
-
-    while (lo <= hi) {
-      const mid = (lo + hi) >> 1;
-      if (cues[mid].startTime <= time) {
-        last = mid;
-        lo = mid + 1;
-      } else {
-        hi = mid - 1;
-      }
-    }
-
-    // Walk backwards while any earlier cue could still be active.
-    const active: VTTCue[] = [];
-    for (let i = last; i >= 0 && maxEndTimes[i] >= time; i--) {
-      if (cues[i].endTime >= time) active.push(cues[i]);
-    }
-
-    return active.reverse();
-  }
-
   private _render(forceUpdate = false) {
-    if (!this._cues.size) return;
+    if (!this._track.size && !this._activeCues.length) return;
 
     let cue: VTTCue,
-      activeCues = this._findActiveCues(this._currentTime),
+      activeCues = this._track.activeAt(this._currentTime),
       activeSet = new Set(activeCues),
       activeRegions = new Set<VTTRegion>();
 
@@ -279,6 +261,8 @@ export class CaptionsRenderer {
 
     updateTimedVTTCueNodes(this.overlay, this._currentTime);
     this._activeCues = activeCues;
+
+    if (this._retention !== undefined) this._track.evict(this._currentTime);
   }
 
   /**
@@ -290,8 +274,7 @@ export class CaptionsRenderer {
     // Hidden or unmeasured overlays have no size; skip until the next resize gives us one.
     if (!container.width || !container.height) return;
 
-    const
-      seen = new Set<VTTRegion | VTTCue>(),
+    const seen = new Set<VTTRegion | VTTCue>(),
       targets: { el: HTMLElement; region: VTTRegion | null; cue: VTTCue }[] = [];
 
     for (const cue of orderForPositioning(activeCues)) {
@@ -477,12 +460,18 @@ function isTopAnchored(cue: VTTCue): boolean {
 export interface CaptionsRendererInit {
   /* Text direction. */
   dir?: 'ltr' | 'rtl';
+  /**
+   * Seconds to keep cues after they end before evicting them from the track. Set this for live
+   * streams so memory stays bounded; leave unset for whole-file tracks.
+   */
+  retention?: number;
 }
 
 export interface CaptionsRendererTrack {
   id?: string;
   regions?: VTTRegion[];
-  cues: VTTCue[];
+  /** Cues to render, or a `CueTrack` to follow (for live content). */
+  cues: VTTCue[] | CueTrack;
   /**
    * Header metadata from the parsed track. The `Language` value is applied as the `lang`
    * attribute on the overlay.

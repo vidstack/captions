@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { CaptionsRenderer, VTTCue, VTTRegion } from 'media-captions';
+import { CaptionsRenderer, CueTrack, VTTCue, VTTRegion } from 'media-captions';
 
 class ResizeObserverStub {
   observe() {}
@@ -252,4 +252,43 @@ test('applies STYLE blocks scoped to the overlay', () => {
   // Resetting removes the style element.
   renderer.reset();
   expect(overlay.querySelector('style')).toBeNull();
+});
+
+test('follows an attached track: adds, live updates, removals, and clear', () => {
+  const { overlay, renderer } = setup();
+  const track = new CueTrack();
+  renderer.changeTrack({ cues: track });
+  expect(renderer.track).toBe(track);
+
+  const live = new VTTCue(0, Infinity, 'Live');
+  renderer.currentTime = 5;
+  track.add(live);
+  expect(texts(overlay)).toEqual(['Live']);
+
+  live.text = 'Live (edited)';
+  live.endTime = 10;
+  track.update(live);
+  expect(texts(overlay)).toEqual(['Live (edited)']);
+
+  renderer.currentTime = 11;
+  expect(texts(overlay)).toEqual([]);
+
+  renderer.currentTime = 5;
+  expect(texts(overlay)).toEqual(['Live (edited)']);
+  track.remove(live);
+  expect(texts(overlay)).toEqual([]);
+
+  track.add(new VTTCue(0, 10, 'A'));
+  expect(texts(overlay)).toEqual(['A']);
+  track.clear();
+  expect(texts(overlay)).toEqual([]);
+});
+
+test('evicts ended cues after the retention window', () => {
+  const overlay = document.createElement('div');
+  document.body.append(overlay);
+  const renderer = new CaptionsRenderer(overlay, { retention: 2 });
+  renderer.changeTrack({ cues: [new VTTCue(0, 1, 'old'), new VTTCue(5, 6, 'recent')] });
+  renderer.currentTime = 5.5;
+  expect(renderer.track.cues.map((c) => c.text)).toEqual(['recent']);
 });
