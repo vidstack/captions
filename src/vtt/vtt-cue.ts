@@ -2,7 +2,10 @@ import { IS_SERVER } from '../utils/env';
 import { TextCue } from './text-cue';
 import type { VTTRegion } from './vtt-region';
 
-const CueBase = IS_SERVER ? TextCue : window.VTTCue;
+// Fall back to our own implementation on the server and in DOM environments that do not ship a
+// native `VTTCue` (e.g., jsdom, happy-dom, some WebViews).
+const CueBase: typeof TextCue =
+  !IS_SERVER && typeof window.VTTCue === 'function' ? (window.VTTCue as any) : TextCue;
 
 /**
  * @see {@link https://www.w3.org/TR/webvtt1/#model-cues}
@@ -73,4 +76,9 @@ export class VTTCue extends CueBase {
    * Additional styles associated with the cue.
    */
   style?: Record<string, string>;
+  /**
+   * Stacking order hint used when cues overlap (e.g., SSA/ASS `Layer`). Higher values render on
+   * top.
+   */
+  layer?: number;
 }

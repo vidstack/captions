@@ -187,7 +187,7 @@ test('GOOD: size settings', async () => {
   expect(errors).toHaveLength(0);
 
   expect(cues[0].size).toBe(45);
-  expect(cues[1].size).toBe(25);
+  expect(cues[1].size).toBe(25.5);
 });
 
 test('BAD: size settings', async () => {

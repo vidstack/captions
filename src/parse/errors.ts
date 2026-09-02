@@ -25,7 +25,7 @@ export const ParseErrorBuilder = {
   _badRangeTimestamp(startTime: number, endTime: number, line: number) {
     return new ParseError({
       code: ParseErrorCode.BadTimestamp,
-      reason: `cue end timestamp \`${endTime}\` is greater than start \`${startTime}\` on line ${line}`,
+      reason: `cue end timestamp \`${endTime}\` is not greater than start \`${startTime}\` on line ${line}`,
       line,
     });
   },

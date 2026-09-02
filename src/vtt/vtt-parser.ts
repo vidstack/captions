@@ -15,11 +15,11 @@ const HEADER_MAGIC /*#__PURE__*/ = 'WEBVTT',
   REGION_BLOCK_START_RE = /*#__PURE__*/ /^REGION:?[\s\t]+/,
   SPACE_RE = /*#__PURE__*/ /[\s\t]+/,
   TIMESTAMP_SEP = /*#__PURE__*/ '-->',
-  TIMESTAMP_SEP_RE = /*#__PURE__*/ /[\s\t]*-->[\s\t]+/,
+  TIMESTAMP_SEP_RE = /*#__PURE__*/ /[\s\t]*-->[\s\t]*/,
   ALIGN_RE = /*#__PURE__*/ /start|center|end|left|right/,
   LINE_ALIGN_RE = /*#__PURE__*/ /start|center|end/,
   POS_ALIGN_RE = /*#__PURE__*/ /line-(?:left|right)|center|auto/,
-  TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d{1,2}):)?(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/;
+  TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d+):)?(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/;
 
 export const enum VTTBlock {
   None = 0,
@@ -114,9 +114,11 @@ export class VTTParser implements CaptionsParser {
 
   protected _parseHeader(line: string, lineCount: number) {
     if (lineCount > 1) {
-      if (SETTING_SEP_RE.test(line)) {
-        const [key, value] = line.split(SETTING_SEP_RE);
-        if (key) this._metadata[key] = (value || '').replace(SPACE_RE, '');
+      const sepIndex = line.search(SETTING_SEP_RE);
+      if (sepIndex > 0) {
+        const key = line.slice(0, sepIndex).trim(),
+          value = line.slice(sepIndex + 1).trim();
+        if (key) this._metadata[key] = value;
       }
     } else if (line.startsWith(HEADER_MAGIC)) {
       this._block = VTTBlock.Header;
@@ -139,7 +141,7 @@ export class VTTParser implements CaptionsParser {
       if (endTime === null) {
         this._handleError(this._errorBuilder?._badEndTimestamp(endTimeText, lineCount));
       }
-      if (startTime != null && endTime !== null && endTime > startTime) {
+      if (startTime !== null && endTime !== null && endTime <= startTime) {
         this._handleError(this._errorBuilder?._badRangeTimestamp(startTime, endTime, lineCount));
       }
     }
