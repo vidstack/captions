@@ -3,8 +3,10 @@ import type { CaptionsParser, CaptionsParserInit, ParsedCaptionsResult } from '.
 import { VTTCue } from '../vtt/vtt-cue';
 
 /**
- * Scenarist Closed Caption (SCC) parser. Decodes CEA-608 byte pairs (data channel 1 only) into
- * `VTTCue` objects by modelling the displayed and non-displayed caption memories.
+ * Scenarist Closed Caption (SCC) parser. Decodes CEA-608 byte pairs into `VTTCue` objects by
+ * modelling the displayed and non-displayed caption memories of a single data channel (CC1 by
+ * default, or CC2 via the `channel` option). SCC files only carry field 1, so CC3/CC4 are not
+ * available.
  *
  * @see {@link https://en.wikipedia.org/wiki/EIA-608}
  */
@@ -66,6 +68,13 @@ const PAC_ROWS: Record<number, number> = {
   0x14: 14,
 };
 
+/**
+ * Control code first bytes are 0x10-0x1f (after parity strip). Bit 3 selects the data channel:
+ * clear for CC1 (0x10-0x17), set for CC2 (0x18-0x1f). Masking it off maps a CC2 code onto its CC1
+ * equivalent so a single decode path serves both channels.
+ */
+const CHANNEL_BIT = 0x08;
+
 // Cell style bit layout: bits 0-2 colour, bit 3 italics, bit 4 underline, bits 5-8 background
 // (0 = none/transparent, otherwise colour index + 1).
 const COLOR_MASK = 0x07,
@@ -102,7 +111,10 @@ export class SCCParser implements CaptionsParser {
   protected _displayed = createScreen();
   protected _hidden = createScreen();
   protected _mode = Mode.PopOn;
-  protected _channel = 1;
+  /** Data channel selected for decoding (`channel` option). */
+  protected _selected: 1 | 2 = 1;
+  /** Data channel most recently addressed by a control code, which owns following characters. */
+  protected _channel: 1 | 2 = 1;
   protected _row = ROWS - 1;
   protected _col = 0;
   protected _style = 0;
@@ -116,6 +128,7 @@ export class SCCParser implements CaptionsParser {
 
   init(init: CaptionsParserInit) {
     this._init = init;
+    this._selected = init.channel === 2 ? 2 : 1;
   }
 
   parse(line: string, lineCount: number) {
@@ -198,13 +211,11 @@ export class SCCParser implements CaptionsParser {
         return;
       }
       this._lastControl = code;
-      if (a >= 0x18) {
-        // Data channel 2 (CC2) is not decoded.
-        this._channel = 2;
-        return;
-      }
-      this._channel = 1;
-      this._control(a, b);
+      // Every control code addresses a channel, and owns the characters that follow it. Codes
+      // for the other channel are dropped, so its modes never leak into the selected channel.
+      this._channel = sccChannelOf(a)!;
+      if (this._channel !== this._selected) return;
+      this._control(a & ~CHANNEL_BIT, b);
       return;
     }
 
@@ -212,12 +223,13 @@ export class SCCParser implements CaptionsParser {
 
     // 0x01-0x0f are XDS/undefined, skip the pair.
     if (a > 0 && a < 0x10) return;
-    if (this._channel !== 1 || this._mode === Mode.Text) return;
+    if (this._channel !== this._selected || this._mode === Mode.Text) return;
 
     if (a >= 0x20) this._writeChar(BASIC_CHARS[a] || String.fromCharCode(a));
     if (b >= 0x20) this._writeChar(BASIC_CHARS[b] || String.fromCharCode(b));
   }
 
+  /** Control code with the channel bit already masked off (`a` is 0x10-0x17). */
   protected _control(a: number, b: number) {
     if (this._mode === Mode.Text && a !== 0x14) return;
 
@@ -434,7 +446,7 @@ export class SCCParser implements CaptionsParser {
   }
 
   protected _writeChar(char: string) {
-    if (this._channel !== 1 || this._mode === Mode.Text) return;
+    if (this._channel !== this._selected || this._mode === Mode.Text) return;
 
     const screen = this._target(),
       col = Math.min(this._col, COLS - 1);
@@ -673,6 +685,15 @@ export function parseSCCFrames(text: string): number | null {
 export function parseSCCTimecode(text: string): number | null {
   const frames = parseSCCFrames(text);
   return frames === null ? null : frames / FPS;
+}
+
+/**
+ * Data channel addressed by a CEA-608 control code first byte (parity already stripped): `1` for
+ * CC1 (0x10-0x17), `2` for CC2 (0x18-0x1f), or `null` if the byte is not a control code.
+ */
+export function sccChannelOf(byte1: number): 1 | 2 | null {
+  if (byte1 < 0x10 || byte1 > 0x1f) return null;
+  return byte1 & CHANNEL_BIT ? 2 : 1;
 }
 
 /**

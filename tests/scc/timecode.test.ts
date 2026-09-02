@@ -1,4 +1,9 @@
-import { parseSCCFrames, parseSCCTimecode, sccWordsToBytes } from '../../src/scc/scc-parser';
+import {
+  parseSCCFrames,
+  parseSCCTimecode,
+  sccChannelOf,
+  sccWordsToBytes,
+} from '../../src/scc/scc-parser';
 
 const FPS = 29.97;
 
@@ -47,4 +52,17 @@ test('hex words to bytes strips parity', () => {
     [0x14, 0x72],
     [0x11, 0x37],
   ]);
+});
+
+test('control code first byte selects the data channel', () => {
+  // CC1: 0x10-0x17, CC2: 0x18-0x1f (bit 3 set).
+  for (let byte = 0x10; byte <= 0x17; byte++) {
+    expect(sccChannelOf(byte)).toBe(1);
+    expect(sccChannelOf(byte | 0x08)).toBe(2);
+  }
+  // Null, XDS/undefined and basic characters are not control codes.
+  expect(sccChannelOf(0x00)).toBeNull();
+  expect(sccChannelOf(0x0f)).toBeNull();
+  expect(sccChannelOf(0x20)).toBeNull();
+  expect(sccChannelOf(0x7f)).toBeNull();
 });

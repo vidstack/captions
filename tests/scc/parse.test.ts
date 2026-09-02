@@ -19,9 +19,12 @@ function word(a: number, b: number) {
   return hex(a) + hex(b);
 }
 
-/** A control code word transmitted twice, as required by CEA-608. */
-function ctrl(a: number, b: number) {
-  const w = word(a, b);
+/**
+ * A control code word transmitted twice, as required by CEA-608. Bit 3 of the first byte selects
+ * the data channel (CC1 clear, CC2 set).
+ */
+function ctrl(a: number, b: number, channel: 1 | 2 = 1) {
+  const w = word(channel === 2 ? a | 0x08 : a, b);
   return `${w} ${w}`;
 }
 
@@ -322,6 +325,115 @@ test('GOOD: channel 2 data and filler are ignored', async () => {
 
   expect(cues).toHaveLength(1);
   expect(cues[0].text).toBe('Yes');
+});
+
+test('GOOD: channel 2 decodes CC2 and ignores CC1', async () => {
+  const CC2_RCL = ctrl(0x14, 0x20, 2),
+    CC2_ENM = ctrl(0x14, 0x2e, 2),
+    CC2_PAC = ctrl(0x14, 0x70, 2),
+    CC2_EOC = ctrl(0x14, 0x2f, 2),
+    CC2_EDM = ctrl(0x14, 0x2c, 2);
+
+  const { cues, errors } = await parseText(
+    scc([
+      ['00:00:01:00', `${RCL} ${ENM} ${PAC_ROW15_COL0} ${text('Nope')} ${EOC}`],
+      ['00:00:02:00', `8080 ${CC2_RCL} ${CC2_ENM} ${CC2_PAC} ${text('Yes')} 8080`],
+      ['00:00:02:15', CC2_EOC],
+      ['00:00:03:00', `${EDM} ${CC2_EDM}`],
+    ]),
+    { type: 'scc', channel: 2 },
+  );
+
+  expect(errors).toHaveLength(0);
+  expect(cues).toHaveLength(1);
+  expect(cues[0].text).toBe('Yes');
+  expect(cues[0].startTime).toBeCloseTo(seconds('00:00:02:15'), 10);
+  expect(cues[0].endTime).toBeCloseTo(seconds('00:00:03:00', 2), 10);
+});
+
+test('GOOD: CC2 stream decodes identically to the same CC1 stream', async () => {
+  /** Exercises every control code family: misc, PAC, mid-row, special/extended, tab, background. */
+  function stream(channel: 1 | 2) {
+    const c = (a: number, b: number) => ctrl(a, b, channel);
+    return scc([
+      [
+        '00:00:01:00',
+        `${c(0x14, 0x20)} ${c(0x14, 0x2e)} ${c(0x14, 0x50)} ${text('Go')} ${c(0x11, 0x28)} ` +
+          `${text('stop')} ${c(0x11, 0x37)} ${c(0x10, 0x24)} ${text(' CAFE')} ${c(0x12, 0x21)} ` +
+          `${c(0x14, 0x72)} ${c(0x17, 0x21)} ${text('Helloo')} ${c(0x14, 0x21)}`,
+      ],
+      ['00:00:01:15', c(0x14, 0x2f)],
+      ['00:00:03:00', c(0x14, 0x2c)],
+      ['00:00:04:00', `${c(0x14, 0x25)} ${c(0x14, 0x70)} ${text('ROLL')}`],
+      ['00:00:05:00', `${c(0x14, 0x2d)} ${text('UP')}`],
+      ['00:00:06:00', `${c(0x14, 0x29)} ${c(0x14, 0x70)} ${text('Paint')}`],
+      ['00:00:07:00', c(0x14, 0x2c)],
+    ]);
+  }
+
+  const summarize = (result: Awaited<ReturnType<typeof parseText>>) =>
+    result.cues.map((cue) => ({
+      text: cue.text,
+      startTime: cue.startTime,
+      endTime: cue.endTime,
+      line: cue.line,
+      position: cue.position,
+      size: cue.size,
+    }));
+
+  const cc1 = await parseText(stream(1), { type: 'scc', channel: 1 }),
+    cc2 = await parseText(stream(2), { type: 'scc', channel: 2 });
+
+  expect(cc1.errors).toHaveLength(0);
+  expect(cc2.errors).toHaveLength(0);
+  expect(cc1.cues.length).toBeGreaterThanOrEqual(4);
+  expect(cc1.cues[0].text).toBe('Go <c.red>stop♪</c><c.red.bg_blue> CAFÉ</c>\nHello');
+  expect(summarize(cc2)).toEqual(summarize(cc1));
+
+  // The default channel decodes nothing from a CC2-only stream, and vice versa.
+  expect((await parseText(stream(2), { type: 'scc' })).cues).toHaveLength(0);
+  expect((await parseText(stream(1), { type: 'scc', channel: 2 })).cues).toHaveLength(0);
+});
+
+test('GOOD: text mode on one channel does not affect the other', async () => {
+  const TR = ctrl(0x14, 0x2a),
+    CC2_TR = ctrl(0x14, 0x2a, 2),
+    CC2_RCL = ctrl(0x14, 0x20, 2),
+    CC2_ENM = ctrl(0x14, 0x2e, 2),
+    CC2_PAC = ctrl(0x14, 0x70, 2),
+    CC2_EOC = ctrl(0x14, 0x2f, 2);
+
+  const content = scc([
+    // CC1 caption while CC2 is in text mode.
+    ['00:00:01:00', `${CC2_TR} ${text('cc2 text')}`],
+    ['00:00:02:00', `${RCL} ${ENM} ${PAC_ROW15_COL0} ${text('One')} ${EOC}`],
+    // CC2 caption while CC1 is in text mode.
+    ['00:00:03:00', `${TR} ${text('cc1 text')}`],
+    ['00:00:04:00', `${CC2_RCL} ${CC2_ENM} ${CC2_PAC} ${text('Two')} ${CC2_EOC}`],
+    ['00:00:05:00', `${EDM} ${ctrl(0x14, 0x2c, 2)}`],
+  ]);
+
+  const cc1 = await parseText(content, { type: 'scc' }),
+    cc2 = await parseText(content, { type: 'scc', channel: 2 });
+
+  expect(cc1.cues.map((cue) => cue.text)).toEqual(['One']);
+  expect(cc2.cues.map((cue) => cue.text)).toEqual(['Two']);
+});
+
+test('GOOD: tabs, runs of spaces and trailing whitespace between fields', async () => {
+  const content =
+    'Scenarist_SCC V1.0   \n\n' +
+    `00:00:01:00\t\t${RCL}  ${ENM} \t ${PAC_ROW15_COL0}   ${text('Tabs')}   \n\n` +
+    `00:00:01:15    ${EOC}\t\n\n` +
+    `00:00:03:00 ${EDM}  \n`;
+
+  const { cues, errors } = await parseText(content, { type: 'scc', errors: true });
+
+  expect(errors).toHaveLength(0);
+  expect(cues).toHaveLength(1);
+  expect(cues[0].text).toBe('Tabs');
+  expect(cues[0].startTime).toBeCloseTo(seconds('00:00:01:15'), 10);
+  expect(cues[0].endTime).toBeCloseTo(seconds('00:00:03:00'), 10);
 });
 
 test('GOOD: open cue is flushed at end of file', async () => {
