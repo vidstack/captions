@@ -23,6 +23,16 @@ function manglePrivateMembers() {
   };
 }
 
+const PARSERS: [string, string][] = [
+  ['vtt', 'src/vtt/vtt-parser.ts'],
+  ['srt', 'src/srt/srt-parser.ts'],
+  ['ssa', 'src/ssa/ssa-parser.ts'],
+  ['ttml', 'src/ttml/ttml-parser.ts'],
+  ['scc', 'src/scc/scc-parser.ts'],
+  ['lrc', 'src/lrc/lrc-parser.ts'],
+  ['sbv', 'src/sbv/sbv-parser.ts'],
+];
+
 function define({ dev }: { dev: boolean }): UserConfig {
   const alias = dev ? 'dev' : 'prod';
 
@@ -31,6 +41,8 @@ function define({ dev }: { dev: boolean }): UserConfig {
       [alias]: 'src/index.ts',
       [`${alias}-cea`]: 'src/cea/index.ts',
       [`${alias}-element`]: 'src/element/index.ts',
+      // Explicit per-format entries for bundlers/runtimes that can not follow dynamic imports.
+      ...Object.fromEntries(PARSERS.map(([name, path]) => [`${alias}-parser-${name}`, path])),
     },
     outDir: 'dist',
     format: 'esm',

@@ -1,58 +1,64 @@
-:where([data-part='captions'] [data-part='region']) {
-  --anchor-x-percent: calc(var(--region-anchor-x) / 100);
-  --anchor-x: calc(var(--region-width) * var(--anchor-x-percent));
-  --anchor-y-percent: calc(var(--region-anchor-y) / 100);
-  --anchor-y: calc(var(--region-height) * var(--anchor-y-percent));
-  --vp-anchor-x: calc(var(--region-viewport-anchor-x) * 1%);
-  --vp-anchor-y-percent: calc(var(--region-viewport-anchor-y) / 100);
-  --vp-anchor-y: calc(var(--overlay-height) * var(--vp-anchor-y-percent));
-  position: absolute;
-  display: inline-flex;
-  flex-flow: column;
-  justify-content: flex-start;
-  width: var(--region-width);
-  height: var(--region-height);
-  min-height: 0px;
-  max-height: var(--region-height);
-  writing-mode: horizontal-tb;
-  top: var(--region-top, calc(var(--vp-anchor-y) - var(--anchor-y)));
-  left: var(--region-left, calc(var(--vp-anchor-x) - var(--anchor-x)));
-  right: var(--region-right);
-  bottom: var(--region-bottom);
-  overflow: hidden;
-  overflow-wrap: break-word;
-  box-sizing: border-box;
-}
+/*
+ * All defaults live in a cascade layer. Unlayered author styles always win over layered ones, so
+ * consumers can override anything without matching specificity or ordering.
+ */
+@layer media-captions {
+  :where([data-part='captions'] [data-part='region']) {
+    --anchor-x-percent: calc(var(--region-anchor-x) / 100);
+    --anchor-x: calc(var(--region-width) * var(--anchor-x-percent));
+    --anchor-y-percent: calc(var(--region-anchor-y) / 100);
+    --anchor-y: calc(var(--region-height) * var(--anchor-y-percent));
+    --vp-anchor-x: calc(var(--region-viewport-anchor-x) * 1%);
+    --vp-anchor-y-percent: calc(var(--region-viewport-anchor-y) / 100);
+    --vp-anchor-y: calc(var(--overlay-height) * var(--vp-anchor-y-percent));
+    position: absolute;
+    display: inline-flex;
+    flex-flow: column;
+    justify-content: flex-start;
+    width: var(--region-width);
+    height: var(--region-height);
+    min-height: 0px;
+    max-height: var(--region-height);
+    writing-mode: horizontal-tb;
+    top: var(--region-top, calc(var(--vp-anchor-y) - var(--anchor-y)));
+    left: var(--region-left, calc(var(--vp-anchor-x) - var(--anchor-x)));
+    right: var(--region-right);
+    bottom: var(--region-bottom);
+    overflow: hidden;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+  }
 
-:where([data-part='captions'] [data-part='region'][data-active]) {
-}
+  :where([data-part='captions'] [data-part='region'][data-active]) {
+  }
 
-:where([data-part='captions'] [data-part='region'][data-scroll='up']) {
-  justify-content: end;
-}
+  :where([data-part='captions'] [data-part='region'][data-scroll='up']) {
+    justify-content: end;
+  }
 
-:where([data-part='captions'] [data-part='region'][data-active][data-scroll='up']) {
-  transition: top 0.433s;
-}
+  :where([data-part='captions'] [data-part='region'][data-active][data-scroll='up']) {
+    transition: top 0.433s;
+  }
 
-:where([data-part='captions'] [data-part='region'] > [data-part='cue-display']) {
-  position: relative;
-  width: auto;
-  font-size: var(--cue-font-size);
-  left: var(--cue-offset);
-  height: var(--cue-height, auto);
-  text-align: var(--cue-text-align);
-  unicode-bidi: plaintext;
-  margin-top: 1px;
-}
+  :where([data-part='captions'] [data-part='region'] > [data-part='cue-display']) {
+    position: relative;
+    width: auto;
+    font-size: var(--cue-font-size);
+    left: var(--cue-offset);
+    height: var(--cue-height, auto);
+    text-align: var(--cue-text-align);
+    unicode-bidi: plaintext;
+    margin-top: 1px;
+  }
 
-:where([data-part='captions'] [data-part='region'] [data-part='cue']) {
-  /* Roll-up lines must not reflow earlier lines when new text arrives. */
-  text-wrap: stable;
-}
+  :where([data-part='captions'] [data-part='region'] [data-part='cue']) {
+    /* Roll-up lines must not reflow earlier lines when new text arrives. */
+    text-wrap: stable;
+  }
 
-:where([data-part='captions'] [data-part='region'] [data-part='cue']) {
-  position: relative;
-  padding: calc(var(--cue-padding-y) / 2) var(--cue-padding-x);
-  border-radius: 0px;
+  :where([data-part='captions'] [data-part='region'] [data-part='cue']) {
+    position: relative;
+    padding: calc(var(--cue-padding-y) / 2) var(--cue-padding-x);
+    border-radius: 0px;
+  }
 }

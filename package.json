@@ -77,6 +77,48 @@
       "development": "./dist/dev-element.js",
       "default": "./dist/prod-element.js"
     },
+    "./parsers/vtt": {
+      "types": "./dist/prod-parser-vtt.d.ts",
+      "test": "./dist/dev-parser-vtt.js",
+      "development": "./dist/dev-parser-vtt.js",
+      "default": "./dist/prod-parser-vtt.js"
+    },
+    "./parsers/srt": {
+      "types": "./dist/prod-parser-srt.d.ts",
+      "test": "./dist/dev-parser-srt.js",
+      "development": "./dist/dev-parser-srt.js",
+      "default": "./dist/prod-parser-srt.js"
+    },
+    "./parsers/ssa": {
+      "types": "./dist/prod-parser-ssa.d.ts",
+      "test": "./dist/dev-parser-ssa.js",
+      "development": "./dist/dev-parser-ssa.js",
+      "default": "./dist/prod-parser-ssa.js"
+    },
+    "./parsers/ttml": {
+      "types": "./dist/prod-parser-ttml.d.ts",
+      "test": "./dist/dev-parser-ttml.js",
+      "development": "./dist/dev-parser-ttml.js",
+      "default": "./dist/prod-parser-ttml.js"
+    },
+    "./parsers/scc": {
+      "types": "./dist/prod-parser-scc.d.ts",
+      "test": "./dist/dev-parser-scc.js",
+      "development": "./dist/dev-parser-scc.js",
+      "default": "./dist/prod-parser-scc.js"
+    },
+    "./parsers/lrc": {
+      "types": "./dist/prod-parser-lrc.d.ts",
+      "test": "./dist/dev-parser-lrc.js",
+      "development": "./dist/dev-parser-lrc.js",
+      "default": "./dist/prod-parser-lrc.js"
+    },
+    "./parsers/sbv": {
+      "types": "./dist/prod-parser-sbv.d.ts",
+      "test": "./dist/dev-parser-sbv.js",
+      "development": "./dist/dev-parser-sbv.js",
+      "default": "./dist/prod-parser-sbv.js"
+    },
     "./styles/*": "./styles/*",
     "./package.json": "./package.json"
   },
