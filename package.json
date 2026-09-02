@@ -71,6 +71,12 @@
       "development": "./dist/dev-cea.js",
       "default": "./dist/prod-cea.js"
     },
+    "./element": {
+      "types": "./dist/prod-element.d.ts",
+      "test": "./dist/dev-element.js",
+      "development": "./dist/dev-element.js",
+      "default": "./dist/prod-element.js"
+    },
     "./styles/*": "./styles/*",
     "./package.json": "./package.json"
   },
@@ -83,6 +89,7 @@
     "cea-608",
     "cea-708",
     "cues",
+    "custom-element",
     "engine",
     "fast",
     "lightweight",
@@ -101,7 +108,8 @@
     "video",
     "vidstack",
     "vtt",
-    "web"
+    "web",
+    "web-component"
   ],
   "pnpm": {
     "onlyBuiltDependencies": [

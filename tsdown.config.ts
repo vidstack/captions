@@ -27,7 +27,11 @@ function define({ dev }: { dev: boolean }): UserConfig {
   const alias = dev ? 'dev' : 'prod';
 
   return {
-    entry: { [alias]: 'src/index.ts', [`${alias}-cea`]: 'src/cea/index.ts' },
+    entry: {
+      [alias]: 'src/index.ts',
+      [`${alias}-cea`]: 'src/cea/index.ts',
+      [`${alias}-element`]: 'src/element/index.ts',
+    },
     outDir: 'dist',
     format: 'esm',
     platform: 'neutral',
