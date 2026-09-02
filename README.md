@@ -611,6 +611,8 @@ and cues should be visually rendered. It includes:
 > **Warning**
 > The [styles files](#installation) need to be included for the overlay renderer to work correctly!
 
+<img src="./assets/collisions.png" width="480px" alt="Simultaneous cues stacked without overlapping" />
+
 ```html
 <div>
   <video src="..."></video>
@@ -760,6 +762,8 @@ colour with `--cue-edge-color`:
 <div id="captions" data-edge-style="uniform"></div>
 ```
 
+<img src="./assets/edge-styles.png" width="480px" alt="The uniform, drop-shadow, raised, and depressed edge styles" />
+
 ## VTT
 
 Web Video Text Tracks (WebVTT) is the natively supported captions format supported
@@ -797,17 +801,9 @@ parseResponse(fetch('/subs/english.vtt'), { type: 'vtt' });
 WebVTT supports regions for bounding/positioning cues and implementing roll up captions
 by setting `scroll:up`.
 
-<img 
-  src="./assets/vtt-regions.png" 
-  width="400px" 
-  alt="Visual explanation of VTT regions" 
-/>
+<img src="./assets/vtt-regions.png" width="480px" alt="Two VTT regions anchored top-left and bottom-right" />
 
-<img 
-  src="./assets/vtt-region-scroll.png" 
-  width="400px" 
-  alt="Visual explanation of VTT region scroll up setting for roll up captions" 
-/>
+<img src="./assets/vtt-region-scroll.png" width="480px" alt="Roll-up captions in a three line VTT region with scroll:up" />
 
 ### VTT Cues
 
@@ -832,11 +828,7 @@ cue.align = 'end';
 cue.lineAlign = 'end';
 ```
 
-<img 
-  src="./assets/vtt-cues.png" 
-  width="400px" 
-  alt="Visual explanation of VTT cues" 
-/>
+<img src="./assets/vtt-cues.png" width="480px" alt="VTT cues positioned with line, position, size, and align settings" />
 
 ## SRT
 
@@ -895,6 +887,8 @@ Continue dialogue on a new line.
 ```ts
 parseResponse(fetch('/subs/english.ssa'), { type: 'ssa' });
 ```
+
+<img src="./assets/ssa.png" width="480px" alt="SSA/ASS styles rendered with outlines, an opaque box, colour and karaoke tags" />
 
 The following features are supported:
 
