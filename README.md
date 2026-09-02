@@ -12,7 +12,8 @@ Captions parsing and rendering library built for the modern web.
 - 🪶 ~13kB core (gzipped) + modular (parser/renderer split) + tree-shaking support.
 - 💤 Parsers are lazy loaded on-demand (each format is its own chunk).
 - 🚄 Efficiently load and apply styles in parallel via CSS files.
-- 🗂️ Supports VTT, SRT, SSA/ASS, TTML/IMSC1/DFXP, SCC (CEA-608), LRC, and SBV.
+- 🗂️ Supports VTT, SRT, SSA/ASS, TTML/IMSC1/DFXP, SCC, LRC, SBV, and CEA-608/708 from video
+  streams.
 - ⬆️ Roll-up captions via VTT regions.
 - 🧰 Modern `fetch` and `ReadableStream` APIs.
 - 📡 Chunked text and response streaming support (including HLS `X-TIMESTAMP-MAP`).
@@ -28,9 +29,6 @@ Captions parsing and rendering library built for the modern web.
 - 🖥️ Works in the browser and server-side (string renderer).
 - 🎨 Easy customization via CSS, including FCC edge-style presets.
 
-➕ CEA-708 is not supported yet as it has no common text container format; SCC files carrying
-CEA-608 are supported. If you need 708 and you're willing to sponsor, feel free to email me at
-rahim.alwer@gmail.com.
 
 🔗 **Quicklinks**
 
@@ -149,6 +147,7 @@ like so:
   - [SSA/ASS](#ssaass)
   - [TTML](#ttml)
   - [SCC (CEA-608)](#scc-cea-608)
+  - [CEA-608/708 from video streams](#cea-608708-from-video-streams)
   - [LRC](#lrc)
   - [SBV](#sbv)
 - [Streaming](#streaming)
@@ -994,8 +993,42 @@ parseResponse(fetch('/subs/english.scc'), { type: 'scc' });
 The parser decodes pop-on, roll-up, and paint-on captions, including special and extended
 characters, colours, italics, underline, and the 15x32 row/column grid which is mapped to cue
 `line`/`position`. Drop-frame (`;`) and non-drop timecodes are supported. CC1 is decoded by
-default; pass `channel: 2` to decode CC2 instead. CC3/CC4 (field 2), text mode, XDS, and CEA-708
-are not supported.
+default; pass `channel: 2` to decode CC2 instead. SCC files only carry field 1, so CC3/CC4 need
+the stream decoders below. Text mode and XDS are not supported.
+
+## CEA-608/708 from video streams
+
+Broadcast and HLS/DASH streams carry captions inside the video as `cc_data` (ATSC A/53 user
+data in MPEG-2, or SEI messages in H.264/H.265). Players such as hls.js and mux.js surface these
+as byte triplets. Two stream decoders turn them into `VTTCue` objects that the renderer can show
+like any other track:
+
+```ts
+import { CEA608Decoder, CEA708Decoder, parseCCData } from 'media-captions/cea';
+
+// CEA-608: channels 1/2 are on field 1, channels 3/4 on field 2.
+const cc608 = new CEA608Decoder({ channel: 1, onCue: (cue) => renderer.addCue(cue) });
+
+// CEA-708 (DTVCC): pick a service (1 is the primary caption service).
+const cc708 = new CEA708Decoder({ service: 1, onCue: (cue) => renderer.addCue(cue) });
+
+// `sei` is the payload of a user_data_registered_itu_t_t35 SEI message starting at "GA94",
+// or a raw cc_data() structure. `pts` is the presentation time in seconds.
+const triplets = parseCCData(sei);
+cc608.decodeCCData(triplets, pts);
+cc708.decodeCCData(triplets, pts);
+
+// When the stream ends, close any open cues.
+cc608.flush();
+cc708.flush();
+```
+
+The decoders live in the separate `media-captions/cea` entry so the core bundle stays small.
+Both expose `cues` (everything emitted so far), `reset()`, and `flush(endTime?)`. The
+608 decoder also accepts raw byte pairs via `decodePair(byte1, byte2, time, field)`, and is the
+engine behind the SCC parser. The 708 decoder assembles DTVCC packets and service blocks, models
+the eight caption windows with pen attributes, and maps window anchors to cue `line`/`position`,
+so positioned captions land where the broadcaster placed them.
 
 ## LRC
 
@@ -1126,7 +1159,9 @@ pnpm screenshots     # regenerates the README images from the sandbox scenarios
 Parsing is covered by conformance suites under `tests/conformance` (WebVTT file structure, cue
 text, SSA/ASS) plus per-format suites, and rendering is measured in Chromium under
 `tests/browser` (stacking, line snapping, percentage lines, position/size/align, vertical text,
-RTL, regions, resize, SSA layout, transforms).
+RTL, regions, resize, SSA layout, transforms). `tests/browser/visual.test.ts` adds screenshot
+comparisons with a small pixel tolerance; baselines live in `tests/browser/__screenshots__` per
+browser and platform, so the first run on a new platform records them and later runs compare.
 
 ## 📝 License
 
