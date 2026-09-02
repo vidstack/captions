@@ -35,7 +35,6 @@ Captions parsing and rendering library built for the modern web.
 - 🖥️ Works in the browser and server-side (string renderer).
 - 🎨 Easy customization via CSS, including FCC edge-style presets.
 
-
 🔗 **Quicklinks**
 
 - **[Installation](#installation)**
@@ -525,7 +524,7 @@ annotations are entity-decoded (decimal and hex references plus the Latin-1 subs
 references, including legacy forms without `;`), so escape them yourself if you render to HTML.
 For the complete HTML table (2,125 names, about 12 kB gzipped) register the optional entry once:
 
-```ts
+````ts
 import { registerFullHTMLEntities } from 'media-captions/entities';
 registerFullHTMLEntities();
 ``` Unknown or mismatched end tags are ignored and never corrupt nesting. As an
@@ -551,7 +550,7 @@ function renderTokens(tokens: VTTNode[]) {
     }
   }
 }
-```
+````
 
 All token types are listed below for use in TypeScript:
 
@@ -748,6 +747,7 @@ A framework-agnostic custom element that loads, syncs, and renders captions over
 
 <script type="module">
   import { defineMediaCaptionsElement } from 'media-captions/element';
+
   defineMediaCaptionsElement();
 </script>
 ```
@@ -1270,13 +1270,13 @@ import type {
   ParseError,
   ParseErrorCode,
   ParseErrorInit,
+  SyncCaptionsRendererOptions,
   TextCue,
   VTTCue,
   VTTCueTemplate,
   VTTHeaderMetadata,
   VTTRegion,
   VTTTimestampMap,
-  SyncCaptionsRendererOptions,
 } from 'media-captions';
 ```
 
