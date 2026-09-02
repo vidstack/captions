@@ -20,9 +20,24 @@ export interface CEA608DecoderOptions {
    */
   channel?: 1 | 2 | 3 | 4;
   /**
-   * Invoked as each cue is completed (its end time is known).
+   * Emit cues as soon as their content is displayed rather than once it is cleared. Live cues are
+   * created with `endTime = Infinity`, delivered through `onCue`, and mutated in place (then
+   * reported through `onCueUpdate`) when their end time becomes known.
+   *
+   * @defaultValue false
+   */
+  live?: boolean;
+  /**
+   * Invoked as each cue is completed (its end time is known). In live mode, invoked as soon as the
+   * cue starts instead.
    */
   onCue?(cue: VTTCue): void;
+  /**
+   * Live mode only: invoked when a cue previously delivered through `onCue` receives its end
+   * time. A cue that ends the moment it starts is removed from `cues` and reported here with
+   * `endTime === startTime`.
+   */
+  onCueUpdate?(cue: VTTCue): void;
 }
 
 const FPS = 29.97,
@@ -110,10 +125,12 @@ interface ScreenContent {
 }
 
 export class CEA608Decoder {
-  /** All cues emitted so far, in order of completion. */
+  /** All cues emitted so far, in order of completion (order of start in live mode). */
   readonly cues: VTTCue[] = [];
 
   protected _onCue: CEA608DecoderOptions['onCue'];
+  protected _onCueUpdate: CEA608DecoderOptions['onCueUpdate'];
+  protected _live: boolean;
   /** Field the selected channel is carried on. */
   protected _field: 1 | 2;
   /** Channel within the field selected for decoding (`1` for CC1/CC3, `2` for CC2/CC4). */
@@ -139,6 +156,8 @@ export class CEA608Decoder {
   constructor(options: CEA608DecoderOptions = {}) {
     const channel = options.channel ?? 1;
     this._onCue = options.onCue;
+    this._onCueUpdate = options.onCueUpdate;
+    this._live = options.live ?? false;
     this._field = channel >= 3 ? 2 : 1;
     this._selected = channel === 2 || channel === 4 ? 2 : 1;
   }
@@ -195,8 +214,12 @@ export class CEA608Decoder {
     this._closeCue(endTime);
   }
 
-  /** Discard all decoder state and emitted cues, including any open cue. */
+  /**
+   * Discard all decoder state and emitted cues, including any open cue. In live mode the open cue
+   * is first closed at the last decoded time so its `onCueUpdate` is delivered.
+   */
   reset() {
+    if (this._live) this._closeCue(this._lastTime);
     this.cues.length = 0;
     this._channel = 1;
     this._cue = null;
@@ -511,7 +534,7 @@ export class CEA608Decoder {
     this._closeCue(time);
 
     if (content) {
-      const cue = new VTTCue(time, time, content.text);
+      const cue = new VTTCue(time, this._live ? Infinity : time, content.text);
       cue.snapToLines = false;
       cue.line = content.line;
       cue.lineAlign = 'start';
@@ -521,6 +544,10 @@ export class CEA608Decoder {
       cue.align = 'left';
       this._cue = cue;
       this._cueKey = key;
+      if (this._live) {
+        this.cues.push(cue);
+        this._onCue?.(cue);
+      }
     }
   }
 
@@ -529,6 +556,18 @@ export class CEA608Decoder {
     if (!cue) return;
     this._cue = null;
     this._cueKey = '';
+    if (this._live) {
+      // Already delivered when it started. A zero-length cue would have been dropped in non-live
+      // mode, so drop it here too and let the consumer know it no longer applies.
+      if (endTime <= cue.startTime) {
+        endTime = cue.startTime;
+        const index = this.cues.lastIndexOf(cue);
+        if (index >= 0) this.cues.splice(index, 1);
+      }
+      cue.endTime = endTime;
+      this._onCueUpdate?.(cue);
+      return;
+    }
     if (endTime <= cue.startTime) return;
     cue.endTime = endTime;
     this.cues.push(cue);

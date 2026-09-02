@@ -107,8 +107,25 @@ const C1_LENGTHS = [
 export interface CEA708DecoderOptions {
   /** Caption service to decode (1-63). Defaults to the primary caption service (1). */
   service?: number;
-  /** Called every time a cue is completed (its end time is known). */
+  /**
+   * Emit cues as soon as their window is displayed rather than once it is hidden or changed. Live
+   * cues are created with `endTime = Infinity`, delivered through `onCue`, and mutated in place
+   * (then reported through `onCueUpdate`) when their end time becomes known.
+   *
+   * @defaultValue false
+   */
+  live?: boolean;
+  /**
+   * Called every time a cue is completed (its end time is known). In live mode, called as soon as
+   * the cue starts instead.
+   */
   onCue?(cue: VTTCue): void;
+  /**
+   * Live mode only: called when a cue previously delivered through `onCue` receives its end time.
+   * A cue that ends the moment it starts is removed from `cues` and reported here with
+   * `endTime === startTime`.
+   */
+  onCueUpdate?(cue: VTTCue): void;
 }
 
 interface CaptionWindow {
@@ -134,6 +151,8 @@ interface CaptionWindow {
 export class CEA708Decoder {
   protected _service: number;
   protected _onCue?: (cue: VTTCue) => void;
+  protected _onCueUpdate?: (cue: VTTCue) => void;
+  protected _live: boolean;
   protected _cues: VTTCue[] = [];
   /** Open cue per window, or `null` when the window has nothing on screen. */
   protected _windowCues: (VTTCue | null)[] = [];
@@ -153,11 +172,13 @@ export class CEA708Decoder {
     const service = options.service ?? 1;
     this._service = service >= 1 && service <= 63 ? Math.floor(service) : 1;
     this._onCue = options.onCue;
+    this._onCueUpdate = options.onCueUpdate;
+    this._live = options.live ?? false;
     this._resetCues();
     this._resetState();
   }
 
-  /** Completed cues, in the order their end times became known. */
+  /** Completed cues, in the order their end times became known (start order in live mode). */
   get cues(): VTTCue[] {
     return this._cues;
   }
@@ -193,8 +214,14 @@ export class CEA708Decoder {
     }
   }
 
-  /** Drop all decoder state and completed cues. */
+  /**
+   * Drop all decoder state and completed cues. In live mode the open cues are first closed at the
+   * last decoded time so their `onCueUpdate` is delivered.
+   */
   reset() {
+    if (this._live) {
+      for (let w = 0; w < MAX_WINDOWS; w++) this._closeCue(w, this._lastTime);
+    }
     this._time = this._lastTime = 0;
     this._resetCues();
     this._resetState();
@@ -548,10 +575,14 @@ export class CEA708Decoder {
       this._closeCue(w, this._time);
 
       if (window && text) {
-        const cue = new VTTCue(this._time, this._time, text);
+        const cue = new VTTCue(this._time, this._live ? Infinity : this._time, text);
         positionCue(cue, window);
         this._windowCues[w] = cue;
         this._windowKeys[w] = key;
+        if (this._live) {
+          this._cues.push(cue);
+          this._onCue?.(cue);
+        }
       }
     }
   }
@@ -560,7 +591,20 @@ export class CEA708Decoder {
     const cue = this._windowCues[w];
     this._windowCues[w] = null;
     this._windowKeys[w] = '';
-    if (!cue || endTime <= cue.startTime) return;
+    if (!cue) return;
+    if (this._live) {
+      // Already delivered when it started. A zero-length cue would have been dropped in non-live
+      // mode, so drop it here too and let the consumer know it no longer applies.
+      if (endTime <= cue.startTime) {
+        endTime = cue.startTime;
+        const index = this._cues.lastIndexOf(cue);
+        if (index >= 0) this._cues.splice(index, 1);
+      }
+      cue.endTime = endTime;
+      this._onCueUpdate?.(cue);
+      return;
+    }
+    if (endTime <= cue.startTime) return;
     cue.endTime = endTime;
     this._cues.push(cue);
     this._onCue?.(cue);

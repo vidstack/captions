@@ -397,3 +397,207 @@ test('sccChannelOf reports the channel bit', () => {
   expect(sccChannelOf(0x1c)).toBe(2);
   expect(sccChannelOf(0x20)).toBeNull();
 });
+
+// --- Live mode ---
+
+type LiveEvent = ['add' | 'update', VTTCue];
+
+function liveDecoder(events: LiveEvent[], channel: 1 | 2 | 3 | 4 = 1) {
+  return new CEA608Decoder({
+    channel,
+    live: true,
+    onCue: (cue) => events.push(['add', cue]),
+    onCueUpdate: (cue) => events.push(['update', cue]),
+  });
+}
+
+const tuple = (cue: VTTCue) => [cue.text, cue.startTime, cue.endTime];
+
+test('live mode: pop-on cue is emitted when it starts and updated in place at EDM', () => {
+  const onCue = vi.fn(),
+    onCueUpdate = vi.fn(),
+    decoder = new CEA608Decoder({ live: true, onCue, onCueUpdate }),
+    script = popOn();
+
+  // Load and flip (EOC) but do not erase yet.
+  feed(decoder, script.slice(0, 2));
+  expect(onCue).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).not.toHaveBeenCalled();
+
+  const cue: VTTCue = onCue.mock.calls[0][0];
+  expect(cue.text).toBe('Hello world.');
+  expect(cue.startTime).toBeCloseTo(frames('00:00:01:15') / FPS, 10);
+  expect(cue.endTime).toBe(Infinity);
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0]).toBe(cue);
+
+  // EDM closes it: same object, end time filled in, no second cue.
+  feed(decoder, script.slice(2));
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate.mock.calls[0][0]).toBe(cue);
+  expect(cue.endTime).toBeCloseTo(frames('00:00:03:00') / FPS, 10);
+  expect(onCue).toHaveBeenCalledTimes(1);
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0]).toBe(cue);
+
+  // Positioning is identical to the non-live path.
+  const batch = new CEA608Decoder();
+  feed(batch, script);
+  expect(decoder.cues.map(summarize)).toEqual(batch.cues.map(summarize));
+});
+
+test('live mode: roll-up emits an add/update pair per change with stable identities', () => {
+  const events: LiveEvent[] = [],
+    decoder = liveDecoder(events),
+    script: Script = [
+      ['00:00:01:00', [...ctrl(0x14, 0x25), ...ctrl(0x14, 0x70), ...text('HELLO')]],
+      ['00:00:02:00', [...ctrl(0x14, 0x2d), ...text('WORLD')]],
+      ['00:00:03:00', ctrl(0x14, 0x2c)],
+    ];
+
+  feed(decoder, script);
+
+  // Events strictly alternate: each add is closed by an update of the very same object before
+  // the next cue is added.
+  expect(events.length % 2).toBe(0);
+  for (let i = 0; i < events.length; i += 2) {
+    expect(events[i][0]).toBe('add');
+    expect(events[i + 1][0]).toBe('update');
+    expect(events[i + 1][1]).toBe(events[i][1]);
+  }
+
+  const adds = events.filter(([type]) => type === 'add').map(([, cue]) => cue);
+  expect(adds.length).toBeGreaterThan(3);
+  expect(new Set(adds).size).toBe(adds.length);
+  expect(adds[0].text).toBe('HE');
+  expect(adds.map((cue) => cue.text)).toContain('HELLO\nWO');
+  expect(adds[adds.length - 1].text).toBe('HELLO\nWORLD');
+  expect(adds[adds.length - 1].endTime).toBeCloseTo(frames('00:00:03:00') / FPS, 10);
+
+  // Cues abut, and `cues` holds each object exactly once, in order.
+  for (let i = 1; i < adds.length; i++) expect(adds[i - 1].endTime).toBe(adds[i].startTime);
+  expect(decoder.cues).toHaveLength(adds.length);
+  adds.forEach((cue, i) => expect(decoder.cues[i]).toBe(cue));
+
+  // The final live state matches a non-live run on the same bytes.
+  const batch = new CEA608Decoder();
+  feed(batch, script);
+  expect(decoder.cues.map(tuple)).toEqual(batch.cues.map(tuple));
+});
+
+test('live mode: paint-on growth through commit() matches the non-live run', () => {
+  const events: LiveEvent[] = [],
+    decoder = liveDecoder(events),
+    batch = new CEA608Decoder(),
+    t = (tc: string, offset = 0) => (frames(tc) + offset) / FPS;
+
+  for (const d of [decoder, batch]) {
+    [...ctrl(0x14, 0x29), ...ctrl(0x14, 0x70), ...text('One')].forEach(([a, b], i) =>
+      d.decodePair(a, b, t('00:00:01:00', i)),
+    );
+    d.commit();
+    text(' two').forEach(([a, b], i) => d.decodePair(a, b, t('00:00:02:00', i)));
+    d.commit();
+    ctrl(0x14, 0x2c).forEach(([a, b], i) => d.decodePair(a, b, t('00:00:03:00', i)));
+    d.commit();
+  }
+
+  expect(events.map(([type, cue]) => [type, cue.text])).toEqual([
+    ['add', 'One'],
+    ['update', 'One'],
+    ['add', 'One two'],
+    ['update', 'One two'],
+  ]);
+  expect(events[1][1]).toBe(events[0][1]);
+  expect(events[3][1]).toBe(events[2][1]);
+  expect(events[2][1]).not.toBe(events[0][1]);
+  expect(decoder.cues.map(tuple)).toEqual(batch.cues.map(tuple));
+});
+
+test('live mode: flush() closes the open cue in place', () => {
+  const onCueUpdate = vi.fn(),
+    decoder = new CEA608Decoder({ live: true, onCueUpdate });
+
+  feed(decoder, popOn().slice(0, 2));
+  expect(decoder.cues).toHaveLength(1);
+  const cue = decoder.cues[0];
+  expect(cue.endTime).toBe(Infinity);
+
+  decoder.flush(5);
+  expect(cue.endTime).toBe(5);
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).toHaveBeenCalledWith(cue);
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0]).toBe(cue);
+
+  // Flushing again is a no-op.
+  decoder.flush(6);
+  expect(cue.endTime).toBe(5);
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+
+  // Without an end time the same one-frame minimum applies as in non-live mode.
+  const implicit = new CEA608Decoder({ live: true });
+  feed(implicit, popOn().slice(0, 2));
+  implicit.flush();
+  const start = frames('00:00:01:15') / FPS;
+  expect(implicit.cues[0].endTime).toBeCloseTo(start + FRAME, 10);
+});
+
+test('live mode: reset() closes the open cue at the last decoded time before clearing', () => {
+  const onCueUpdate = vi.fn(),
+    decoder = new CEA608Decoder({ live: true, onCueUpdate });
+
+  feed(decoder, [...popOn().slice(0, 2), ['00:00:04:00', ctrl(0x14, 0x20)]]);
+  const cue = decoder.cues[0];
+  expect(cue.endTime).toBe(Infinity);
+
+  decoder.reset();
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).toHaveBeenCalledWith(cue);
+  expect(cue.endTime).toBeCloseTo((frames('00:00:04:00') + 1) / FPS, 10);
+  expect(decoder.cues).toHaveLength(0);
+
+  // Fully usable afterwards.
+  feed(decoder, popOn());
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0].endTime).toBeCloseTo(frames('00:00:03:00') / FPS, 10);
+});
+
+test('live mode: a cue that ends the instant it starts is withdrawn', () => {
+  const onCue = vi.fn(),
+    onCueUpdate = vi.fn(),
+    decoder = new CEA608Decoder({ live: true, onCue, onCueUpdate }),
+    batch = new CEA608Decoder(),
+    // EOC immediately followed by EDM at the same time: the caption is never really visible.
+    pairs = [
+      ...ctrl(0x14, 0x20),
+      ...ctrl(0x14, 0x70),
+      ...text('Gone'),
+      ...ctrl(0x14, 0x2f),
+      ...ctrl(0x14, 0x2c),
+    ];
+
+  for (const d of [decoder, batch]) {
+    pairs.forEach(([a, b]) => d.decodePair(a, b, 1));
+    d.commit();
+  }
+
+  // Announced when displayed, then reported as zero-length so a renderer can drop it.
+  expect(onCue).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  const cue: VTTCue = onCue.mock.calls[0][0];
+  expect(onCueUpdate.mock.calls[0][0]).toBe(cue);
+  expect(cue.endTime).toBe(cue.startTime);
+  expect(decoder.cues).toHaveLength(0);
+  expect(batch.cues).toHaveLength(0);
+});
+
+test('live mode is off by default and leaves non-live output untouched', () => {
+  const onCueUpdate = vi.fn(),
+    decoder = new CEA608Decoder({ onCueUpdate });
+  feed(decoder, popOn());
+  decoder.flush();
+  expect(onCueUpdate).not.toHaveBeenCalled();
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0].endTime).toBeCloseTo(frames('00:00:03:00') / FPS, 10);
+});

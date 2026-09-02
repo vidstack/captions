@@ -1,5 +1,6 @@
 import type { CCDataTriplet } from '../../src/cea/cc-data';
 import { CEA708Decoder } from '../../src/cea/cea708-decoder';
+import type { VTTCue } from '../../src/vtt/vtt-cue';
 
 /**
  * Build the `cc_data` triplets of one DTVCC packet from its payload (service blocks). The packet
@@ -502,4 +503,217 @@ test('real-world pop-on sequence: delete all, define, write two rows, display', 
   expect(cue.positionAlign).toBe('center');
   expect(cue.size).toBe(100);
   expect(cue.align).toBe('center');
+});
+
+// --- Live mode ---
+
+type LiveEvent = ['add' | 'update', VTTCue];
+
+function liveDecoder(events: LiveEvent[]) {
+  return new CEA708Decoder({
+    live: true,
+    onCue: (cue) => events.push(['add', cue]),
+    onCueUpdate: (cue) => events.push(['update', cue]),
+  });
+}
+
+const tuple = (cue: VTTCue) => [cue.text, cue.startTime, cue.endTime];
+
+test('live mode: a displayed window is emitted at once and updated in place when hidden', () => {
+  const onCue = vi.fn(),
+    onCueUpdate = vi.fn(),
+    decoder = new CEA708Decoder({ live: true, onCue, onCueUpdate });
+
+  decoder.decodeCCData(svc(HELLO), 1);
+  expect(onCue).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).not.toHaveBeenCalled();
+
+  const cue: VTTCue = onCue.mock.calls[0][0];
+  expect(cue.text).toBe('Hello');
+  expect(cue.startTime).toBe(1);
+  expect(cue.endTime).toBe(Infinity);
+  expect(cue.line).toBeCloseTo(20);
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0]).toBe(cue);
+
+  decoder.decodeCCData(svc(HDW(1)), 3);
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate.mock.calls[0][0]).toBe(cue);
+  expect(cue.endTime).toBe(3);
+  expect(onCue).toHaveBeenCalledTimes(1);
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0]).toBe(cue);
+
+  // Nothing left open.
+  decoder.flush(10);
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  expect(cue.endTime).toBe(3);
+});
+
+test('live mode: scrolling and redisplay yield add/update pairs with stable identities', () => {
+  const events: LiveEvent[] = [],
+    decoder = liveDecoder(events),
+    batch = new CEA708Decoder();
+
+  for (const d of [decoder, batch]) {
+    d.decodeCCData(svc([...DF({ rows: 2 }), ...text('one'), ...CR, ...text('two'), ...DSW(1)]), 1);
+    // CR on the last row scrolls: new content, new cue.
+    d.decodeCCData(svc([...CR, ...text('three')]), 2);
+    // Hide and re-show within one group: identical content is coalesced, no new cue.
+    d.decodeCCData(svc([...HDW(1), ...DSW(1), ...ETX]), 3);
+    // Hide, then redisplay the same text later: a fresh cue with its own start.
+    d.decodeCCData(svc(HDW(1)), 4);
+    d.decodeCCData(svc(DSW(1)), 5);
+    d.flush(6);
+  }
+
+  expect(events.map(([type, cue]) => [type, cue.text])).toEqual([
+    ['add', 'one\ntwo'],
+    ['update', 'one\ntwo'],
+    ['add', 'two\nthree'],
+    ['update', 'two\nthree'],
+    ['add', 'two\nthree'],
+    ['update', 'two\nthree'],
+  ]);
+
+  // Each update targets the object added just before it; redisplay is a distinct object.
+  expect(events[1][1]).toBe(events[0][1]);
+  expect(events[3][1]).toBe(events[2][1]);
+  expect(events[5][1]).toBe(events[4][1]);
+  expect(events[4][1]).not.toBe(events[2][1]);
+
+  const adds = events.filter(([type]) => type === 'add').map(([, cue]) => cue);
+  expect(new Set(adds).size).toBe(3);
+  expect(decoder.cues).toHaveLength(3);
+  adds.forEach((cue, i) => expect(decoder.cues[i]).toBe(cue));
+
+  expect(decoder.cues.map(tuple)).toEqual([
+    ['one\ntwo', 1, 2],
+    ['two\nthree', 2, 4],
+    ['two\nthree', 5, 6],
+  ]);
+  expect(decoder.cues.map(tuple)).toEqual(batch.cues.map(tuple));
+});
+
+test('live mode: each visible window has its own open cue', () => {
+  const events: LiveEvent[] = [],
+    decoder = liveDecoder(events);
+
+  decoder.decodeCCData(
+    svc([
+      ...DF({ id: 0, relative: true, av: 10, ah: 50, anchor: 1 }),
+      ...text('top'),
+      ...DF({ id: 1, relative: true, av: 90, ah: 50, anchor: 7 }),
+      ...text('bottom'),
+      ...DSW(0b11),
+    ]),
+    1,
+  );
+  expect(events.map(([type, cue]) => [type, cue.text, cue.endTime])).toEqual([
+    ['add', 'top', Infinity],
+    ['add', 'bottom', Infinity],
+  ]);
+
+  decoder.decodeCCData(svc(TGW(0b01)), 2);
+  expect(events).toHaveLength(3);
+  expect(events[2][0]).toBe('update');
+  expect(events[2][1]).toBe(events[0][1]);
+  expect(events[0][1].endTime).toBe(2);
+  expect(events[1][1].endTime).toBe(Infinity);
+
+  decoder.flush(3);
+  expect(events).toHaveLength(4);
+  expect(events[3][1]).toBe(events[1][1]);
+  expect(events[1][1].endTime).toBe(3);
+  expect(decoder.cues).toHaveLength(2);
+});
+
+test('live mode: flush() closes the open cue in place', () => {
+  const onCueUpdate = vi.fn(),
+    decoder = new CEA708Decoder({ live: true, onCueUpdate });
+
+  decoder.decodeCCData(svc(HELLO), 1);
+  const cue = decoder.cues[0];
+  expect(cue.endTime).toBe(Infinity);
+
+  decoder.flush(5);
+  expect(cue.endTime).toBe(5);
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).toHaveBeenCalledWith(cue);
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0]).toBe(cue);
+
+  // Flushing again is a no-op.
+  decoder.flush(6);
+  expect(cue.endTime).toBe(5);
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+
+  // Without a time: last decode time, or the minimum duration past the start.
+  const implicit = new CEA708Decoder({ live: true });
+  implicit.decodeCCData(svc(HELLO), 1);
+  implicit.decodeCCData(svc(DLY(5)), 4);
+  implicit.flush();
+  expect(implicit.cues[0].endTime).toBe(4);
+
+  const minimum = new CEA708Decoder({ live: true });
+  minimum.decodeCCData(svc(HELLO), 1);
+  minimum.flush();
+  expect(minimum.cues[0].endTime).toBeGreaterThan(1);
+  expect(minimum.cues[0].endTime).toBeLessThan(Infinity);
+});
+
+test('live mode: reset() closes open cues at the last decoded time before clearing', () => {
+  const onCueUpdate = vi.fn(),
+    decoder = new CEA708Decoder({ live: true, onCueUpdate });
+
+  decoder.decodeCCData(svc(HELLO), 1);
+  decoder.decodeCCData(svc(DLY(5)), 4);
+  const cue = decoder.cues[0];
+
+  decoder.reset();
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).toHaveBeenCalledWith(cue);
+  expect(cue.endTime).toBe(4);
+  expect(decoder.cues).toHaveLength(0);
+
+  // Fully usable afterwards.
+  decoder.decodeCCData(svc(HELLO), 5);
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0]).not.toBe(cue);
+  expect(decoder.cues[0].endTime).toBe(Infinity);
+});
+
+test('live mode: a cue that ends the instant it starts is withdrawn', () => {
+  const onCue = vi.fn(),
+    onCueUpdate = vi.fn(),
+    decoder = new CEA708Decoder({ live: true, onCue, onCueUpdate }),
+    batch = new CEA708Decoder();
+
+  // Displayed and hidden by two groups sharing one presentation time.
+  for (const d of [decoder, batch]) {
+    d.decodeCCData(svc(HELLO), 1);
+    d.decodeCCData(svc(HDW(1)), 1);
+    d.flush(2);
+  }
+
+  expect(onCue).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).toHaveBeenCalledTimes(1);
+  const cue: VTTCue = onCue.mock.calls[0][0];
+  expect(onCueUpdate.mock.calls[0][0]).toBe(cue);
+  expect(cue.endTime).toBe(cue.startTime);
+  expect(decoder.cues).toHaveLength(0);
+  expect(batch.cues).toHaveLength(0);
+});
+
+test('live mode is off by default and leaves non-live output untouched', () => {
+  const onCue = vi.fn(),
+    onCueUpdate = vi.fn(),
+    decoder = new CEA708Decoder({ onCue, onCueUpdate });
+
+  decoder.decodeCCData(svc(HELLO), 1);
+  expect(onCue).not.toHaveBeenCalled();
+  decoder.decodeCCData(svc(HDW(1)), 3);
+  expect(onCue).toHaveBeenCalledTimes(1);
+  expect(onCueUpdate).not.toHaveBeenCalled();
+  expect(decoder.cues.map(tuple)).toEqual([['Hello', 1, 3]]);
 });
