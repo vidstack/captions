@@ -1,4 +1,5 @@
-import { CaptionsRenderer, parseText, VTTCue, VTTRegion } from '../src';
+import { CaptionsRenderer, CueTrack, parseText, VTTCue, VTTRegion } from '../src';
+import { defineMediaCaptionsElement } from '../src/element';
 
 type Scenario = (
   mount: (label?: string, small?: boolean) => CaptionsRenderer,
@@ -147,6 +148,86 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an1}{\\k60}Ka{\\k60}ra{\\k6
       renderer.overlay.style.setProperty('--cue-bg-color', 'transparent');
       renderer.changeTrack({ cues: [cue(0, 10, `${style} edge style`)] });
     }
+  },
+
+  layout(mount) {
+    // The structured cue model: parsers of positioned formats emit these instead of CSS.
+    const renderer = mount();
+    const centered = cue(0, 10, 'layout: left 50%, translate x -0.5, max-content');
+    centered.layout = { left: 50, bottom: 6, width: 'max-content', translate: { x: -0.5 } };
+    centered.textStyle = {
+      color: '#ffd166',
+      textStroke: '0.08em #1c1f2b',
+      backgroundColor: 'transparent',
+    };
+
+    const fixed = cue(0, 10, 'layout.fixed: pinned at 70% / 35%, never moved by collisions');
+    fixed.layout = {
+      left: 70,
+      top: 35,
+      width: 'max-content',
+      translate: { x: -0.5, y: -0.5 },
+      fixed: true,
+    };
+    fixed.textStyle = { fontSize: '4cqh', opacity: '0.9' };
+
+    const boxed = cue(0, 10, 'textStyle: outline box, bold, letter spacing');
+    boxed.layout = { left: 4, top: 8, width: 'max-content', maxWidth: 40 };
+    boxed.textStyle = {
+      backgroundColor: 'rgba(20, 30, 60, 0.95)',
+      outline: '0.15em solid #9cc4ff',
+      fontWeight: 'bold',
+      letterSpacing: '0.05em',
+      textAlign: 'left',
+    };
+
+    const faded = cue(0, 10, 'textStyle.animation: fade in');
+    faded.layout = { right: 4, top: 8, width: 'max-content' };
+    faded.textStyle = { animation: 'media-captions-fade-in 1.5s' };
+
+    renderer.changeTrack({ cues: [centered, fixed, boxed, faded] });
+  },
+
+  live(mount) {
+    // A CueTrack fed incrementally, the way CEA-608/708 stream decoders do in live mode.
+    const renderer = mount('CueTrack live: open-ended cues updated in place');
+    const track = new CueTrack(undefined, { retention: 30 });
+    renderer.changeTrack({ cues: track });
+
+    const first = cue(0, Infinity, 'Live caption arrives with endTime = Infinity');
+    track.add(first);
+
+    // Later the decoder learns when it ended and updates the same object.
+    first.endTime = 2;
+    track.update(first);
+
+    const second = cue(2, Infinity, 'Next caption is on screen right now');
+    track.add(second);
+    second.text = 'Next caption is on screen right now (text edited in place)';
+    track.update(second);
+  },
+
+  element(mount) {
+    // The <media-captions> custom element in light DOM (page stylesheets apply).
+    defineMediaCaptionsElement();
+    const viewport = document.createElement('div');
+    viewport.className = 'viewport';
+    const tag = document.createElement('div');
+    tag.className = 'label';
+    tag.textContent = '<media-captions edge-style="uniform">';
+    viewport.append(tag);
+    const el = document.createElement('media-captions');
+    el.setAttribute('edge-style', 'uniform');
+    viewport.append(el);
+    root.append(viewport);
+    el.load({
+      cues: [
+        cue(0, 10, 'Rendered by the <media-captions> element'),
+        cue(0, 10, 'Attributes: src, type, for, dir, edge-style, shadow', { line: 1 }),
+      ],
+    });
+    renderers.push(el.renderer);
+    void mount; // handled manually above
   },
 
   collisions(mount) {

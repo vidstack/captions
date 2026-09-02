@@ -11,6 +11,8 @@ const SCENARIOS = [
   { name: 'collisions', file: 'collisions.png', time: 3 },
   { name: 'ssa', file: 'ssa.png', time: 1.3 },
   { name: 'edge-styles', file: 'edge-styles.png', time: 1, selector: '#root' },
+  { name: 'layout', file: 'layout-model.png', time: 3 },
+  { name: 'live', file: 'live-track.png', time: 3 },
 ];
 
 const server = await createServer({
