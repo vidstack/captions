@@ -3,7 +3,7 @@ import { setDataAttr } from '../utils/style';
 import { tokenizeVTTCue, type VTTNode } from './tokenize-cue';
 import type { VTTCue } from './vtt-cue';
 
-const CLASS_TOKEN_RE = /*#__PURE__*/ /[^\w-]+/g;
+const CLASS_TOKEN_RE = /[^\w-]+/g;
 
 export function createVTTCueTemplate(cue: VTTCue): VTTCueTemplate {
   if (IS_SERVER) {

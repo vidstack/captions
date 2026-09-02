@@ -2,19 +2,19 @@ import type { CaptionsParser } from '../parse/types';
 import { VTTCue } from '../vtt/vtt-cue';
 import { VTTBlock, VTTParser } from '../vtt/vtt-parser';
 
-const MILLISECOND_SEP_RE = /*#__PURE__*/ /,/g,
-  TIMESTAMP_SEP = /*#__PURE__*/ '-->',
+const MILLISECOND_SEP_RE = /,/g,
+  TIMESTAMP_SEP = '-->',
   // Extended SRT coordinates (`X1:100 X2:200 Y1:50 Y2:80`) can not be mapped without knowing the
   // video dimensions, so they are stripped from the timing line.
-  COORDS_RE = /*#__PURE__*/ /^[XY][12]:-?\d+$/i,
+  COORDS_RE = /^[XY][12]:-?\d+$/i,
   // Common SSA/ASS override tags that survive SRT conversions (e.g., `{\an8}` for top placement).
-  ALIGN_TAG_RE = /*#__PURE__*/ /\{\\an?([1-9])\}/,
-  OVERRIDE_TAG_RE = /*#__PURE__*/ /\{\\[^}]*\}/g,
-  FONT_OPEN_RE = /*#__PURE__*/ /<font\b([^>]*)>/gi,
-  FONT_CLOSE_RE = /*#__PURE__*/ /<\/font\s*>/gi,
-  FONT_COLOR_RE = /*#__PURE__*/ /color\s*=\s*["']?\s*([#\w]+)/i,
-  HEX_COLOR_RE = /*#__PURE__*/ /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
-  STRIKE_TAG_RE = /*#__PURE__*/ /<\/?(?:s|strike|del)\s*>/gi,
+  ALIGN_TAG_RE = /\{\\an?([1-9])\}/,
+  OVERRIDE_TAG_RE = /\{\\[^}]*\}/g,
+  FONT_OPEN_RE = /<font\b([^>]*)>/gi,
+  FONT_CLOSE_RE = /<\/font\s*>/gi,
+  FONT_COLOR_RE = /color\s*=\s*["']?\s*([#\w]+)/i,
+  HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
+  STRIKE_TAG_RE = /<\/?(?:s|strike|del)\s*>/gi,
   VTT_COLORS = /*#__PURE__*/ new Set([
     'white',
     'lime',
@@ -26,7 +26,7 @@ const MILLISECOND_SEP_RE = /*#__PURE__*/ /,/g,
     'black',
   ]),
   // HTML colour names that are commonly used in SRT files but are not part of the WebVTT palette.
-  HTML_COLORS = /*#__PURE__*/ {
+  HTML_COLORS = {
     green: '#008000',
     orange: '#ffa500',
     purple: '#800080',

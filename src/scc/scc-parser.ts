@@ -13,15 +13,15 @@ const FPS = 29.97,
   ROWS = 15,
   COLS = 32;
 
-const HEADER_RE = /*#__PURE__*/ /^Scenarist_SCC V1\.0\s*$/,
-  BOM_RE = /*#__PURE__*/ /^﻿/,
-  LINE_RE = /*#__PURE__*/ /^(\d{2}:\d{2}:\d{2}[:;.,]\d{2})(?:\s+(.*))?$/,
-  TIMECODE_RE = /*#__PURE__*/ /^(\d{2}):(\d{2}):(\d{2})([:;.,])(\d{2})$/,
-  HEX_WORD_RE = /*#__PURE__*/ /^[0-9a-fA-F]{4}$/,
-  WORD_SPLIT_RE = /*#__PURE__*/ /\s+/;
+const HEADER_RE = /^Scenarist_SCC V1\.0\s*$/,
+  BOM_RE = /^﻿/,
+  LINE_RE = /^(\d{2}:\d{2}:\d{2}[:;.,]\d{2})(?:\s+(.*))?$/,
+  TIMECODE_RE = /^(\d{2}):(\d{2}):(\d{2})([:;.,])(\d{2})$/,
+  HEX_WORD_RE = /^[0-9a-fA-F]{4}$/,
+  WORD_SPLIT_RE = /\s+/;
 
 /** Basic character set (0x20-0x7f) substitutions that differ from ASCII. */
-const BASIC_CHARS: Record<number, string> = /*#__PURE__*/ {
+const BASIC_CHARS: Record<number, string> = {
   0x2a: 'á',
   0x5c: 'é',
   0x5e: 'í',
@@ -35,27 +35,27 @@ const BASIC_CHARS: Record<number, string> = /*#__PURE__*/ {
 };
 
 /** Special characters (0x11 0x30-0x3f). Index 9 is the transparent space. */
-const SPECIAL_CHARS = /*#__PURE__*/ [
+const SPECIAL_CHARS = [
   '®', '°', '½', '¿', '™', '¢', '£', '♪', 'à', ' ', 'è', 'â', 'ê', 'î', 'ô', 'û',
 ]; // prettier-ignore
 
 /** Extended Spanish/Miscellaneous/French characters (0x12 0x20-0x3f). */
-const EXTENDED_CHARS_1 = /*#__PURE__*/ [
+const EXTENDED_CHARS_1 = [
   'Á', 'É', 'Ó', 'Ú', 'Ü', 'ü', '‘', '¡', '*', "'", '—', '©', '℠', '•', '“', '”',
   'À', 'Â', 'Ç', 'È', 'Ê', 'Ë', 'ë', 'Î', 'Ï', 'ï', 'Ô', 'Ù', 'ù', 'Û', '«', '»',
 ]; // prettier-ignore
 
 /** Extended Portuguese/German/Danish characters (0x13 0x20-0x3f). */
-const EXTENDED_CHARS_2 = /*#__PURE__*/ [
+const EXTENDED_CHARS_2 = [
   'Ã', 'ã', 'Í', 'Ì', 'ì', 'Ò', 'ò', 'Õ', 'õ', '{', '}', '\\', '^', '_', '|', '~',
   'Ä', 'ä', 'Ö', 'ö', 'ß', '¥', '¤', '¦', 'Å', 'å', 'Ø', 'ø', '┌', '┐', '└', '┘',
 ]; // prettier-ignore
 
 /** CEA-608 colour index -> WebVTT class name (green is rendered as `lime`). */
-const COLORS = /*#__PURE__*/ ['white', 'lime', 'blue', 'cyan', 'red', 'yellow', 'magenta', 'black'];
+const COLORS = ['white', 'lime', 'blue', 'cyan', 'red', 'yellow', 'magenta', 'black'];
 
 /** Preamble address code first byte -> base row (1-based). Second byte bit 0x20 adds one. */
-const PAC_ROWS: Record<number, number> = /*#__PURE__*/ {
+const PAC_ROWS: Record<number, number> = {
   0x11: 1,
   0x12: 3,
   0x15: 5,

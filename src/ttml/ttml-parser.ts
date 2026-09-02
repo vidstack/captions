@@ -3,28 +3,27 @@ import type { CaptionsParser, CaptionsParserInit, ParsedCaptionsResult } from '.
 import { VTTCue } from '../vtt/vtt-cue';
 import type { VTTHeaderMetadata } from '../vtt/vtt-header';
 
-const CLOCK_TIME_RE =
-    /*#__PURE__*/ /^(\d+):(\d{1,2}):(\d{1,2})(?:[.,](\d+)|:(\d+)(?:[.,](\d+))?)?$/,
-  OFFSET_TIME_RE = /*#__PURE__*/ /^(\d+(?:\.\d+)?|\.\d+)(h|m|s|ms|f|t)$/,
-  ENTITY_RE = /*#__PURE__*/ /&(#[xX][0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g,
-  WHITESPACE_RE = /*#__PURE__*/ /\s+/,
-  TRAILING_SPACES_RE = /*#__PURE__*/ / +$/,
-  LENGTH_RE = /*#__PURE__*/ /^(-?\d*\.?\d+)(%|px|c|em|rw|rh)?$/,
-  HEX_COLOR_RE = /*#__PURE__*/ /^#([0-9a-f]{6})([0-9a-f]{2})?$/,
-  RGB_COLOR_RE = /*#__PURE__*/ /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/,
-  UNDERLINE_RE = /*#__PURE__*/ /(^|\s)underline(\s|$)/,
-  TAG_NAME_END_RE = /*#__PURE__*/ /[ .]/,
-  AMP_RE = /*#__PURE__*/ /&/g,
-  LT_RE = /*#__PURE__*/ /</g;
+const CLOCK_TIME_RE = /^(\d+):(\d{1,2}):(\d{1,2})(?:[.,](\d+)|:(\d+)(?:[.,](\d+))?)?$/,
+  OFFSET_TIME_RE = /^(\d+(?:\.\d+)?|\.\d+)(h|m|s|ms|f|t)$/,
+  ENTITY_RE = /&(#[xX][0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g,
+  WHITESPACE_RE = /\s+/,
+  TRAILING_SPACES_RE = / +$/,
+  LENGTH_RE = /^(-?\d*\.?\d+)(%|px|c|em|rw|rh)?$/,
+  HEX_COLOR_RE = /^#([0-9a-f]{6})([0-9a-f]{2})?$/,
+  RGB_COLOR_RE = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/,
+  UNDERLINE_RE = /(^|\s)underline(\s|$)/,
+  TAG_NAME_END_RE = /[ .]/,
+  AMP_RE = /&/g,
+  LT_RE = /</g;
 
-const ENTITIES: Record<string, string> = /*#__PURE__*/ {
+const ENTITIES: Record<string, string> = {
     amp: '&',
     lt: '<',
     gt: '>',
     quot: '"',
     apos: "'",
   },
-  COLOR_NAMES: Record<string, string> = /*#__PURE__*/ {
+  COLOR_NAMES: Record<string, string> = {
     ffffff: 'white',
     '00ff00': 'lime',
     '00ffff': 'cyan',

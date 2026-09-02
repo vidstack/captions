@@ -1,9 +1,9 @@
 import type { VTTCue } from './vtt-cue';
 import { parseVTTTimestamp } from './vtt-parser';
 
-const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
-  MULTI_SPACE_RE = /*#__PURE__*/ /[\s\t]+/,
-  TAG_NAME = /*#__PURE__*/ {
+const DIGIT_RE = /[0-9]/,
+  MULTI_SPACE_RE = /[\s\t]+/,
+  TAG_NAME = {
     c: 'span',
     i: 'i',
     b: 'b',
@@ -14,7 +14,7 @@ const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
     lang: 'span',
     timestamp: 'span',
   },
-  HTML_ENTITIES = /*#__PURE__*/ {
+  HTML_ENTITIES = {
     amp: '&',
     lt: '<',
     gt: '>',
@@ -50,7 +50,7 @@ const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
     yen: '\u{a5}',
     cent: '\u{a2}',
   },
-  HTML_ENTITY_RE = /*#__PURE__*/ /&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([a-zA-Z][a-zA-Z0-9]*));/g,
+  HTML_ENTITY_RE = /&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([a-zA-Z][a-zA-Z0-9]*));/g,
   COLORS = /*#__PURE__*/ new Set([
     'white',
     'lime',
@@ -61,7 +61,7 @@ const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
     'blue',
     'black',
   ]),
-  HEX_COLOR_RE = /*#__PURE__*/ /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
+  HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
   BLOCK_TYPES = /*#__PURE__*/ new Set(Object.keys(TAG_NAME));
 
 const enum Mode {

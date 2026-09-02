@@ -2,8 +2,8 @@ import type { VTTCue } from './vtt-cue';
 import type { VTTHeaderMetadata } from './vtt-header';
 import { parseVTTTimestamp } from './vtt-parser';
 
-const MPEGTS_RE = /*#__PURE__*/ /MPEGTS:\s*(\d+)/i,
-  LOCAL_RE = /*#__PURE__*/ /LOCAL:\s*([\d:.]+)/i,
+const MPEGTS_RE = /MPEGTS:\s*(\d+)/i,
+  LOCAL_RE = /LOCAL:\s*([\d:.]+)/i,
   MPEGTS_CLOCK = 90000;
 
 export interface VTTTimestampMap {

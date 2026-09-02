@@ -5,21 +5,21 @@ import { toCoords, toFloat, toNumber, toPercentage } from '../utils/unit';
 import { VTTCue } from './vtt-cue';
 import { VTTRegion } from './vtt-region';
 
-const HEADER_MAGIC /*#__PURE__*/ = 'WEBVTT',
-  COMMA = /*#__PURE__*/ ',',
-  PERCENT_SIGN = /*#__PURE__*/ '%',
-  SETTING_SEP_RE = /*#__PURE__*/ /[:=]/,
-  SETTING_LINE_RE = /*#__PURE__*/ /^[\s\t]*(region|vertical|line|position|size|align)[:=]/,
-  NOTE_BLOCK_START = /*#__PURE__*/ 'NOTE',
-  REGION_BLOCK_START = /*#__PURE__*/ 'REGION',
-  REGION_BLOCK_START_RE = /*#__PURE__*/ /^REGION:?[\s\t]+/,
-  SPACE_RE = /*#__PURE__*/ /[\s\t]+/,
-  TIMESTAMP_SEP = /*#__PURE__*/ '-->',
-  TIMESTAMP_SEP_RE = /*#__PURE__*/ /[\s\t]*-->[\s\t]*/,
-  ALIGN_RE = /*#__PURE__*/ /start|center|end|left|right/,
-  LINE_ALIGN_RE = /*#__PURE__*/ /start|center|end/,
-  POS_ALIGN_RE = /*#__PURE__*/ /line-(?:left|right)|center|auto/,
-  TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d+):)?(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/;
+const HEADER_MAGIC = 'WEBVTT',
+  COMMA = ',',
+  PERCENT_SIGN = '%',
+  SETTING_SEP_RE = /[:=]/,
+  SETTING_LINE_RE = /^[\s\t]*(region|vertical|line|position|size|align)[:=]/,
+  NOTE_BLOCK_START = 'NOTE',
+  REGION_BLOCK_START = 'REGION',
+  REGION_BLOCK_START_RE = /^REGION:?[\s\t]+/,
+  SPACE_RE = /[\s\t]+/,
+  TIMESTAMP_SEP = '-->',
+  TIMESTAMP_SEP_RE = /[\s\t]*-->[\s\t]*/,
+  ALIGN_RE = /start|center|end|left|right/,
+  LINE_ALIGN_RE = /start|center|end/,
+  POS_ALIGN_RE = /line-(?:left|right)|center|auto/,
+  TIMESTAMP_RE = /^(?:(\d+):)?(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/;
 
 export const enum VTTBlock {
   None = 0,

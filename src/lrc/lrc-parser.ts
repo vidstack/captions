@@ -2,14 +2,14 @@ import { ParseError, ParseErrorCode } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit } from '../parse/types';
 import { VTTCue } from '../vtt/vtt-cue';
 
-const LEADING_TAG_RE = /*#__PURE__*/ /^\[([^\]]*)\]/,
-  ID_TAG_RE = /*#__PURE__*/ /^([A-Za-z_][\w-]*):\s*(.*)$/,
-  DIGIT_START_RE = /*#__PURE__*/ /^\d/,
-  INLINE_TAG_RE = /*#__PURE__*/ /<(\d{1,3}(?::\d{1,3})?:\d{2}(?:\.\d{1,3})?)>/g,
-  TIMESTAMP_RE = /*#__PURE__*/ /^(?:(\d{1,2}):)?(\d{1,3}):(\d{2})(?:\.(\d{1,3}))?$/,
-  OFFSET_RE = /*#__PURE__*/ /^[+-]?\d+$/,
-  AMP_RE = /*#__PURE__*/ /&/g,
-  LT_RE = /*#__PURE__*/ /</g,
+const LEADING_TAG_RE = /^\[([^\]]*)\]/,
+  ID_TAG_RE = /^([A-Za-z_][\w-]*):\s*(.*)$/,
+  DIGIT_START_RE = /^\d/,
+  INLINE_TAG_RE = /<(\d{1,3}(?::\d{1,3})?:\d{2}(?:\.\d{1,3})?)>/g,
+  TIMESTAMP_RE = /^(?:(\d{1,2}):)?(\d{1,3}):(\d{2})(?:\.(\d{1,3}))?$/,
+  OFFSET_RE = /^[+-]?\d+$/,
+  AMP_RE = /&/g,
+  LT_RE = /</g,
   DEFAULT_CUE_DURATION = 5;
 
 /**

@@ -2,11 +2,11 @@ import { ParseError, ParseErrorCode } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit } from '../parse/types';
 import { VTTCue } from '../vtt/vtt-cue';
 
-const TIMING_LINE_RE = /*#__PURE__*/ /^(\d+:\d{2}:\d{2}\.\d{3})\s*,\s*(\d+:\d{2}:\d{2}\.\d{3})$/,
-  TIMESTAMP_RE = /*#__PURE__*/ /^(\d+):(\d{2}):(\d{2})\.(\d{3})$/,
-  LINE_BREAK_RE = /*#__PURE__*/ /\[br\]/gi,
-  AMP_RE = /*#__PURE__*/ /&/g,
-  LT_RE = /*#__PURE__*/ /</g;
+const TIMING_LINE_RE = /^(\d+:\d{2}:\d{2}\.\d{3})\s*,\s*(\d+:\d{2}:\d{2}\.\d{3})$/,
+  TIMESTAMP_RE = /^(\d+):(\d{2}):(\d{2})\.(\d{3})$/,
+  LINE_BREAK_RE = /\[br\]/gi,
+  AMP_RE = /&/g,
+  LT_RE = /</g;
 
 const enum Block {
   None = 0,
