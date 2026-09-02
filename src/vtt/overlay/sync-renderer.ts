@@ -3,18 +3,27 @@ import type { CaptionsRenderer } from './render-overlay';
 export interface SyncCaptionsRendererOptions {
   /**
    * Whether to use `requestVideoFrameCallback` when available so cue and karaoke timing is
-   * frame-accurate. Falls back to `requestAnimationFrame` while playing.
+   * frame-accurate. Falls back to `requestAnimationFrame` while playing. Set to `false` for a
+   * low-power mode driven purely by media events (pair it with `track` for exact cue boundaries).
    *
    * @defaultValue true
    */
   frameAccurate?: boolean;
+  /**
+   * A native `TextTrack` whose cues mirror the renderer's cues (our `VTTCue` extends the native
+   * class, so `track.addCue(cue)` works). The browser fires `cuechange` exactly at cue boundaries,
+   * which lets the renderer update at the right moment without a frame loop. The track is set to
+   * `hidden` so the browser does not render it itself.
+   */
+  track?: TextTrack | null;
 }
 
 /**
  * Keeps a `CaptionsRenderer` in sync with a media element. The `timeupdate` event only fires a
  * few times per second which makes short cues and karaoke timed text visibly late, so while the
  * media is playing this uses `requestVideoFrameCallback` (or `requestAnimationFrame`) instead and
- * only relies on events while paused or seeking.
+ * only relies on events while paused or seeking. Provide a `track` and disable `frameAccurate`
+ * for an event-driven mode that still updates precisely at cue boundaries.
  *
  * Returns a function that stops syncing.
  */
@@ -24,8 +33,10 @@ export function syncCaptionsRenderer(
   options: SyncCaptionsRendererOptions = {},
 ): () => void {
   const video = media as HTMLVideoElement,
+    track = options.track ?? null,
     useVideoFrames =
-      options.frameAccurate !== false && typeof video.requestVideoFrameCallback === 'function';
+      options.frameAccurate !== false && typeof video.requestVideoFrameCallback === 'function',
+    useFrames = options.frameAccurate !== false;
 
   let frameId = 0,
     disposed = false;
@@ -48,7 +59,7 @@ export function syncCaptionsRenderer(
 
   function start() {
     stop();
-    if (media.paused) return;
+    if (media.paused || !useFrames) return;
     frameId = useVideoFrames
       ? video.requestVideoFrameCallback(onVideoFrame)
       : requestAnimationFrame(onAnimationFrame);
@@ -62,8 +73,14 @@ export function syncCaptionsRenderer(
   }
 
   function onTimeUpdate() {
-    // Covers paused seeking, `currentTime` assignment, and browsers throttling frame callbacks.
+    // Covers paused seeking, `currentTime` assignment, event-driven mode, and browsers throttling
+    // frame callbacks.
     if (media.paused || !frameId) setTime(media.currentTime);
+  }
+
+  function onCueChange() {
+    // Cue boundaries are exact, so update even while the frame loop is running.
+    setTime(media.currentTime);
   }
 
   media.addEventListener('playing', start);
@@ -73,6 +90,11 @@ export function syncCaptionsRenderer(
   media.addEventListener('seeking', onTimeUpdate);
   media.addEventListener('seeked', onTimeUpdate);
   media.addEventListener('timeupdate', onTimeUpdate);
+
+  if (track) {
+    if (track.mode === 'disabled') track.mode = 'hidden';
+    track.addEventListener('cuechange', onCueChange);
+  }
 
   setTime(media.currentTime);
   start();
@@ -87,5 +109,6 @@ export function syncCaptionsRenderer(
     media.removeEventListener('seeking', onTimeUpdate);
     media.removeEventListener('seeked', onTimeUpdate);
     media.removeEventListener('timeupdate', onTimeUpdate);
+    track?.removeEventListener('cuechange', onCueChange);
   };
 }

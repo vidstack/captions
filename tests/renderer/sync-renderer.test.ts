@@ -83,3 +83,32 @@ test('dispose stops all syncing', () => {
   media.emit('timeupdate');
   expect(renderer.currentTime).toBe(0);
 });
+
+test('event-driven mode uses native text track cue boundaries without a frame loop', () => {
+  const media = new FakeMedia(),
+    track = Object.assign(new EventTarget(), { mode: 'disabled' as TextTrackMode }),
+    renderer = { currentTime: -1 } as unknown as CaptionsRenderer,
+    dispose = syncCaptionsRenderer(renderer, media as unknown as HTMLMediaElement, {
+      frameAccurate: false,
+      track: track as unknown as TextTrack,
+    });
+
+  expect(track.mode).toBe('hidden');
+
+  media.paused = false;
+  media.emit('playing');
+  expect(media.pendingFrames).toBe(0);
+
+  media.currentTime = 2.25;
+  track.dispatchEvent(new Event('cuechange'));
+  expect(renderer.currentTime).toBe(2.25);
+
+  media.currentTime = 3;
+  media.emit('timeupdate');
+  expect(renderer.currentTime).toBe(3);
+
+  dispose();
+  media.currentTime = 9;
+  track.dispatchEvent(new Event('cuechange'));
+  expect(renderer.currentTime).toBe(3);
+});
