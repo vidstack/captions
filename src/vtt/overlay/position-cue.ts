@@ -13,7 +13,10 @@ import {
   type DirectionalAxis,
 } from './box';
 
-const POSITION_OVERRIDE = Symbol(__DEV__ ? 'POSITION_OVERRIDE' : 0);
+const POSITION_OVERRIDE = Symbol(__DEV__ ? 'POSITION_OVERRIDE' : 0),
+  TRANSLATE = Symbol(__DEV__ ? 'TRANSLATE' : 0),
+  TRANSLATE_X_RE = /translateX\(\s*(-?[\d.]+)%\s*\)/,
+  TRANSLATE_Y_RE = /translateY\(\s*(-?[\d.]+)%\s*\)/;
 
 // Adapted from: https://github.com/videojs/vtt.js
 export function positionCue(
@@ -32,6 +35,12 @@ export function positionCue(
   }
 
   displayBox = resolveRelativeBox(container, { ...displayEl[STARTING_BOX] });
+
+  // Explicitly positioned cues (e.g., SSA `\pos`) are never moved, but other cues avoid them.
+  if (displayEl.hasAttribute('data-fixed')) {
+    setBoxCSSVars(displayEl, container, untranslateBox(displayEl, displayBox), 'cue');
+    return displayBox;
+  }
 
   if (displayEl[POSITION_OVERRIDE]) {
     axis = [displayEl[POSITION_OVERRIDE] === 'top' ? '+y' : '-y', '+x', '-x'];
@@ -89,9 +98,22 @@ export function positionCue(
   }
 
   displayBox = avoidBoxCollisions(container, displayBox, boxes, axis);
-  setBoxCSSVars(displayEl, container, displayBox, 'cue');
+  setBoxCSSVars(displayEl, container, untranslateBox(displayEl, displayBox), 'cue');
 
   return displayBox;
+}
+
+/**
+ * CSS positions are applied before `transform`, so the written box must exclude the translation
+ * that was folded into the visual box for collision detection.
+ */
+function untranslateBox(el: HTMLElement, box: Box): Box {
+  const translate = el[TRANSLATE];
+  if (!translate) return box;
+  const result = { ...box };
+  moveBox(result, '+x', -translate.x);
+  moveBox(result, '+y', -translate.y);
+  return result;
 }
 
 function createStartingBox(container: Box, cueEl: HTMLElement, isHorizontal: boolean) {
@@ -116,6 +138,17 @@ function createStartingBox(container: Box, cueEl: HTMLElement, isHorizontal: boo
 
   if (pos.left !== null) box.left = pos.left;
   if (pos.right !== null) box.right = container.width - pos.right;
+
+  // Fold percentage translations (e.g., `translateX(-50%)` for centred SSA cues) into the visual
+  // box so collisions are detected where the cue is actually painted.
+  const transform = cueEl.style.getPropertyValue('--cue-transform'),
+    tx = parseFloat(transform.match(TRANSLATE_X_RE)?.[1] ?? '0') || 0,
+    ty = parseFloat(transform.match(TRANSLATE_Y_RE)?.[1] ?? '0') || 0,
+    translate = { x: (tx / 100) * box.width, y: (ty / 100) * box.height };
+
+  cueEl[TRANSLATE] = translate.x || translate.y ? translate : null;
+  moveBox(box, '+x', translate.x);
+  moveBox(box, '+y', translate.y);
 
   return createCSSBox(container, box);
 }

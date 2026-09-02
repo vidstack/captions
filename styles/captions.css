@@ -45,6 +45,7 @@
   right: var(--cue-right);
   bottom: var(--cue-bottom);
   width: var(--cue-width, auto);
+  max-width: var(--cue-max-width, none);
   height: var(--cue-height, auto);
   z-index: var(--cue-z-index, auto);
   font-size: var(--cue-font-size);

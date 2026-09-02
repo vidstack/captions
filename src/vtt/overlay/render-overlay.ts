@@ -15,7 +15,6 @@ export class CaptionsRenderer {
   private _currentTime = 0;
   private _dir: 'ltr' | 'rtl' = 'ltr';
   private _activeCues: VTTCue[] = [];
-  private _isResizing = false;
 
   private readonly _resizeObserver: ResizeObserver;
   private readonly _regions = new Map<string, HTMLElement>();
@@ -102,12 +101,12 @@ export class CaptionsRenderer {
   }
 
   private _resizing() {
-    this._isResizing = true;
     this._resize();
   }
 
+  // Debounced so a continuous resize (e.g., entering fullscreen) re-lays out once. Cue changes in
+  // the meantime still render against the last known overlay size rather than being dropped.
   protected _resize = debounce(() => {
-    this._isResizing = false;
     this._updateOverlay();
 
     for (const el of this._regions.values()) {
@@ -183,7 +182,7 @@ export class CaptionsRenderer {
   }
 
   private _render(forceUpdate = false) {
-    if (!this._cues.size || this._isResizing) return;
+    if (!this._cues.size) return;
 
     let cue: VTTCue,
       activeCues = this._findActiveCues(this._currentTime),
@@ -235,9 +234,10 @@ export class CaptionsRenderer {
 
     if (forceUpdate) {
       const boxes: Box[] = [],
-        seen = new Set<VTTRegion | VTTCue>();
-      for (let i = activeCues.length - 1; i >= 0; i--) {
-        cue = activeCues[i];
+        seen = new Set<VTTRegion | VTTCue>(),
+        ordered = orderForPositioning(activeCues);
+      for (let i = 0; i < ordered.length; i++) {
+        cue = ordered[i];
         if (seen.has(cue.region || cue)) continue;
         const isRegion = this._hasRegion(cue),
           el = isRegion ? this._regions.get(cue.region!.id)! : this._cues.get(cue)!;
@@ -297,6 +297,7 @@ export class CaptionsRenderer {
     if (cue.vertical !== '') setDataAttr(display, 'vertical');
     setCSSVar(display, 'cue-text-align', cue.align);
     if (cue.layer) setCSSVar(display, 'cue-z-index', cue.layer);
+    if (cue.style?.__fixed) setDataAttr(display, 'fixed');
 
     if (cue.style) {
       for (const prop of Object.keys(cue.style)) {
@@ -365,6 +366,32 @@ export class CaptionsRenderer {
   private _hasRegion(cue: VTTCue) {
     return cue.region && cue.size === 100 && cue.vertical === '' && cue.line === 'auto';
   }
+}
+
+/**
+ * Cues are positioned so they read top-down in cue order. Bottom anchored cues are positioned
+ * last-to-first (the newest cue takes the default slot and older cues are pushed up), while top
+ * anchored cues are positioned first-to-last so older cues stay on top and newer ones are pushed
+ * down. Fixed cues go first so everything else avoids them.
+ */
+function orderForPositioning(cues: VTTCue[]): VTTCue[] {
+  const fixed: VTTCue[] = [],
+    top: VTTCue[] = [],
+    bottom: VTTCue[] = [];
+
+  for (const cue of cues) {
+    if (cue.style?.__fixed) fixed.push(cue);
+    else if (isTopAnchored(cue)) top.push(cue);
+    else bottom.push(cue);
+  }
+
+  return [...fixed, ...top, ...bottom.reverse()];
+}
+
+function isTopAnchored(cue: VTTCue): boolean {
+  if (cue.line === 'auto') return !!cue.style?.['--cue-top'] && !cue.style['--cue-bottom'];
+  if (cue.snapToLines) return cue.line >= 0;
+  return cue.lineAlign === 'end' ? cue.line <= 50 : cue.line < 50;
 }
 
 export interface CaptionsRendererInit {
