@@ -4,6 +4,7 @@ import { renderVTTCueString, updateTimedVTTCueNodes } from '../render-cue';
 import type { VTTCue } from '../vtt-cue';
 import type { VTTHeaderMetadata } from '../vtt-header';
 import type { VTTRegion } from '../vtt-region';
+import { transformVTTStyle } from '../vtt-style';
 import { createBox, STARTING_BOX, type Box } from './box';
 import { computeCuePosition, computeCuePositionAlignment, positionCue } from './position-cue';
 import { positionRegion } from './position-region';
@@ -23,6 +24,9 @@ export class CaptionsRenderer {
   // Sorted cue index so finding active cues is O(log n + active) instead of a full scan.
   private _sortedCues: VTTCue[] | null = null;
   private _maxEndTimes: number[] = [];
+
+  private _styleEl: HTMLStyleElement | null = null;
+  private static _scopeId = 0;
 
   /* Text direction. */
   get dir() {
@@ -60,9 +64,10 @@ export class CaptionsRenderer {
     this._resizeObserver.observe(overlay);
   }
 
-  changeTrack({ regions, cues, metadata }: CaptionsRendererTrack) {
+  changeTrack({ regions, cues, metadata, styles }: CaptionsRendererTrack) {
     this.reset();
     this._applyMetadata(metadata);
+    this._applyStyles(styles);
     this._buildRegions(regions);
     for (const cue of cues) this._cues.set(cue, null);
     this._sortedCues = null;
@@ -91,6 +96,7 @@ export class CaptionsRenderer {
     this._regions.clear();
     this._activeCues = [];
     this._sortedCues = null;
+    this._styleEl = null;
     this.overlay.textContent = '';
     this.overlay.removeAttribute('lang');
   }
@@ -131,6 +137,31 @@ export class CaptionsRenderer {
     // hyphenation, quotes, and font fallback for the cue text.
     const lang = metadata?.Language ?? metadata?.language ?? metadata?.lang;
     if (lang) this.overlay.setAttribute('lang', lang);
+  }
+
+  /**
+   * Applies WebVTT `STYLE` blocks. Selectors are rewritten to the overlay DOM and scoped to this
+   * overlay via a unique `data-scope` attribute so multiple renderers never leak styles.
+   */
+  private _applyStyles(styles?: string[]) {
+    if (!styles?.length) return;
+
+    if (!this.overlay.hasAttribute('data-scope')) {
+      setDataAttr(this.overlay, 'scope', `mc${++CaptionsRenderer._scopeId}`);
+    }
+
+    const scope = `[data-scope="${this.overlay.getAttribute('data-scope')}"]`,
+      css = styles
+        .map((style) => transformVTTStyle(style, scope))
+        .filter(Boolean)
+        .join('\n');
+
+    if (!css) return;
+
+    this._styleEl = document.createElement('style');
+    setPartAttr(this._styleEl, 'style');
+    this._styleEl.textContent = css;
+    this.overlay.append(this._styleEl);
   }
 
   private _buildIndex() {
@@ -408,4 +439,10 @@ export interface CaptionsRendererTrack {
    * attribute on the overlay.
    */
   metadata?: VTTHeaderMetadata;
+  /**
+   * CSS from WebVTT `STYLE` blocks. Selectors such as `::cue`, `::cue(.class)`,
+   * `::cue(v[voice="Bob"])`, and `::cue-region` are rewritten to the rendered DOM, scoped to this
+   * overlay, and restricted to presentational properties.
+   */
+  styles?: string[];
 }

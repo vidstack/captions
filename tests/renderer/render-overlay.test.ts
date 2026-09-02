@@ -188,3 +188,29 @@ test('addCue, removeCue, and reset keep the DOM in sync', () => {
   expect(overlay.children).toHaveLength(0);
   expect(renderer.activeCues).toEqual([]);
 });
+
+test('applies STYLE blocks scoped to the overlay', () => {
+  const { overlay, renderer } = setup();
+  renderer.changeTrack({
+    cues: [new VTTCue(0, 10, '<b>Styled</b>')],
+    styles: ['::cue { color: red }', '::cue(b) { color: lime }', 'body { display: none }'],
+  });
+
+  const scope = overlay.getAttribute('data-scope');
+  expect(scope).toMatch(/^mc\d+$/);
+
+  const style = overlay.querySelector('style')!;
+  expect(style.getAttribute('data-part')).toBe('style');
+  expect(style.textContent).toContain(`[data-scope="${scope}"] [data-part="cue"] {`);
+  expect(style.textContent).toContain(`[data-scope="${scope}"] [data-part="cue"] b {`);
+  expect(style.textContent).not.toContain('display: none');
+
+  // A second renderer gets its own scope.
+  const other = setup();
+  other.renderer.changeTrack({ cues: [], styles: ['::cue { color: blue }'] });
+  expect(other.overlay.getAttribute('data-scope')).not.toBe(scope);
+
+  // Resetting removes the style element.
+  renderer.reset();
+  expect(overlay.querySelector('style')).toBeNull();
+});

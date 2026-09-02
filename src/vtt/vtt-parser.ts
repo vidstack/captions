@@ -11,6 +11,7 @@ const HEADER_MAGIC = 'WEBVTT',
   SETTING_SEP_RE = /[:=]/,
   SETTING_LINE_RE = /^[\s\t]*(region|vertical|line|position|size|align)[:=]/,
   NOTE_BLOCK_START = 'NOTE',
+  STYLE_BLOCK_START = 'STYLE',
   REGION_BLOCK_START = 'REGION',
   REGION_BLOCK_START_RE = /^REGION:?[\s\t]+/,
   SPACE_RE = /[\s\t]+/,
@@ -27,6 +28,7 @@ export const enum VTTBlock {
   Cue = 2,
   Region = 3,
   Note = 4,
+  Style = 5,
 }
 
 export class VTTParser implements CaptionsParser {
@@ -40,6 +42,8 @@ export class VTTParser implements CaptionsParser {
   protected _errors: ParseError[] = [];
   protected _errorBuilder?: typeof ParseErrorBuilder;
   protected _prevLine = '';
+  protected _styles: string[] = [];
+  protected _style = '';
 
   async init(init: CaptionsParserInit) {
     this._init = init;
@@ -60,6 +64,8 @@ export class VTTParser implements CaptionsParser {
       } else if (this._block === VTTBlock.Header) {
         this._parseHeader(line, lineCount);
         this._init.onHeaderMetadata?.(this._metadata);
+      } else if (this._block === VTTBlock.Style) {
+        this._commitStyle();
       }
 
       this._block = VTTBlock.None;
@@ -81,9 +87,21 @@ export class VTTParser implements CaptionsParser {
         case VTTBlock.Region:
           this._parseRegionSettings(line.split(SPACE_RE), lineCount);
           break;
+        case VTTBlock.Style:
+          // A timing line inside a STYLE block means the blank separator was missing.
+          if (line.includes(TIMESTAMP_SEP)) {
+            this._commitStyle();
+            this._block = VTTBlock.None;
+            this.parse(line, lineCount);
+            return;
+          }
+          this._style += (this._style ? '\n' : '') + line;
+          break;
       }
     } else if (line.startsWith(NOTE_BLOCK_START)) {
       this._block = VTTBlock.Note;
+    } else if (line === STYLE_BLOCK_START || /^STYLE[\s\t]*$/.test(line)) {
+      this._block = VTTBlock.Style;
     } else if (line.startsWith(REGION_BLOCK_START)) {
       this._block = VTTBlock.Region;
       this._region = new VTTRegion();
@@ -104,12 +122,22 @@ export class VTTParser implements CaptionsParser {
   }
 
   done() {
+    this._commitStyle();
     return {
       metadata: this._metadata,
       cues: this._cues,
       regions: Object.values(this._regions),
       errors: this._errors,
+      styles: this._styles,
     };
+  }
+
+  protected _commitStyle() {
+    const css = this._style.trim();
+    this._style = '';
+    if (!css) return;
+    this._styles.push(css);
+    this._init.onStyle?.(css);
   }
 
   protected _parseHeader(line: string, lineCount: number) {

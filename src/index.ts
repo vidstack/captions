@@ -15,3 +15,4 @@ export * from './vtt/render-cue';
 export * from './vtt/overlay/render-overlay';
 export * from './vtt/overlay/sync-renderer';
 export * from './vtt/vtt-timestamp-map';
+export * from './vtt/vtt-style';

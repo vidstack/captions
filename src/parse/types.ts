@@ -37,6 +37,11 @@ export interface ParsedCaptionsResult {
    * `loadEmbeddedFonts` to register them with the document.
    */
   fonts?: EmbeddedFont[];
+  /**
+   * Raw CSS collected from WebVTT `STYLE` blocks, in file order. Pass the parse result to
+   * `CaptionsRenderer.changeTrack` to have them applied (scoped and sanitized) to the overlay.
+   */
+  styles?: string[];
 }
 
 export interface EmbeddedFont {
@@ -77,9 +82,20 @@ export interface ParseCaptionsOptions {
    */
   type?: CaptionsFileFormat | CaptionsParserFactory;
   /**
+   * CEA-608 data channel to decode when parsing SCC files (`1` for CC1, `2` for CC2). SCC files
+   * only carry field 1, so CC3/CC4 are not available.
+   *
+   * @defaultValue 1
+   */
+  channel?: 1 | 2;
+  /**
    * Invoked with metadata that was parsed from the VTT header.
    */
   onHeaderMetadata?(data: VTTHeaderMetadata): void;
+  /**
+   * Invoked with the CSS text of each WebVTT `STYLE` block as it is parsed.
+   */
+  onStyle?(css: string): void;
   /**
    * Invoked when a new VTT Cue has been parsed and constructed.
    */
