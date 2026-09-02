@@ -1,4 +1,5 @@
 import { VTTCue } from '../vtt/vtt-cue';
+import type { CueTextStyle } from '../vtt/vtt-cue';
 import type { CCDataTriplet } from './cc-data';
 
 /**
@@ -6,6 +7,17 @@ import type { CCDataTriplet } from './cc-data';
  * the service blocks for a single caption service, and models the eight caption windows of that
  * service. Every visible window is emitted as its own `VTTCue`, positioned from the window anchor,
  * so multiple simultaneous windows keep their independent placement.
+ *
+ * Window attributes (fill, border, print direction, display effect) and the dominant pen edge are
+ * mapped onto `cue.textStyle` / `cue.vertical`; pen sizes become `<c.pen-small>` /
+ * `<c.pen-large>` spans in the cue text. Approximations:
+ *
+ * - The pen background colour (SPC) is per character but WebVTT cues have a single background,
+ *   so it is ignored in favour of the window fill.
+ * - Left-to-right / right-to-left scroll directions behave like bottom-to-top.
+ * - The wipe display effect always wipes left-to-right; the effect direction is ignored.
+ * - Right-to-left print direction keeps the text in logical order (the renderer's
+ *   `unicode-bidi: plaintext` handles RTL scripts) and mirrors left/right justification.
  *
  * @see {@link https://en.wikipedia.org/wiki/CEA-708}
  */
@@ -19,21 +31,27 @@ const MAX_WINDOWS = 8,
   ANCHOR_ROWS = 75,
   ANCHOR_COLS = 210,
   /** Minimum cue duration used when `flush()` is called without a later time. */
-  MIN_DURATION = 1 / 30;
+  MIN_DURATION = 1 / 30,
+  /** Display effect speed unit (seconds) and the floor applied to the resulting duration. */
+  EFFECT_SPEED_UNIT = 0.5,
+  MIN_EFFECT_DURATION = 0.1;
 
-// Cell style bit layout: bits 0-5 foreground RGB (2 bits per channel, blue lowest), bit 6 italics,
-// bit 7 underline, bits 8-13 background RGB, bit 14 transparent background.
-const FG_MASK = 0x3f,
-  ITALICS = 1 << 6,
-  UNDERLINE = 1 << 7,
-  BG_SHIFT = 8,
-  BG_MASK = 0x3f << BG_SHIFT,
-  BG_TRANSPARENT = 1 << 14,
-  /** White foreground on solid black background. */
-  DEFAULT_STYLE = FG_MASK;
+/** SPA pen sizes. */
+const enum PenSize {
+  Small = 0,
+  Standard = 1,
+  Large = 2,
+}
 
-/** Two-bit colour component -> 8-bit component. */
-const COMPONENTS = [0x00, 0x55, 0xaa, 0xff];
+/** SPA pen edge types (6 and 7 are reserved and treated as none). */
+const enum EdgeType {
+  None = 0,
+  Raised = 1,
+  Depressed = 2,
+  Uniform = 3,
+  LeftDropShadow = 4,
+  RightDropShadow = 5,
+}
 
 /** Window justification values from SWA / the predefined window styles. */
 const enum Justify {
@@ -43,7 +61,53 @@ const enum Justify {
   Full = 3,
 }
 
-/** Predefined window styles 1-7 (index 0 unused): justification and word wrap. */
+/** SWA print / scroll direction values. */
+const enum Direction {
+  LeftToRight = 0,
+  RightToLeft = 1,
+  TopToBottom = 2,
+  BottomToTop = 3,
+}
+
+/** SWA fill / pen opacity values. */
+const enum Opacity {
+  Solid = 0,
+  Flash = 1,
+  Translucent = 2,
+  Transparent = 3,
+}
+
+/** SWA display effects (3 is reserved and treated as snap). */
+const enum DisplayEffect {
+  Snap = 0,
+  Fade = 1,
+  Wipe = 2,
+}
+
+// Cell style bit layout: bits 0-5 foreground RGB (2 bits per channel, blue lowest), bit 6 italics,
+// bit 7 underline, bits 8-13 background RGB, bit 14 transparent background, bits 15-16 pen size,
+// bits 17-19 edge type, bits 20-25 edge RGB.
+const FG_MASK = 0x3f,
+  ITALICS = 1 << 6,
+  UNDERLINE = 1 << 7,
+  BG_SHIFT = 8,
+  BG_MASK = 0x3f << BG_SHIFT,
+  BG_TRANSPARENT = 1 << 14,
+  SIZE_SHIFT = 15,
+  SIZE_MASK = 0x03 << SIZE_SHIFT,
+  EDGE_SHIFT = 17,
+  EDGE_MASK = 0x07 << EDGE_SHIFT,
+  EDGE_COLOR_SHIFT = 20,
+  EDGE_COLOR_MASK = 0x3f << EDGE_COLOR_SHIFT,
+  /** Style bits that produce cue text tags; the rest are rendered per window, not per run. */
+  TAG_MASK = FG_MASK | ITALICS | UNDERLINE | SIZE_MASK,
+  /** White foreground on solid black background, standard size, no edge. */
+  DEFAULT_STYLE = FG_MASK | (PenSize.Standard << SIZE_SHIFT);
+
+/** Two-bit colour component -> 8-bit component. */
+const COMPONENTS = [0x00, 0x55, 0xaa, 0xff];
+
+/** Predefined window styles 1-7 (index 0 unused): justification, word wrap, fill opacity. */
 const WINDOW_STYLE_JUSTIFY = [
   Justify.Left,
   Justify.Left,
@@ -55,13 +119,33 @@ const WINDOW_STYLE_JUSTIFY = [
   Justify.Left,
 ];
 const WINDOW_STYLE_WORD_WRAP = [false, false, false, false, true, true, true, false];
+const WINDOW_STYLE_FILL_OPACITY = [
+  Opacity.Solid,
+  Opacity.Solid,
+  Opacity.Transparent,
+  Opacity.Solid,
+  Opacity.Solid,
+  Opacity.Transparent,
+  Opacity.Solid,
+  Opacity.Solid,
+];
 
 const JUSTIFY_ALIGN: VTTCue['align'][] = ['left', 'right', 'center', 'left'];
+
+/** Print direction -> cue `vertical`. Vertical print directions stack lines like TTML `tb` modes. */
+const PRINT_VERTICAL: VTTCue['vertical'][] = ['', '', 'lr', 'rl'];
+
+/** Anchor component (0 start / 1 middle / 2 end) -> line and position alignment. */
+const LINE_ALIGNS: VTTCue['lineAlign'][] = ['start', 'center', 'end'],
+  POSITION_ALIGNS: VTTCue['positionAlign'][] = ['line-left', 'center', 'line-right'];
+
+/** Fill opacity -> CSS alpha. Flash is not animated and rendered as solid. */
+const FILL_ALPHA = [1, 1, 0.5, 0];
 
 /** G2 character set (after EXT1, 0x20-0x7f). Unlisted codes are undefined and dropped. */
 const G2_CHARS: Record<number, string> = {
   0x20: ' ', // transparent space
-  0x21: ' ', // non-breaking transparent space
+  0x21: ' ', // non-breaking transparent space
   0x25: '…',
   0x2a: 'Š',
   0x2c: 'Œ',
@@ -141,6 +225,19 @@ interface CaptionWindow {
   columnCount: number;
   justify: Justify;
   wordWrap: boolean;
+  printDirection: Direction;
+  scrollDirection: Direction;
+  /** 6-bit fill RGB and its opacity. */
+  fillColor: number;
+  fillOpacity: Opacity;
+  /** Border type (0 none, 1 raised, 2 depressed, 3 uniform, 4/5 shadow) and 6-bit RGB. */
+  borderType: number;
+  borderColor: number;
+  displayEffect: DisplayEffect;
+  /** Display effect speed in 0.5 s units. */
+  effectSpeed: number;
+  /** The window was just displayed: the next cue created for it carries the display effect. */
+  effectPending: boolean;
   chars: string[][];
   styles: number[][];
   penRow: number;
@@ -381,13 +478,13 @@ export class CEA708Decoder {
         this._forEachWindow(bytes[i + 1], (window) => clearWindow(window));
         break;
       case 0x89: // DSW - display windows
-        this._forEachWindow(bytes[i + 1], (window) => (window.visible = true));
+        this._forEachWindow(bytes[i + 1], (window) => setVisible(window, true));
         break;
       case 0x8a: // HDW - hide windows
-        this._forEachWindow(bytes[i + 1], (window) => (window.visible = false));
+        this._forEachWindow(bytes[i + 1], (window) => setVisible(window, false));
         break;
       case 0x8b: // TGW - toggle windows
-        this._forEachWindow(bytes[i + 1], (window) => (window.visible = !window.visible));
+        this._forEachWindow(bytes[i + 1], (window) => setVisible(window, !window.visible));
         break;
       case 0x8c: // DLW - delete windows
         for (let w = 0; w < MAX_WINDOWS; w++) {
@@ -400,16 +497,16 @@ export class CEA708Decoder {
         this._resetState();
         break;
       case 0x90: // SPA - set pen attributes
-        this._setPenAttributes(bytes[i + 2]);
+        this._setPenAttributes(bytes[i + 1], bytes[i + 2]);
         break;
       case 0x91: // SPC - set pen color
-        this._setPenColor(bytes[i + 1], bytes[i + 2]);
+        this._setPenColor(bytes[i + 1], bytes[i + 2], bytes[i + 3]);
         break;
       case 0x92: // SPL - set pen location
         this._setPenLocation(bytes[i + 1] & 0x0f, bytes[i + 2] & 0x3f);
         break;
       case 0x97: // SWA - set window attributes
-        this._setWindowAttributes(bytes[i + 3]);
+        this._setWindowAttributes(bytes[i + 1], bytes[i + 2], bytes[i + 3], bytes[i + 4]);
         break;
       // DLY (delay) and DLC (delay cancel) affect timing only, which is driven by cc_data time.
     }
@@ -443,6 +540,15 @@ export class CEA708Decoder {
         columnCount,
         justify: Justify.Left,
         wordWrap: false,
+        printDirection: Direction.LeftToRight,
+        scrollDirection: Direction.BottomToTop,
+        fillColor: 0,
+        fillOpacity: Opacity.Solid,
+        borderType: 0,
+        borderColor: 0,
+        displayEffect: DisplayEffect.Snap,
+        effectSpeed: 0,
+        effectPending: false,
         chars: [],
         styles: [],
         penRow: 0,
@@ -454,7 +560,7 @@ export class CEA708Decoder {
       resizeWindow(window, rowCount, columnCount);
     }
 
-    window.visible = (bytes[i] & 0x20) !== 0;
+    setVisible(window, (bytes[i] & 0x20) !== 0);
     window.rowLock = (bytes[i] & 0x10) !== 0;
     window.columnLock = (bytes[i] & 0x08) !== 0;
     window.priority = bytes[i] & 0x07;
@@ -464,31 +570,43 @@ export class CEA708Decoder {
     window.anchorPoint = Math.min(8, bytes[i + 3] >> 4);
 
     // Window style 0 means "keep the current attributes", which for a new window are style 1.
-    if (windowStyle > 0) {
-      window.justify = WINDOW_STYLE_JUSTIFY[windowStyle];
-      window.wordWrap = WINDOW_STYLE_WORD_WRAP[windowStyle];
-    }
+    if (windowStyle > 0) applyWindowStyle(window, windowStyle);
 
     this._current = id;
   }
 
-  /** SPA second byte: italics (bit 7) and underline (bit 6). Size/font/edge are not rendered. */
-  protected _setPenAttributes(byte2: number) {
+  /**
+   * SPA: pen size (byte 1 bits 0-1), italics (byte 2 bit 7), underline (bit 6), and edge type
+   * (bits 5-3). Text tag, offset, and font style are not rendered.
+   */
+  protected _setPenAttributes(byte1: number, byte2: number) {
     const window = this._windows[this._current];
     if (!window) return;
-    window.style &= ~(ITALICS | UNDERLINE);
-    if (byte2 & 0x80) window.style |= ITALICS;
-    if (byte2 & 0x40) window.style |= UNDERLINE;
+
+    let size = byte1 & 0x03,
+      edge = (byte2 >> 3) & 0x07;
+    if (size > PenSize.Large) size = PenSize.Standard; // reserved
+    if (edge > EdgeType.RightDropShadow) edge = EdgeType.None; // reserved
+
+    let style = window.style & ~(ITALICS | UNDERLINE | SIZE_MASK | EDGE_MASK);
+    if (byte2 & 0x80) style |= ITALICS;
+    if (byte2 & 0x40) style |= UNDERLINE;
+    window.style = style | (size << SIZE_SHIFT) | (edge << EDGE_SHIFT);
   }
 
-  /** SPC: opacity (2 bits) + RGB (2 bits each) for foreground and background. */
-  protected _setPenColor(fg: number, bg: number) {
+  /**
+   * SPC: opacity (2 bits) + RGB (2 bits each) for foreground and background, then the edge RGB.
+   * The background is stored per character but not rendered: a cue has a single background, which
+   * comes from the window fill.
+   */
+  protected _setPenColor(fg: number, bg: number, edge: number) {
     const window = this._windows[this._current];
     if (!window) return;
-    let style = (window.style & ~(FG_MASK | BG_MASK | BG_TRANSPARENT)) | (fg & FG_MASK);
+    let style =
+      (window.style & ~(FG_MASK | BG_MASK | BG_TRANSPARENT | EDGE_COLOR_MASK)) | (fg & FG_MASK);
     style |= (bg & 0x3f) << BG_SHIFT;
-    // Opacity 3 is transparent.
-    if (bg >> 6 === 3) style |= BG_TRANSPARENT;
+    if (bg >> 6 === Opacity.Transparent) style |= BG_TRANSPARENT;
+    style |= (edge & 0x3f) << EDGE_COLOR_SHIFT;
     window.style = style;
   }
 
@@ -499,12 +617,26 @@ export class CEA708Decoder {
     window.penCol = Math.min(col, window.columnCount - 1);
   }
 
-  /** SWA third byte: word wrap (bit 6), print/scroll direction (ignored), justify (bits 0-1). */
-  protected _setWindowAttributes(byte3: number) {
+  /**
+   * SWA: fill opacity + RGB (byte 1), border type low bits + border RGB (byte 2), border type
+   * high bit / word wrap / print direction / scroll direction / justify (byte 3), display effect /
+   * effect direction / effect speed (byte 4). The effect direction is not used (wipes always run
+   * left-to-right).
+   */
+  protected _setWindowAttributes(byte1: number, byte2: number, byte3: number, byte4: number) {
     const window = this._windows[this._current];
     if (!window) return;
+
+    window.fillOpacity = byte1 >> 6;
+    window.fillColor = byte1 & 0x3f;
+    window.borderType = (byte2 >> 6) | ((byte3 & 0x80) >> 5);
+    window.borderColor = byte2 & 0x3f;
     window.wordWrap = (byte3 & 0x40) !== 0;
+    window.printDirection = (byte3 >> 4) & 0x03;
+    window.scrollDirection = (byte3 >> 2) & 0x03;
     window.justify = byte3 & 0x03;
+    window.displayEffect = byte4 >> 6;
+    window.effectSpeed = byte4 & 0x0f;
   }
 
   protected _writeChar(char: string) {
@@ -514,12 +646,57 @@ export class CEA708Decoder {
     if (window.penCol >= window.columnCount) {
       // Past the right edge: wrap onto the next row, or truncate for fixed-layout windows.
       if (!window.wordWrap) return;
-      this._carriageReturn();
+      // A space at the boundary is consumed by the line break itself.
+      if (char === ' ') {
+        this._carriageReturn();
+        return;
+      }
+      this._wrapWord();
     }
 
     window.chars[window.penRow][window.penCol] = char;
     window.styles[window.penRow][window.penCol] = window.style;
     window.penCol++;
+  }
+
+  /**
+   * Word wrap at the right edge: carry the unfinished word (everything after the last space on
+   * the row) onto the next row. Without a space to break at, the row breaks mid-word.
+   */
+  protected _wrapWord() {
+    const window = this._windows[this._current]!,
+      row = window.chars[window.penRow],
+      rowStyles = window.styles[window.penRow];
+
+    let start = -1;
+    for (let c = window.columnCount - 1; c >= 0; c--) {
+      if (row[c] === ' ' || row[c] === '') {
+        start = c + 1;
+        break;
+      }
+    }
+
+    if (start < 0 || start >= window.columnCount) {
+      this._carriageReturn();
+      return;
+    }
+
+    const word = row.slice(start),
+      wordStyles = rowStyles.slice(start);
+    for (let c = start; c < window.columnCount; c++) {
+      row[c] = '';
+      rowStyles[c] = DEFAULT_STYLE;
+    }
+
+    this._carriageReturn();
+
+    const target = window.chars[window.penRow],
+      targetStyles = window.styles[window.penRow];
+    for (let c = 0; c < word.length; c++) {
+      target[c] = word[c];
+      targetStyles[c] = wordStyles[c];
+    }
+    window.penCol = word.length;
   }
 
   protected _backspace() {
@@ -536,12 +713,30 @@ export class CEA708Decoder {
     clearWindow(window);
   }
 
-  /** CR: move to the start of the next row, scrolling the window up when on the last row. */
+  /**
+   * CR: move to the start of the next row in the scroll direction, scrolling the window when the
+   * pen is already on the last row. Bottom-to-top (the default) fills downwards and scrolls rows
+   * up; top-to-bottom fills upwards and scrolls rows down, dropping the bottom row. Left-to-right
+   * and right-to-left scrolling are approximated as bottom-to-top.
+   */
   protected _carriageReturn() {
     const window = this._windows[this._current];
     if (!window) return;
 
     window.penCol = 0;
+
+    if (window.scrollDirection === Direction.TopToBottom) {
+      if (window.penRow > 0) {
+        window.penRow--;
+        return;
+      }
+      window.chars.pop();
+      window.styles.pop();
+      window.chars.unshift(emptyRow(window.columnCount, ''));
+      window.styles.unshift(emptyRow(window.columnCount, DEFAULT_STYLE));
+      return;
+    }
+
     if (window.penRow < window.rowCount - 1) {
       window.penRow++;
       return;
@@ -567,16 +762,27 @@ export class CEA708Decoder {
     for (let w = 0; w < MAX_WINDOWS; w++) {
       const window = this._windows[w],
         text = window && window.visible ? renderWindow(window) : '',
-        key = text && window ? windowKey(window, text) : '';
+        textStyle = window && text ? windowTextStyle(window) : undefined,
+        key = window && text ? windowKey(window, text, textStyle) : '';
 
-      // Identical content, keep the current cue going.
-      if (key === this._windowKeys[w]) continue;
+      // Identical content, keep the current cue going. The display effect only applies to a new
+      // cue, so it lapses unless the window is still waiting for its first text.
+      if (key === this._windowKeys[w]) {
+        if (window && (text || !window.visible)) window.effectPending = false;
+        continue;
+      }
 
       this._closeCue(w, this._time);
 
       if (window && text) {
         const cue = new VTTCue(this._time, this._live ? Infinity : this._time, text);
         positionCue(cue, window);
+        if (textStyle) cue.textStyle = textStyle;
+        if (window.effectPending) {
+          window.effectPending = false;
+          const animation = displayAnimation(window);
+          if (animation) cue.textStyle = { ...cue.textStyle, animation };
+        }
         this._windowCues[w] = cue;
         this._windowKeys[w] = key;
         if (this._live) {
@@ -678,8 +884,33 @@ function resizeWindow(window: CaptionWindow, rowCount: number, columnCount: numb
   }
 }
 
+/** Show or hide a window; becoming visible arms the display effect for the next cue. */
+function setVisible(window: CaptionWindow, visible: boolean) {
+  if (visible && !window.visible) window.effectPending = true;
+  window.visible = visible;
+}
+
+/**
+ * Apply predefined window style 1-7. All styles print left-to-right, scroll bottom-to-top, snap
+ * on, and have no border; styles 2 and 5 have a transparent fill. Style 7 ("ticker tape") is
+ * specified with a top-to-bottom print direction and right-to-left scroll, which is not honoured:
+ * real-world tickers are horizontal.
+ */
+function applyWindowStyle(window: CaptionWindow, style: number) {
+  window.justify = WINDOW_STYLE_JUSTIFY[style];
+  window.wordWrap = WINDOW_STYLE_WORD_WRAP[style];
+  window.printDirection = Direction.LeftToRight;
+  window.scrollDirection = Direction.BottomToTop;
+  window.fillColor = 0;
+  window.fillOpacity = WINDOW_STYLE_FILL_OPACITY[style];
+  window.borderType = 0;
+  window.borderColor = 0;
+  window.displayEffect = DisplayEffect.Snap;
+  window.effectSpeed = 0;
+}
+
 /** Identity of a window's on-screen content, including everything that affects cue placement. */
-function windowKey(window: CaptionWindow, text: string) {
+function windowKey(window: CaptionWindow, text: string, textStyle: CueTextStyle | undefined) {
   return (
     (window.relative ? 'r' : 'a') +
     window.anchorPoint +
@@ -691,28 +922,126 @@ function windowKey(window: CaptionWindow, text: string) {
     window.columnCount +
     ':' +
     window.justify +
+    ':' +
+    window.printDirection +
+    ':' +
+    (textStyle ? JSON.stringify(textStyle) : '') +
     '|' +
     text
   );
 }
 
-/** Map the window anchor onto WebVTT line/position settings. */
+/** Map the window anchor and print direction onto WebVTT line/position/vertical settings. */
 function positionCue(cue: VTTCue, window: CaptionWindow) {
   const anchor = window.anchorPoint,
-    vertical = window.relative
-      ? window.anchorVertical
-      : (window.anchorVertical / ANCHOR_ROWS) * 100,
-    horizontal = window.relative
-      ? window.anchorHorizontal
-      : (window.anchorHorizontal / ANCHOR_COLS) * 100;
+    // Anchor points number 0-8 across a 3x3 grid: top/middle/bottom rows, left/center/right columns.
+    anchorRow = Math.floor(anchor / 3),
+    anchorCol = anchor % 3,
+    vertical = Math.min(
+      100,
+      window.relative ? window.anchorVertical : (window.anchorVertical / ANCHOR_ROWS) * 100,
+    ),
+    horizontal = Math.min(
+      100,
+      window.relative ? window.anchorHorizontal : (window.anchorHorizontal / ANCHOR_COLS) * 100,
+    ),
+    writingMode = PRINT_VERTICAL[window.printDirection];
 
   cue.snapToLines = false;
-  cue.line = Math.min(100, vertical);
-  cue.lineAlign = anchor < 3 ? 'start' : anchor < 6 ? 'center' : 'end';
-  cue.position = Math.min(100, horizontal);
-  cue.positionAlign = anchor % 3 === 0 ? 'line-left' : anchor % 3 === 1 ? 'center' : 'line-right';
+  cue.vertical = writingMode;
+
+  // WebVTT `position`/`size` run along the inline axis and `line` along the block axis. For
+  // vertical print directions the axes swap, as they do for TTML vertical writing modes.
+  if (writingMode) {
+    cue.line = horizontal;
+    cue.lineAlign = LINE_ALIGNS[anchorCol];
+    cue.position = vertical;
+    cue.positionAlign = POSITION_ALIGNS[anchorRow];
+  } else {
+    cue.line = vertical;
+    cue.lineAlign = LINE_ALIGNS[anchorRow];
+    cue.position = horizontal;
+    cue.positionAlign = POSITION_ALIGNS[anchorCol];
+  }
+
   cue.size = Math.min(100, Math.round((window.columnCount / FULL_WIDTH_COLS) * 100));
-  cue.align = JUSTIFY_ALIGN[window.justify];
+
+  // Justification is relative to the print direction, so left/right swap for right-to-left.
+  let align = JUSTIFY_ALIGN[window.justify];
+  if (window.printDirection === Direction.RightToLeft) {
+    if (align === 'left') align = 'right';
+    else if (align === 'right') align = 'left';
+  }
+  cue.align = align;
+}
+
+/**
+ * Window fill, border, and dominant pen edge as cue text styling. The default solid black fill is
+ * left unset so the renderer's (user-configurable) background applies. Returns `undefined` when
+ * nothing deviates from the defaults.
+ */
+function windowTextStyle(window: CaptionWindow): CueTextStyle | undefined {
+  const style: CueTextStyle = {};
+  let any = false;
+
+  if (window.fillColor !== 0 || window.fillOpacity >= Opacity.Translucent) {
+    style.backgroundColor = rgbaColor(window.fillColor, FILL_ALPHA[window.fillOpacity]);
+    any = true;
+  }
+
+  if (window.borderType !== 0) {
+    style.outline = '0.08em solid ' + hexColor(window.borderColor);
+    any = true;
+  }
+
+  const edge = dominantEdge(window);
+  if (edge > 0) {
+    const color = hexColor((edge & EDGE_COLOR_MASK) >> EDGE_COLOR_SHIFT);
+    switch ((edge & EDGE_MASK) >> EDGE_SHIFT) {
+      case EdgeType.Uniform:
+        style.textStroke = '0.08em ' + color;
+        break;
+      case EdgeType.Raised:
+        style.textShadow = '-0.04em -0.04em 0 ' + color;
+        break;
+      case EdgeType.Depressed:
+        style.textShadow = '0.04em 0.04em 0 ' + color;
+        break;
+      case EdgeType.LeftDropShadow:
+        style.textShadow = '-0.06em 0.06em 0.06em ' + color;
+        break;
+      case EdgeType.RightDropShadow:
+        style.textShadow = '0.06em 0.06em 0.06em ' + color;
+        break;
+    }
+    any = true;
+  }
+
+  return any ? style : undefined;
+}
+
+/**
+ * Cell style of the first written character with a non-none edge type, or `0` when no character
+ * in the window has an edge. Edges are rendered per cue, so the first one seen wins.
+ */
+function dominantEdge(window: CaptionWindow) {
+  for (let r = 0; r < window.rowCount; r++) {
+    const chars = window.chars[r],
+      styles = window.styles[r];
+    for (let c = 0; c < window.columnCount; c++) {
+      if (chars[c] !== '' && styles[c] & EDGE_MASK) return styles[c];
+    }
+  }
+  return 0;
+}
+
+/** CSS animation for the window's display effect, or `undefined` for snap. */
+function displayAnimation(window: CaptionWindow) {
+  const effect = window.displayEffect;
+  if (effect !== DisplayEffect.Fade && effect !== DisplayEffect.Wipe) return;
+  const seconds = Math.max(MIN_EFFECT_DURATION, window.effectSpeed * EFFECT_SPEED_UNIT),
+    name = effect === DisplayEffect.Fade ? 'media-captions-fade-in' : 'media-captions-wipe-in';
+  return name + ' ' + seconds + 's';
 }
 
 /**
@@ -750,8 +1079,10 @@ function renderRow(chars: string[], styles: number[], end: number) {
 
   for (let c = 0; c <= end; c++) {
     const char = chars[c],
-      // Never-written cells continue the current run so styles are not needlessly split.
-      style = char === '' ? (current < 0 ? DEFAULT_STYLE : current) : styles[c];
+      // Never-written cells continue the current run so styles are not needlessly split. Only the
+      // bits that produce tags take part, so e.g. a background change does not split a run.
+      style =
+        char === '' ? (current < 0 ? DEFAULT_STYLE & TAG_MASK : current) : styles[c] & TAG_MASK;
 
     if (style !== current) {
       if (current >= 0) text += closeTags(current);
@@ -765,18 +1096,24 @@ function renderRow(chars: string[], styles: number[], end: number) {
   return text + closeTags(current);
 }
 
+/** Opening tags for a run, outermost first: colour, pen size, italics, underline. */
 function openTags(style: number) {
-  const fg = style & FG_MASK;
+  const fg = style & FG_MASK,
+    size = (style & SIZE_MASK) >> SIZE_SHIFT;
   let tags = fg !== FG_MASK ? '<c.' + hexColor(fg) + '>' : '';
+  if (size === PenSize.Small) tags += '<c.pen-small>';
+  else if (size === PenSize.Large) tags += '<c.pen-large>';
   if (style & ITALICS) tags += '<i>';
   if (style & UNDERLINE) tags += '<u>';
   return tags;
 }
 
 function closeTags(style: number) {
+  const size = (style & SIZE_MASK) >> SIZE_SHIFT;
   let tags = '';
   if (style & UNDERLINE) tags += '</u>';
   if (style & ITALICS) tags += '</i>';
+  if (size !== PenSize.Standard) tags += '</c>';
   if ((style & FG_MASK) !== FG_MASK) tags += '</c>';
   return tags;
 }
@@ -788,6 +1125,21 @@ function hexColor(rgb: number) {
     hex2(COMPONENTS[(rgb >> 4) & 0x03]) +
     hex2(COMPONENTS[(rgb >> 2) & 0x03]) +
     hex2(COMPONENTS[rgb & 0x03])
+  );
+}
+
+/** 6-bit CEA-708 colour plus alpha -> `rgba(r,g,b,a)`. */
+function rgbaColor(rgb: number, alpha: number) {
+  return (
+    'rgba(' +
+    COMPONENTS[(rgb >> 4) & 0x03] +
+    ',' +
+    COMPONENTS[(rgb >> 2) & 0x03] +
+    ',' +
+    COMPONENTS[rgb & 0x03] +
+    ',' +
+    alpha +
+    ')'
   );
 }
 

@@ -85,21 +85,46 @@ const text = (str: string) => Array.from(str, (c) => c.charCodeAt(0)),
   DLW = (bitmap: number) => [0x8c, bitmap],
   DLY = (ticks: number) => [0x8d, ticks],
   RST = [0x8f],
-  SPA = (italics: boolean, underline: boolean) => [
+  /**
+   * SPA: byte 1 is text tag (4 bits), offset (2 bits: 1 normal), pen size (2 bits: 0 small,
+   * 1 standard, 2 large); byte 2 is italics, underline, edge type (3 bits), font style (3 bits).
+   */
+  SPA = (italics: boolean, underline: boolean, { size = 1, edge = 0 } = {}) => [
     0x90,
-    0x00,
-    (italics ? 0x80 : 0) | (underline ? 0x40 : 0),
+    0x04 | size,
+    (italics ? 0x80 : 0) | (underline ? 0x40 : 0) | (edge << 3),
   ],
-  /** Foreground/background as opacity (2 bits) + RGB (2 bits each). */
-  SPC = (fg: number, bg = 0) => [0x91, fg, bg, 0x00],
+  /** Foreground/background as opacity (2 bits) + RGB (2 bits each), then the edge RGB. */
+  SPC = (fg: number, bg = 0, edge = 0) => [0x91, fg, bg, edge],
   SPL = (row: number, col: number) => [0x92, row, col],
-  /** SWA with the given justification (0 left, 1 right, 2 center) and word wrap flag. */
-  SWA = (justify: number, wordWrap = false) => [
+  /**
+   * SWA with the given justification (0 left, 1 right, 2 center), word wrap flag, and optional
+   * fill / border / direction / display effect fields.
+   */
+  SWA = (
+    justify: number,
+    wordWrap = false,
+    {
+      fillOpacity = 0,
+      fillColor = 0,
+      borderType = 0,
+      borderColor = 0,
+      printDirection = 0,
+      scrollDirection = 3,
+      effect = 0,
+      effectDirection = 0,
+      effectSpeed = 0,
+    } = {},
+  ) => [
     0x97,
-    0x00,
-    0x00,
-    (wordWrap ? 0x40 : 0) | justify,
-    0x00,
+    (fillOpacity << 6) | fillColor,
+    ((borderType & 0x03) << 6) | borderColor,
+    ((borderType & 0x04) << 5) |
+      (wordWrap ? 0x40 : 0) |
+      (printDirection << 4) |
+      (scrollDirection << 2) |
+      justify,
+    (effect << 6) | (effectDirection << 4) | effectSpeed,
   ],
   ETX = [0x03],
   CR = [0x0d],
@@ -503,6 +528,385 @@ test('real-world pop-on sequence: delete all, define, write two rows, display', 
   expect(cue.positionAlign).toBe('center');
   expect(cue.size).toBe(100);
   expect(cue.align).toBe('center');
+});
+
+// --- Window attributes, pen attributes, and directions ---
+
+/** Decode one group and flush, returning the single resulting cue. */
+function decodeOne(data: number[]) {
+  const decoder = new CEA708Decoder();
+  decoder.decodeCCData(svc(data), 1);
+  decoder.flush(2);
+  expect(decoder.cues).toHaveLength(1);
+  return decoder.cues[0];
+}
+
+test('pen sizes wrap runs in pen-small / pen-large classes, nested inside colour and style', () => {
+  const cue = decodeOne([
+    ...DF(),
+    ...SPA(false, false, { size: 0 }),
+    ...text('tiny'),
+    ...SPA(false, false),
+    ...text(' normal '),
+    ...SPA(true, true, { size: 2 }),
+    ...SPC(0x30), // red
+    ...text('BIG'),
+    ...DSW(1),
+  ]);
+  expect(cue.text).toBe(
+    '<c.pen-small>tiny</c> normal <c.#ff0000><c.pen-large><i><u>BIG</u></i></c></c>',
+  );
+  expect(cue.textStyle).toBeUndefined();
+});
+
+test('standard pen size and reserved size value leave the text unwrapped', () => {
+  const cue = decodeOne([
+    ...DF(),
+    ...SPA(false, false, { size: 1 }),
+    ...text('one '),
+    ...SPA(false, false, { size: 3 }),
+    ...text('two'),
+    ...DSW(1),
+  ]);
+  expect(cue.text).toBe('one two');
+});
+
+test.each([
+  [1, 'raised', { textShadow: '-0.04em -0.04em 0 #000000' }],
+  [2, 'depressed', { textShadow: '0.04em 0.04em 0 #000000' }],
+  [3, 'uniform', { textStroke: '0.08em #000000' }],
+  [4, 'left drop shadow', { textShadow: '-0.06em 0.06em 0.06em #000000' }],
+  [5, 'right drop shadow', { textShadow: '0.06em 0.06em 0.06em #000000' }],
+])(
+  'pen edge type %i (%s) maps onto the cue text style with a black default colour',
+  (edge, _, style) => {
+    const cue = decodeOne([...DF(), ...SPA(false, false, { edge }), ...text('Edge'), ...DSW(1)]);
+    expect(cue.text).toBe('Edge');
+    expect(cue.textStyle).toEqual(style);
+  },
+);
+
+test('edge colour comes from SPC and the first non-none edge in the window wins', () => {
+  const cue = decodeOne([
+    ...DF({ rows: 2 }),
+    ...text('plain '),
+    ...SPA(false, false, { edge: 3 }),
+    ...SPC(0x3f, 0, 0x03), // blue edge
+    ...text('stroked'),
+    ...CR,
+    ...SPA(false, false, { edge: 1 }),
+    ...SPC(0x3f, 0, 0x30), // red edge, ignored
+    ...text('raised'),
+    ...DSW(1),
+  ]);
+  expect(cue.text).toBe('plain stroked\nraised');
+  expect(cue.textStyle).toEqual({ textStroke: '0.08em #0000ff' });
+});
+
+test('no edge type yields no text stroke or shadow', () => {
+  const cue = decodeOne([
+    ...DF(),
+    ...SPA(false, false, { edge: 0 }),
+    ...SPC(0x3f, 0, 0x30),
+    ...text('Flat'),
+    ...DSW(1),
+  ]);
+  expect(cue.textStyle).toBeUndefined();
+});
+
+test('window fill: translucent, transparent, and coloured fills become rgba backgrounds', () => {
+  const translucent = decodeOne([
+      ...DF(),
+      ...SWA(0, false, { fillOpacity: 2 }),
+      ...text('a'),
+      ...DSW(1),
+    ]),
+    transparent = decodeOne([
+      ...DF(),
+      ...SWA(0, false, { fillOpacity: 3 }),
+      ...text('a'),
+      ...DSW(1),
+    ]),
+    // Flash is rendered as solid; 2-bit colour 0b10_01_11 -> rgb(170,85,255).
+    flash = decodeOne([
+      ...DF(),
+      ...SWA(0, false, { fillOpacity: 1, fillColor: 0x27 }),
+      ...text('a'),
+      ...DSW(1),
+    ]),
+    solidBlack = decodeOne([...DF(), ...SWA(0), ...text('a'), ...DSW(1)]);
+
+  expect(translucent.textStyle).toEqual({ backgroundColor: 'rgba(0,0,0,0.5)' });
+  expect(transparent.textStyle).toEqual({ backgroundColor: 'rgba(0,0,0,0)' });
+  expect(flash.textStyle).toEqual({ backgroundColor: 'rgba(170,85,255,1)' });
+  // The default solid black fill is left to the renderer.
+  expect(solidBlack.textStyle).toBeUndefined();
+});
+
+test('window border becomes an outline in the border colour; pen background is ignored', () => {
+  const cue = decodeOne([
+    ...DF(),
+    // Border type 5 (shadow right) exercises the high bit carried in the third byte.
+    ...SWA(0, false, { fillOpacity: 3, borderType: 5, borderColor: 0x3c }), // yellow
+    ...SPC(0x3f, 0x30), // red pen background, not rendered
+    ...text('Boxed'),
+    ...DSW(1),
+  ]);
+  expect(cue.text).toBe('Boxed');
+  expect(cue.textStyle).toEqual({
+    backgroundColor: 'rgba(0,0,0,0)',
+    outline: '0.08em solid #ffff00',
+  });
+});
+
+test('predefined window styles 2 and 5 have a transparent fill', () => {
+  const popOn = decodeOne([...DF({ style: 2 }), ...text('a'), ...DSW(1)]),
+    rollUp = decodeOne([...DF({ style: 5 }), ...text('a'), ...DSW(1)]),
+    opaque = decodeOne([...DF({ style: 4 }), ...text('a'), ...DSW(1)]);
+  expect(popOn.textStyle).toEqual({ backgroundColor: 'rgba(0,0,0,0)' });
+  expect(rollUp.textStyle).toEqual({ backgroundColor: 'rgba(0,0,0,0)' });
+  expect(opaque.textStyle).toBeUndefined();
+});
+
+test('changing the window fill while displayed starts a new cue', () => {
+  const decoder = new CEA708Decoder();
+  decoder.decodeCCData(svc(HELLO), 1);
+  decoder.decodeCCData(svc(SWA(0, false, { fillOpacity: 3 })), 2);
+  decoder.flush(3);
+
+  expect(decoder.cues.map((cue) => [cue.text, cue.startTime, cue.endTime])).toEqual([
+    ['Hello', 1, 2],
+    ['Hello', 2, 3],
+  ]);
+  expect(decoder.cues[0].textStyle).toBeUndefined();
+  expect(decoder.cues[1].textStyle).toEqual({ backgroundColor: 'rgba(0,0,0,0)' });
+});
+
+test('top-to-bottom print direction is vertical lr with swapped line/position axes', () => {
+  const cue = decodeOne([
+    ...DF({ relative: true, av: 10, ah: 80, anchor: 2, cols: 16 }), // top-right anchor
+    ...SWA(0, false, { printDirection: 2 }),
+    ...text('down'),
+    ...DSW(1),
+  ]);
+  expect(cue.text).toBe('down');
+  expect(cue.vertical).toBe('lr');
+  // `line` now runs along the horizontal axis, `position` along the vertical axis.
+  expect(cue.line).toBe(80);
+  expect(cue.lineAlign).toBe('end');
+  expect(cue.position).toBe(10);
+  expect(cue.positionAlign).toBe('line-left');
+  expect(cue.size).toBe(50);
+});
+
+test('bottom-to-top print direction is vertical rl', () => {
+  const cue = decodeOne([
+    ...DF({ relative: true, av: 50, ah: 50, anchor: 4 }),
+    ...SWA(2, false, { printDirection: 3 }),
+    ...text('up'),
+    ...DSW(1),
+  ]);
+  expect(cue.vertical).toBe('rl');
+  expect(cue.line).toBe(50);
+  expect(cue.lineAlign).toBe('center');
+  expect(cue.position).toBe(50);
+  expect(cue.positionAlign).toBe('center');
+  expect(cue.align).toBe('center');
+});
+
+test('right-to-left print direction keeps logical order and mirrors left/right justification', () => {
+  const left = decodeOne([
+      ...DF(),
+      ...SWA(0, false, { printDirection: 1 }),
+      ...text('abc'),
+      ...DSW(1),
+    ]),
+    right = decodeOne([
+      ...DF(),
+      ...SWA(1, false, { printDirection: 1 }),
+      ...text('abc'),
+      ...DSW(1),
+    ]);
+  expect(left.text).toBe('abc');
+  expect(left.vertical).toBe('');
+  expect(left.align).toBe('right');
+  expect(right.align).toBe('left');
+});
+
+test('horizontal print directions leave cue.vertical empty', () => {
+  const cue = decodeOne([...DF(), ...SWA(0), ...text('flat'), ...DSW(1)]);
+  expect(cue.vertical).toBe('');
+});
+
+test('top-to-bottom scroll direction adds rows at the top and drops the bottom row', () => {
+  const decoder = new CEA708Decoder();
+  decoder.decodeCCData(
+    svc([
+      ...DF({ rows: 2 }),
+      ...SWA(0, false, { scrollDirection: 2 }),
+      ...text('one'),
+      ...CR,
+      ...text('two'),
+      ...DSW(1),
+    ]),
+    1,
+  );
+  decoder.decodeCCData(svc([...CR, ...text('three')]), 2);
+  decoder.flush(3);
+
+  expect(decoder.cues.map((cue) => cue.text)).toEqual(['two\none', 'three\ntwo']);
+});
+
+test('top-to-bottom scroll moves the pen up before scrolling', () => {
+  const cue = decodeOne([
+    ...DF({ rows: 3 }),
+    ...SWA(0, false, { scrollDirection: 2 }),
+    ...SPL(2, 0),
+    ...text('bottom'),
+    ...CR,
+    ...text('middle'),
+    ...CR,
+    ...text('top'),
+    ...DSW(1),
+  ]);
+  expect(cue.text).toBe('top\nmiddle\nbottom');
+});
+
+test('left/right scroll directions behave like bottom-to-top', () => {
+  const decoder = new CEA708Decoder();
+  decoder.decodeCCData(
+    svc([
+      ...DF({ rows: 2 }),
+      ...SWA(0, false, { scrollDirection: 1 }),
+      ...text('one'),
+      ...CR,
+      ...text('two'),
+      ...CR,
+      ...text('three'),
+      ...DSW(1),
+    ]),
+    1,
+  );
+  decoder.flush(2);
+  expect(decoder.cues[0].text).toBe('two\nthree');
+});
+
+test('fade display effect animates the cue for effect_speed * 0.5 s', () => {
+  const cue = decodeOne([
+    ...DF(),
+    ...SWA(0, false, { effect: 1, effectSpeed: 3 }),
+    ...text('fade'),
+    ...DSW(1),
+  ]);
+  expect(cue.textStyle).toEqual({ animation: 'media-captions-fade-in 1.5s' });
+});
+
+test('wipe display effect animates the cue with a minimum duration of 0.1 s', () => {
+  const wipe = decodeOne([
+      ...DF(),
+      ...SWA(0, false, { effect: 2, effectDirection: 1, effectSpeed: 2 }),
+      ...text('wipe'),
+      ...DSW(1),
+    ]),
+    instant = decodeOne([
+      ...DF(),
+      ...SWA(0, false, { effect: 2, effectSpeed: 0 }),
+      ...text('wipe'),
+      ...DSW(1),
+    ]);
+  expect(wipe.textStyle).toEqual({ animation: 'media-captions-wipe-in 1s' });
+  expect(instant.textStyle).toEqual({ animation: 'media-captions-wipe-in 0.1s' });
+});
+
+test('display effects combine with fill styling and apply only to the cue shown on display', () => {
+  const decoder = new CEA708Decoder();
+  decoder.decodeCCData(
+    svc([
+      ...DF({ rows: 2 }),
+      ...SWA(0, false, { fillOpacity: 3, effect: 1, effectSpeed: 1 }),
+      ...text('one'),
+      ...DSW(1),
+    ]),
+    1,
+  );
+  // Content change while displayed: a new cue, but no re-animation.
+  decoder.decodeCCData(svc([...CR, ...text('two')]), 2);
+  // Hide and redisplay: the effect plays again.
+  decoder.decodeCCData(svc(HDW(1)), 3);
+  decoder.decodeCCData(svc(DSW(1)), 4);
+  decoder.flush(5);
+
+  expect(decoder.cues.map((cue) => cue.textStyle)).toEqual([
+    { backgroundColor: 'rgba(0,0,0,0)', animation: 'media-captions-fade-in 0.5s' },
+    { backgroundColor: 'rgba(0,0,0,0)' },
+    { backgroundColor: 'rgba(0,0,0,0)', animation: 'media-captions-fade-in 0.5s' },
+  ]);
+});
+
+test('snap display effect and hidden-then-filled windows: the effect waits for the first text', () => {
+  const snap = decodeOne([...DF(), ...SWA(0, false, { effect: 0 }), ...text('snap'), ...DSW(1)]);
+  expect(snap.textStyle).toBeUndefined();
+
+  // Window displayed while empty (paint-on): the animation applies once text arrives.
+  const decoder = new CEA708Decoder();
+  decoder.decodeCCData(
+    svc([...DF({ visible: true }), ...SWA(0, false, { effect: 1, effectSpeed: 2 })]),
+    1,
+  );
+  decoder.decodeCCData(svc(text('painted')), 2);
+  decoder.flush(3);
+  expect(decoder.cues).toHaveLength(1);
+  expect(decoder.cues[0].textStyle).toEqual({ animation: 'media-captions-fade-in 1s' });
+});
+
+test('word wrap carries the unfinished word onto the next row', () => {
+  const cue = decodeOne([
+    ...DF({ rows: 2, cols: 8 }),
+    ...SWA(0, true),
+    ...text('hello world'),
+    ...DSW(1),
+  ]);
+  expect(cue.text).toBe('hello\nworld');
+});
+
+test('word wrap keeps the moved word styling and consumes a space at the boundary', () => {
+  const styled = decodeOne([
+      ...DF({ rows: 2, cols: 8 }),
+      ...SWA(0, true),
+      ...text('hello '),
+      ...SPA(true, false),
+      ...text('world'),
+      ...DSW(1),
+    ]),
+    boundary = decodeOne([
+      ...DF({ rows: 2, cols: 4 }),
+      ...SWA(0, true),
+      ...text('abcd efgh'),
+      ...DSW(1),
+    ]);
+  expect(styled.text).toBe('hello\n<i>world</i>');
+  expect(boundary.text).toBe('abcd\nefgh');
+});
+
+test('word wrap falls back to breaking a word longer than the row', () => {
+  const cue = decodeOne([
+    ...DF({ rows: 3, cols: 4 }),
+    ...SWA(0, true),
+    ...text('ab cdefgh'),
+    ...DSW(1),
+  ]);
+  // "c" moves down with the word, which then overflows the row and breaks mid-word.
+  expect(cue.text).toBe('ab\ncdef\ngh');
+});
+
+test('word wrap on the last row scrolls the carried word into view', () => {
+  const cue = decodeOne([
+    ...DF({ rows: 1, cols: 8 }),
+    ...SWA(0, true),
+    ...text('hello world'),
+    ...DSW(1),
+  ]);
+  expect(cue.text).toBe('world');
 });
 
 // --- Live mode ---
