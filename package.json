@@ -65,6 +65,12 @@
       "development": "./dist/dev.js",
       "default": "./dist/prod.js"
     },
+    "./cea": {
+      "types": "./dist/prod-cea.d.ts",
+      "test": "./dist/dev-cea.js",
+      "development": "./dist/dev-cea.js",
+      "default": "./dist/prod-cea.js"
+    },
     "./styles/*": "./styles/*",
     "./package.json": "./package.json"
   },
@@ -74,6 +80,8 @@
   "keywords": [
     "ass",
     "captions",
+    "cea-608",
+    "cea-708",
     "cues",
     "engine",
     "fast",
@@ -82,11 +90,13 @@
     "parser",
     "player",
     "regions",
+    "scc",
     "srt",
     "ssa",
     "streaming",
     "text-tracks",
     "ts",
+    "ttml",
     "typescript",
     "video",
     "vidstack",

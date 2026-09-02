@@ -83,11 +83,12 @@ export interface ParseCaptionsOptions {
   type?: CaptionsFileFormat | CaptionsParserFactory;
   /**
    * CEA-608 data channel to decode when parsing SCC files (`1` for CC1, `2` for CC2). SCC files
-   * only carry field 1, so CC3/CC4 are not available.
+   * only carry field 1, so `3`/`4` (CC3/CC4) yield no cues here; use `CEA608Decoder` from
+   * `media-captions/cea` with stream `cc_data` for those.
    *
    * @defaultValue 1
    */
-  channel?: 1 | 2;
+  channel?: 1 | 2 | 3 | 4;
   /**
    * Invoked with metadata that was parsed from the VTT header.
    */
