@@ -27,6 +27,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { parseText, tokenizeVTTCue, type VTTCue, type VTTNode } from 'media-captions';
+import { registerFullHTMLEntities } from 'media-captions/entities';
 
 // --------------------------------------------------------------------------------------------
 // Fixtures
@@ -111,9 +112,6 @@ const KNOWN_FILE_DIVERGENCES: Record<string, string[]> = {
 
 /** WPT cue text test names that currently fail (see KNOWN_DIVERGENCES.md). */
 const KNOWN_CUE_TEXT_DIVERGENCES = new Set<string>([
-  // T8: only a Latin-1 subset of the HTML named character reference table ships.
-  'WebVTT cue data parser test entities - e3ac2060b915f0f499b2863f999dcdb38a5db79b', // &ClockwiseContourIntegral;
-  'WebVTT cue data parser test entities - 31c8a5ecfa5c54d8c0ec5b4ee8f0bbea0d6d40af', // &nsubE;
   // T7: a mismatched end tag closes through open ancestors instead of being ignored.
   'WebVTT cue data parser test tree-building - 325c1e590e74f1ff33ca5b4838c04cf6b6dd71ba',
   'WebVTT cue data parser test tree-building - 92847ed2694c9639ba96f4cc61e2215362a74904',
@@ -312,6 +310,10 @@ async function cueTextToHTML(input: string) {
 }
 
 describe('WPT webvtt/parsing/cue-text-parsing', () => {
+  // The WPT entity tests expect the full HTML named character reference table, which is an
+  // opt-in entry (`media-captions/entities`) so the core bundle only ships a Latin-1 subset.
+  registerFullHTMLEntities();
+
   for (const wpt of cueTextParsing.tests) {
     const run = KNOWN_CUE_TEXT_DIVERGENCES.has(wpt.name) ? test.fails : test;
     run(`${wpt.name} (${JSON.stringify(wpt.input)})`, async () => {

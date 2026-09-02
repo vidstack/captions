@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       'media-captions/cea': '/src/cea/index',
+      'media-captions/entities': '/src/entities/index',
       'media-captions/element': '/src/element/index',
       'media-captions': '/src/index',
     },

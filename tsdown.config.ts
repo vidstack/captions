@@ -40,6 +40,7 @@ function define({ dev }: { dev: boolean }): UserConfig {
     entry: {
       [alias]: 'src/index.ts',
       [`${alias}-cea`]: 'src/cea/index.ts',
+      [`${alias}-entities`]: 'src/entities/index.ts',
       [`${alias}-element`]: 'src/element/index.ts',
       // Explicit per-format entries for bundlers/runtimes that can not follow dynamic imports.
       ...Object.fromEntries(PARSERS.map(([name, path]) => [`${alias}-parser-${name}`, path])),

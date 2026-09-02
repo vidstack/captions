@@ -21,6 +21,7 @@
     "paths": {
       "media-captions": ["./src/index.ts"],
       "media-captions/cea": ["./src/cea/index.ts"],
+      "media-captions/entities": ["./src/entities/index.ts"],
       "media-captions/element": ["./src/element/index.ts"]
     },
     "types": ["vitest/globals"],

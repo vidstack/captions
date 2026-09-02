@@ -7,8 +7,8 @@ Counts (`wpt.test.ts`):
 | Suite                          | WPT tests | Converted | Skipped | Fully passing | With divergences |
 | ------------------------------ | --------- | --------- | ------- | ------------- | ---------------- |
 | `file-parsing` (per HTML file) | 40        | 39        | 1       | 33            | 6                |
-| `cue-text-parsing` (per entry) | 79        | 79        | 0       | 73            | 6                |
-| **Total**                      | **119**   | **118**   | **1**   | **106**       | **12**           |
+| `cue-text-parsing` (per entry) | 79        | 79        | 0       | 75            | 4                |
+| **Total**                      | **119**   | **118**   | **1**   | **108**       | **10**           |
 
 Every remaining divergence is a documented, deliberate tolerance (`T*` below). Diverging
 assertions are excluded from the regular test and exercised by a `test.fails` sibling, so the
@@ -39,8 +39,11 @@ All of the following were bugs when the suite was first vendored and are now fix
 - Strict mode required two hour digits; the spec accepts one.
 - Formerly T5: cues whose end is not after their start are now kept (and reported), as in browsers.
 - Formerly T6: timestamp tags are no longer range-checked against the cue.
-- T8 (partial): uppercase `&AMP;`-style names, `&not;`/`&notin;`, and legacy no-semicolon
-  references for the shipped Latin-1 subset now decode.
+- Formerly T8: uppercase `&AMP;`-style names, `&not;`/`&notin;`, and legacy no-semicolon
+  references now decode. The core bundle still ships only a Latin-1 subset of the named character
+  reference table; the full HTML table (2,231 names) is an opt-in entry, `media-captions/entities`
+  (`registerFullHTMLEntities()`), and is registered in the WPT run so the two `entities` tests
+  (`&ClockwiseContourIntegral;`, `&nsubE;`) pass.
 
 ## Deliberate tolerances / deviations
 
@@ -80,10 +83,3 @@ All of the following were bugs when the suite was first vendored and are now fix
   node is `<b>` (only the current node, plus the `</ruby>`-closes-`<rt>` special case, is
   considered), giving `<ruby>test<rt><b>testtest</b></rt></ruby>`. `closeNode` closes the nearest
   matching ancestor instead. Deliberate tolerance for unbalanced markup (`<b><i>x</b>`).
-
-### T8. Limited named character reference table
-
-- Tests: `entities - e3ac2060...` (`&ClockwiseContourIntegral;`), `31c8a5ec...` (`&nsubE;`)
-- Spec: the full HTML named character reference table (2,231 names). We ship the Latin-1 subset,
-  uppercase variants, and legacy no-semicolon handling for those names. Deliberate size trade-off
-  for a zero-dependency library.

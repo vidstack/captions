@@ -72,6 +72,12 @@
       "development": "./dist/dev-cea.js",
       "default": "./dist/prod-cea.js"
     },
+    "./entities": {
+      "types": "./dist/prod-entities.d.ts",
+      "test": "./dist/dev-entities.js",
+      "development": "./dist/dev-entities.js",
+      "default": "./dist/prod-entities.js"
+    },
     "./element": {
       "types": "./dist/prod-element.d.ts",
       "test": "./dist/dev-element.js",
