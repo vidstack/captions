@@ -16,7 +16,8 @@ Captions parsing and rendering library built for the modern web.
 - ⬆️ Roll-up captions via VTT regions.
 - 🧰 Modern `fetch` and `ReadableStream` APIs.
 - 📡 Chunked text and response streaming support (including HLS `X-TIMESTAMP-MAP`).
-- 📝 WebVTT spec-compliant settings and rendering, with balanced line wrapping.
+- 📝 WebVTT spec-compliant parsing and rendering (including `STYLE` blocks), verified by
+  conformance suites and real-browser layout tests.
 - 🎤 Timed text-tracks for karaoke-style captions (VTT, LRC, and ASS `\k` tags).
 - 🎞️ Frame-accurate cue timing via `requestVideoFrameCallback`.
 - 🛠️ Supports custom captions parser and cue renderer.
@@ -159,7 +160,10 @@ like so:
 All parsing functions exported from this package accept the following options:
 
 - `strict`: Whether strict mode is enabled. In strict mode parsing errors will throw and cancel
-  the parsing process.
+  the parsing process, and the WebVTT grammar is enforced exactly (signature, timestamp digits,
+  `%` on percentages). Outside strict mode the parser is deliberately tolerant of common real-world
+  deviations (missing signature, comma millisecond separators, bare percentages, legacy
+  `align:middle`) while still reporting them as errors when `errors` is enabled.
 - `errors`: Whether errors should be collected and reported in the final
   [parser result](#parse-result). By default, this value will be true in dev mode or if `strict`
   mode is true. If set to true and `strict` mode is false, the `onError` callback will be invoked.
@@ -168,8 +172,10 @@ All parsing functions exported from this package accept the following options:
 - `type`: The type of the captions file format so the correct parser is loaded. Options
   include `vtt`, `srt`, `ssa`, `ass`, `ttml` (also `dfxp`/`xml`), `scc`, `lrc`, `sbv`, or a
   custom [`CaptionsParser`](#captionsparser) object.
+- `channel`: CEA-608 data channel to decode for SCC files (`1` or `2`).
 - `onHeaderMetadata`: Callback that is invoked when the metadata from the header block has been
   parsed.
+- `onStyle`: Invoked with the CSS text of each WebVTT `STYLE` block.
 - `onCue`: Invoked when parsing a VTT cue block has finished parsing and a `VTTCue` has
   been created. Do note, regardless of which captions file format is provided a `VTTCue` will
   be created.
@@ -211,6 +217,8 @@ All parsing functions exported from this package return a `Promise` which will r
   set to true.
 - `fonts`: Fonts embedded in the file (SSA/ASS `[Fonts]` section), see
   [`loadEmbeddedFonts`](#loadembeddedfonts).
+- `styles`: CSS text from WebVTT `STYLE` blocks, applied by the renderer (see
+  [Styling](#styling)).
 
 ```ts
 import { parseText } from 'media-captions';
@@ -649,7 +657,8 @@ video.addEventListener('timeupdate', () => {
 **Methods**
 
 - `changeTrack(track: CaptionsRendererTrack)`: Resets the renderer and prepares new regions and
-  cues. Pass the parse result directly; its `metadata.Language` is applied as the overlay `lang`.
+  cues. Pass the parse result directly; its `metadata.Language` is applied as the overlay `lang`
+  and its `styles` (WebVTT `STYLE` blocks) are injected scoped to the overlay.
 - `addCue(cue: VTTCue)`: Add a new cue to the renderer.
 - `removeCue(cue: VTTCue)`: Remove a cue from the renderer.
 - `update(forceUpdate: boolean)`: Schedules a re-render to happen.
@@ -671,6 +680,16 @@ const renderer = new CaptionsRenderer(captions),
 
 // Later...
 stop();
+```
+
+For a low-power, event-driven mode, mirror the cues into a hidden native text track (our `VTTCue`
+extends the native class) and let the browser fire `cuechange` exactly at cue boundaries:
+
+```ts
+const track = video.addTextTrack('metadata');
+for (const cue of cues) track.addCue(cue);
+
+syncCaptionsRenderer(renderer, video, { frameAccurate: false, track });
 ```
 
 ## `loadEmbeddedFonts`
@@ -747,6 +766,29 @@ easily customized with CSS. Here are all the parts you can select and customize:
 
 Every part also exposes a matching `part` attribute, so the overlay can be styled from outside a
 shadow root with `::part(cue)`, `::part(region)`, and so on.
+
+### WebVTT `STYLE` blocks
+
+`STYLE` blocks in a VTT file are parsed into `result.styles` and applied by
+[`CaptionsRenderer`](#captionsrenderer). Selectors are rewritten to the rendered DOM and scoped
+to the overlay, so several renderers on one page never leak styles into each other:
+
+```text
+WEBVTT
+
+STYLE
+::cue { color: papayawhip; }
+::cue(b) { color: peachpuff; }
+::cue(v[voice="Bob"]) { color: lime; }
+::cue(:past) { color: gray; }
+::cue-region(#top) { opacity: 0.8; }
+```
+
+Declarations are restricted to presentational properties (colour, background, font, text
+decoration and shadow, outline, opacity, visibility, and similar) and anything that would load an
+external resource such as `url()` or `@import` is dropped, so untrusted files can style captions
+but never the page. `transformVTTStyle(css, scope)` is exported if you want to apply the same
+rewriting yourself.
 
 Cue text uses `text-wrap: balance`, which is what the WebVTT rendering rules ask for and which
 browsers now support natively, and region (roll-up) cues use `text-wrap: stable` so earlier lines
@@ -926,11 +968,12 @@ parseResponse(fetch('/subs/english.ttml'), { type: 'ttml' });
 ```
 
 Supported: clock and offset time expressions (including frames and ticks), time inheritance
-across `body`/`div`/`p`/`span`, referential and inline styling, regions (`tts:origin`,
-`tts:extent`, `tts:displayAlign`, `tts:textAlign`) mapped to cue positioning, italics, bold,
+across `body`/`div`/`p`/`span` (with the next paragraph's start used as a missing end), referential
+and inline styling, regions (`tts:origin`, `tts:extent`, `tts:displayAlign`, `tts:textAlign`) in
+percentages, pixels, or cells (`ttp:cellResolution`) mapped to cue positioning, `tts:fontSize`
+mapped to a scaled cue font size, vertical writing modes (`tbrl`, `tblr`), italics, bold,
 underline, colours, `xml:lang`, ruby, `<br/>`, `xml:space`, and timed spans mapped to WebVTT
-timestamp tags. Not supported: `<set>` animations, vertical writing modes, images, and
-clock-based time bases.
+timestamp tags. Not supported: `<set>` animations, images, and wall-clock time bases.
 
 ## SCC (CEA-608)
 
@@ -948,10 +991,11 @@ Scenarist_SCC V1.0
 parseResponse(fetch('/subs/english.scc'), { type: 'scc' });
 ```
 
-The parser decodes CC1 pop-on, roll-up, and paint-on captions, including special and extended
+The parser decodes pop-on, roll-up, and paint-on captions, including special and extended
 characters, colours, italics, underline, and the 15x32 row/column grid which is mapped to cue
-`line`/`position`. Drop-frame (`;`) and non-drop timecodes are supported. CC2-CC4, text mode,
-XDS, and CEA-708 are not supported.
+`line`/`position`. Drop-frame (`;`) and non-drop timecodes are supported. CC1 is decoded by
+default; pass `channel: 2` to decode CC2 instead. CC3/CC4 (field 2), text mode, XDS, and CEA-708
+are not supported.
 
 ## LRC
 
@@ -1065,6 +1109,24 @@ import type {
   SyncCaptionsRendererOptions,
 } from 'media-captions';
 ```
+
+## Development
+
+```bash
+pnpm install
+pnpm test            # unit suites (node + jsdom) and real-browser layout suites (Playwright)
+pnpm test:unit
+pnpm test:browser    # needs `pnpm exec playwright install chromium` once
+pnpm typecheck
+pnpm build           # tsdown -> dist/prod.js, dist/dev.js, dist/prod.d.ts
+pnpm sandbox         # interactive scenarios at http://localhost:3100/.sandbox/index.html
+pnpm screenshots     # regenerates the README images from the sandbox scenarios
+```
+
+Parsing is covered by conformance suites under `tests/conformance` (WebVTT file structure, cue
+text, SSA/ASS) plus per-format suites, and rendering is measured in Chromium under
+`tests/browser` (stacking, line snapping, percentage lines, position/size/align, vertical text,
+RTL, regions, resize, SSA layout, transforms).
 
 ## 📝 License
 
