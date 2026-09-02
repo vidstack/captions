@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prettier --check src tests styles scripts
+      - run: pnpm typecheck
+      - run: pnpm vitest --run --project unit
+      - run: pnpm exec playwright install --with-deps chromium
+      # Screenshot baselines are recorded per platform; until Linux baselines are committed
+      # (see record-baselines.yml) the visual suite is skipped here.
+      - run: pnpm vitest --run --project browser --exclude tests/browser/visual.test.ts
+      - run: pnpm build
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: vitest-attachments
+          path: .vitest-attachments
+          if-no-files-found: ignore
