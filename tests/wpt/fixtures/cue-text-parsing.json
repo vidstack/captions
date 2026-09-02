@@ -1,0 +1,559 @@
+{
+  "upstream": "422734d7fd906113ab2e8a929e115bbcdfa5b341",
+  "tests": [
+    {
+      "file": "entities-trusted-types.html",
+      "name": "WebVTT cue data parser unescapes entities under require-trusted-types-for - amp",
+      "input": "&amp;",
+      "expectedTree": "#document-fragment\n| \"&\"",
+      "expectedHTML": "&amp;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 3686fc0cdc60dc536e75df054b0bd372273db2cc",
+      "input": "&",
+      "expectedTree": "#document-fragment\n| \"&\"",
+      "expectedHTML": "&amp;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - f1869f6e2853635eec81cc3afa3e2b8148ccbdc0",
+      "input": "&amp",
+      "expectedTree": "#document-fragment\n| \"&\"",
+      "expectedHTML": "&amp;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 92d76530d723b6b4e4ef8280c01cf1c80f9bebdb",
+      "input": "&amp;",
+      "expectedTree": "#document-fragment\n| \"&\"",
+      "expectedHTML": "&amp;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 261cd4e9df4a12535b66a0c39e9635aab2bb19aa",
+      "input": "&AMP;",
+      "expectedTree": "#document-fragment\n| \"&\"",
+      "expectedHTML": "&amp;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 1a2269cdb73bf97ec6a99b0edabfe646c471b67e",
+      "input": "&lt;",
+      "expectedTree": "#document-fragment\n| \"<\"",
+      "expectedHTML": "&lt;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 44ceb90884cceeeccb4f7024e3598f7dc5ceebfa",
+      "input": "&gt;",
+      "expectedTree": "#document-fragment\n| \">\"",
+      "expectedHTML": "&gt;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 05def72af03fc2b1617da950d871b9fd0ba20e5a",
+      "input": "a&lrm;b",
+      "expectedTree": "#document-fragment\n| \"a‎b\"",
+      "expectedHTML": "a‎b"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - da999a55445eca43aa41e039ec439c1a812db297",
+      "input": "a&rlm;b",
+      "expectedTree": "#document-fragment\n| \"a‏b\"",
+      "expectedHTML": "a‏b"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 0fd9e3823b62c028c1d50e35b1f3ee3df02a62eb",
+      "input": "&quot;",
+      "expectedTree": "#document-fragment\n| \"\"\"",
+      "expectedHTML": "\""
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - e7387003fbacb22b706796c98b781eb4ebf5ff85",
+      "input": "&nbsp;",
+      "expectedTree": "#document-fragment\n| \" \"",
+      "expectedHTML": " "
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 216cd0e914b9f2ccd04eff6d02a0b1ce24441d95",
+      "input": "&copy;",
+      "expectedTree": "#document-fragment\n| \"©\"",
+      "expectedHTML": "©"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 2cdf20980d17a5d077299215e6a7e97f3c6b07e2",
+      "input": "&&",
+      "expectedTree": "#document-fragment\n| \"&&\"",
+      "expectedHTML": "&amp;&amp;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 83f4500c0bd8598480713997a041d8f70fd3f11e",
+      "input": "&1",
+      "expectedTree": "#document-fragment\n| \"&1\"",
+      "expectedHTML": "&amp;1"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 2c6b2ba38a08eca45370f28a5b7df2aa463fb3dc",
+      "input": "&1;",
+      "expectedTree": "#document-fragment\n| \"&1;\"",
+      "expectedHTML": "&amp;1;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - f4bb977c0a06851bdd19260c035a766c5c8ea093",
+      "input": "&<",
+      "expectedTree": "#document-fragment\n| \"&\"",
+      "expectedHTML": "&amp;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - b1fff1ac42688d16e00f6c758d84e5152e39702d",
+      "input": "&<c",
+      "expectedTree": "#document-fragment\n| \"&\"\n| <span>",
+      "expectedHTML": "&amp;<span></span>"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - bd68f6beda2c2264e61dff7359c1ad48bc0a9934",
+      "input": "&#32;",
+      "expectedTree": "#document-fragment\n| \" \"",
+      "expectedHTML": " "
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 5b77a0be23453dfe6eea59d43bb0708f89e1df82",
+      "input": "&#x20;",
+      "expectedTree": "#document-fragment\n| \" \"",
+      "expectedHTML": " "
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 87986551b0e6180cb279f2aa4cdddf77daa90c11",
+      "input": "&;",
+      "expectedTree": "#document-fragment\n| \"&;\"",
+      "expectedHTML": "&amp;;"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - e3ac2060b915f0f499b2863f999dcdb38a5db79b",
+      "input": "&ClockwiseContourIntegral;",
+      "expectedTree": "#document-fragment\n| \"∲\"",
+      "expectedHTML": "∲"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 31c8a5ecfa5c54d8c0ec5b4ee8f0bbea0d6d40af",
+      "input": "&nsubE;",
+      "expectedTree": "#document-fragment\n| \"⫅̸\"",
+      "expectedHTML": "⫅̸"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 9ed59950764468c4ef2948d71cf75c3f2b60c74d",
+      "input": "&notin;",
+      "expectedTree": "#document-fragment\n| \"∉\"",
+      "expectedHTML": "∉"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 71a6efcfab81264fb95bb3234c59687c11c72baf",
+      "input": "&not;",
+      "expectedTree": "#document-fragment\n| \"¬\"",
+      "expectedHTML": "¬"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 86d7c20ca3c060f9e699c7da43927c4a07a5d569",
+      "input": "&not",
+      "expectedTree": "#document-fragment\n| \"¬\"",
+      "expectedHTML": "¬"
+    },
+    {
+      "file": "entities.html",
+      "name": "WebVTT cue data parser test entities - 314cd94292df37044e90ce27b5606bf8ec636b94",
+      "input": "&notit;",
+      "expectedTree": "#document-fragment\n| \"¬it;\"",
+      "expectedHTML": "¬it;"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - d49e42f7582c6f00b2569f2d14629611c0c6b0e6",
+      "input": "<",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 9dd187edd10c907e6b92148fd82940e401dbe79f",
+      "input": "<<",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 2d2c4333983e23a4962083e8120e5d42c839f77b",
+      "input": "<\t",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 94f898df44b470e2d05d74c6816fd908e55c9fdf",
+      "input": "<\n",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 2fdc1b84ba41ec98833851e80781df1fbe72182f",
+      "input": "< ",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 487690a6f5da4666f9caaf3a3ecc10992aca1414",
+      "input": "<.",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 0d7df935b172f2a1b357b94596d68f2443f30f8b",
+      "input": "<c.",
+      "expectedTree": "#document-fragment\n| <span>",
+      "expectedHTML": "<span></span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - cd1d6dd274e03ae8fc56bc4ef163998d9ff24496",
+      "input": "</",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - fca1a11d42b735453117f42456360e88082a3fd7",
+      "input": "<c></>x",
+      "expectedTree": "#document-fragment\n| <span>\n|   \"x\"",
+      "expectedHTML": "<span>x</span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - fe3b6277edf5c2f84e7a6779eddd0cac30552bca",
+      "input": "<c></\nc>x",
+      "expectedTree": "#document-fragment\n| <span>\n|   \"x\"",
+      "expectedHTML": "<span>x</span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 6ceded63b53eeab3681a0fc540e959ca88f7dce9",
+      "input": "<c>test",
+      "expectedTree": "#document-fragment\n| <span>\n|   \"test\"",
+      "expectedHTML": "<span>test</span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - cdcdb0d5d6a975c5612eabcbea5d732ff3bc9f56",
+      "input": "a<c.d e>b</c>c",
+      "expectedTree": "#document-fragment\n| \"a\"\n| <span>\n|   class=\"d\"\n|   \"b\"\n| \"c\"",
+      "expectedHTML": "a<span class=\"d\">b</span>c"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 71de37451e7d5524eacc8a190d21cd64c4304e14",
+      "input": "<i>test",
+      "expectedTree": "#document-fragment\n| <i>\n|   \"test\"",
+      "expectedHTML": "<i>test</i>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 70f72cc4d2139d9e8c33189a1a9b89ecd6014a15",
+      "input": "a<i.d e>b</i>c",
+      "expectedTree": "#document-fragment\n| \"a\"\n| <i>\n|   class=\"d\"\n|   \"b\"\n| \"c\"",
+      "expectedHTML": "a<i class=\"d\">b</i>c"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 985284b688a09f1f55e3c9aab49d7e4ca11f870a",
+      "input": "<b>test",
+      "expectedTree": "#document-fragment\n| <b>\n|   \"test\"",
+      "expectedHTML": "<b>test</b>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 39c36af6d6850bc474f1d9962c1133933fd50dd0",
+      "input": "a<b.d e>b</b>c",
+      "expectedTree": "#document-fragment\n| \"a\"\n| <b>\n|   class=\"d\"\n|   \"b\"\n| \"c\"",
+      "expectedHTML": "a<b class=\"d\">b</b>c"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - fa6993eaa94404648d8b52e2830e53369404fdcb",
+      "input": "<u>test",
+      "expectedTree": "#document-fragment\n| <u>\n|   \"test\"",
+      "expectedHTML": "<u>test</u>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 45221829445210412642152bfb22fa2ed222d46e",
+      "input": "a<u.d e>b</u>c",
+      "expectedTree": "#document-fragment\n| \"a\"\n| <u>\n|   class=\"d\"\n|   \"b\"\n| \"c\"",
+      "expectedHTML": "a<u class=\"d\">b</u>c"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - e4d351e1a6b40a7dace801b722efaa200c4895f2",
+      "input": "<ruby>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"",
+      "expectedHTML": "<ruby>test</ruby>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - a8481eabd1dcac1d02e57e74d499e2395ac171cd",
+      "input": "a<ruby.f g>b<rt.h j>c</rt>d</ruby>e",
+      "expectedTree": "#document-fragment\n| \"a\"\n| <ruby>\n|   class=\"f\"\n|   \"b\"\n|   <rt>\n|     class=\"h\"\n|     \"c\"\n|   \"d\"\n| \"e\"",
+      "expectedHTML": "a<ruby class=\"f\">b<rt class=\"h\">c</rt>d</ruby>e"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 68e1d0376f827ebe0c047751a2067594ff41b612",
+      "input": "<rt>test",
+      "expectedTree": "#document-fragment\n| \"test\"",
+      "expectedHTML": "test"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - ab2024b4e65ed64a751adbe8aae1e84ee61bf3e6",
+      "input": "<v>test",
+      "expectedTree": "#document-fragment\n| <span>\n|   title=\"\"\n|   \"test\"",
+      "expectedHTML": "<span title=\"\">test</span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 10f4823ffb17c71654c4602bc45c58300e3ecbcc",
+      "input": "<v a>test",
+      "expectedTree": "#document-fragment\n| <span>\n|   title=\"a\"\n|   \"test\"",
+      "expectedHTML": "<span title=\"a\">test</span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - 909924ef392fb20c9526acfa4f18f891eda61a0c",
+      "input": "<v a b>test",
+      "expectedTree": "#document-fragment\n| <span>\n|   title=\"a b\"\n|   \"test\"",
+      "expectedHTML": "<span title=\"a b\">test</span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - e5ca35cc29404efc0ebd58aa5f6efefc86fc5287",
+      "input": "<v.a>test",
+      "expectedTree": "#document-fragment\n| <span>\n|   class=\"a\"\n|   title=\"\"\n|   \"test\"",
+      "expectedHTML": "<span class=\"a\" title=\"\">test</span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - e535c486dac7dc571463b150adc55fd841bc3008",
+      "input": "<v.a.b>test",
+      "expectedTree": "#document-fragment\n| <span>\n|   class=\"a b\"\n|   title=\"\"\n|   \"test\"",
+      "expectedHTML": "<span class=\"a b\" title=\"\">test</span>"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - bb7abafab60a0ea63f57420759fac4093148ecc8",
+      "input": "a<v.d e>b</v>c",
+      "expectedTree": "#document-fragment\n| \"a\"\n| <span>\n|   class=\"d\"\n|   title=\"e\"\n|   \"b\"\n| \"c\"",
+      "expectedHTML": "a<span class=\"d\" title=\"e\">b</span>c"
+    },
+    {
+      "file": "tags.html",
+      "name": "WebVTT cue data parser test tags - b53365151e0b2434837d6cce15c3d51e666a813e",
+      "input": "a<lang.d e>b</lang>c",
+      "expectedTree": "#document-fragment\n| \"a\"\n| <span>\n|   class=\"d\"\n|   lang=\"e\"\n|   \"b\"\n| \"c\"",
+      "expectedHTML": "a<span class=\"d\" lang=\"e\">b</span>c"
+    },
+    {
+      "file": "text.html",
+      "name": "WebVTT cue data parser test text - aa785adca3fcdfe1884ae840e13c6d294a2414e8",
+      "input": "text",
+      "expectedTree": "#document-fragment\n| \"text\"",
+      "expectedHTML": "text"
+    },
+    {
+      "file": "text.html",
+      "name": "WebVTT cue data parser test text - 3979f3c0c7664ee8a9f78854626bc7bc39b86c96",
+      "input": "text1\ntext2",
+      "expectedTree": "#document-fragment\n| \"text1\ntext2\"",
+      "expectedHTML": "text1\ntext2"
+    },
+    {
+      "file": "text.html",
+      "name": "WebVTT cue data parser test text - 6805ac5ddce21cfceb4eccf04a6a9013760f5d5b",
+      "input": "foo\u0000bar",
+      "expectedTree": "#document-fragment\n| \"foo�bar\"",
+      "expectedHTML": "foo�bar"
+    },
+    {
+      "file": "text.html",
+      "name": "WebVTT cue data parser test text - 5cfbdbe32701516fc90c3786da1db4716ac09fb8",
+      "input": "✓",
+      "expectedTree": "#document-fragment\n| \"✓\"",
+      "expectedHTML": "✓"
+    },
+    {
+      "file": "text.html",
+      "name": "WebVTT cue data parser test text - a34d27ca7b23f07db6ec2e32226fca105e958db6",
+      "input": "text1\n\ntext2",
+      "expectedTree": "#document-fragment\n| \"text1\"",
+      "expectedHTML": "text1"
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 54c245f3fbe7a3e25398b13971d44f2bb3a5f947",
+      "input": "<0",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 5e190a1b4541fcb10e403af111c14ef152fecb0d",
+      "input": "<0.500",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 92b97d3497836259e0b9305e27f2b91ea1dc9b31",
+      "input": "<0:00.500",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 2f0e84518d356cb1e56a366296fa491c5bed1e3a",
+      "input": "<00:\u000000:00.500>",
+      "expectedTree": "#document-fragment",
+      "expectedHTML": ""
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 47fa4306a695161da88533d456ce94829e53b13d",
+      "input": "<00:00.500",
+      "expectedTree": "#document-fragment\n| <?timestamp 00:00:00.500>",
+      "expectedHTML": "<?timestamp 00:00:00.500>"
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - c1036a4322c1852e02e5a1843a9a81dfca6d7af3",
+      "input": "<00:00:00.500",
+      "expectedTree": "#document-fragment\n| <?timestamp 00:00:00.500>",
+      "expectedHTML": "<?timestamp 00:00:00.500>"
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 70ec34d828ca661a583c651207becb968bb41653",
+      "input": "test<00:00:00.500>test",
+      "expectedTree": "#document-fragment\n| \"test\"\n| <?timestamp 00:00:00.500>\n| \"test\"",
+      "expectedHTML": "test<?timestamp 00:00:00.500>test"
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 66ba641ff047a226fa60fe867fd2479d40f3ff0f",
+      "input": "test<01:00:00.000>test",
+      "expectedTree": "#document-fragment\n| \"test\"\n| <?timestamp 01:00:00.000>\n| \"test\"",
+      "expectedHTML": "test<?timestamp 01:00:00.000>test"
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 398e8da1aaaf392739ca72057fef58bd5333f74d",
+      "input": "test<10:00:00.000>test",
+      "expectedTree": "#document-fragment\n| \"test\"\n| <?timestamp 10:00:00.000>\n| \"test\"",
+      "expectedHTML": "test<?timestamp 10:00:00.000>test"
+    },
+    {
+      "file": "timestamps.html",
+      "name": "WebVTT cue data parser test timestamps - 391fce67644cf4dd9967e1436d1449ef5baf675f",
+      "input": "test<100:00:00.000>test",
+      "expectedTree": "#document-fragment\n| \"test\"\n| <?timestamp 100:00:00.000>\n| \"test\"",
+      "expectedHTML": "test<?timestamp 100:00:00.000>test"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - 4e1243bd22c66e76c2ba9eddc1f91394e57f9f83",
+      "input": "test",
+      "expectedTree": "#document-fragment\n| \"test\"",
+      "expectedHTML": "test"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - 2564487cfc7e317428fb437ef8de8de4f4963426",
+      "input": "<ruby>test<rt>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     \"test\"",
+      "expectedHTML": "<ruby>test<rt>test</rt></ruby>"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - 9b1902c975558eeaff4afbaf0a6dc100e1978769",
+      "input": "<ruby>test<rt>test</rt>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     \"test\"\n|   \"test\"",
+      "expectedHTML": "<ruby>test<rt>test</rt>test</ruby>"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - 119c596ea09649d3bd03934485e3067e89377412",
+      "input": "<ruby>test<rt>test</rt></ruby>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     \"test\"\n| \"test\"",
+      "expectedHTML": "<ruby>test<rt>test</rt></ruby>test"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - c94512b045699cb72f730e46b2a0a3bed2c939f9",
+      "input": "<ruby>test<rt>test</ruby>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     \"test\"\n| \"test\"",
+      "expectedHTML": "<ruby>test<rt>test</rt></ruby>test"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - 325c1e590e74f1ff33ca5b4838c04cf6b6dd71ba",
+      "input": "<ruby>test<rt><b>test</rt></ruby>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     <b>\n|       \"test\"\n|       \"test\"",
+      "expectedHTML": "<ruby>test<rt><b>testtest</b></rt></ruby>"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - 92847ed2694c9639ba96f4cc61e2215362a74904",
+      "input": "<ruby>test<rt><b>test</ruby>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     <b>\n|       \"test\"\n|       \"test\"",
+      "expectedHTML": "<ruby>test<rt><b>testtest</b></rt></ruby>"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - c0da62d1c8716ca544c96799f06ac7e4664500fb",
+      "input": "<ruby>test<rt><b>test</rt></ruby></b>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     <b>\n|       \"test\"\n|     \"test\"",
+      "expectedHTML": "<ruby>test<rt><b>test</b>test</rt></ruby>"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - b85bd616672eba0591718182ef32e3307d223bb0",
+      "input": "<ruby>test<rt><b>test</rt></b></ruby>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     <b>\n|       \"test\"\n| \"test\"",
+      "expectedHTML": "<ruby>test<rt><b>test</b></rt></ruby>test"
+    },
+    {
+      "file": "tree-building.html",
+      "name": "WebVTT cue data parser test tree-building - 132f07c3ab0e86dd1b93bf434c94c0d1cfdd4fde",
+      "input": "<ruby>test<rt><b>test</rt></b>test</ruby>test",
+      "expectedTree": "#document-fragment\n| <ruby>\n|   \"test\"\n|   <rt>\n|     <b>\n|       \"test\"\n|     \"test\"\n| \"test\"",
+      "expectedHTML": "<ruby>test<rt><b>test</b>test</rt></ruby>test"
+    }
+  ],
+  "skipped": []
+}
