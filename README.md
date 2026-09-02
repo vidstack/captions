@@ -17,8 +17,8 @@ Captions parsing and rendering library built for the modern web.
 - ⬆️ Roll-up captions via VTT regions.
 - 🧰 Modern `fetch` and `ReadableStream` APIs.
 - 📡 Chunked text and response streaming support (including HLS `X-TIMESTAMP-MAP`).
-- 📝 WebVTT spec-compliant parsing and rendering (including `STYLE` blocks), verified by
-  conformance suites and real-browser layout tests.
+- 📝 WebVTT spec-compliant parsing and rendering (including `STYLE` blocks), verified against
+  the web-platform-tests suite, conformance suites, and real-browser layout tests.
 - 🎤 Timed text-tracks for karaoke-style captions (VTT, LRC, and ASS `\k` tags).
 - 🎞️ Frame-accurate cue timing via `requestVideoFrameCallback`.
 - 🛠️ Supports custom captions parser and cue renderer.
@@ -1278,8 +1278,11 @@ pnpm sandbox         # interactive scenarios at http://localhost:3100/.sandbox/i
 pnpm screenshots     # regenerates the README images from the sandbox scenarios
 ```
 
-Parsing is covered by conformance suites under `tests/conformance` (WebVTT file structure, cue
-text, SSA/ASS) plus per-format suites, and rendering is measured in Chromium under
+Parsing is covered by the vendored web-platform-tests WebVTT suites under `tests/wpt` (118
+tests; the handful of intentional real-world tolerances are listed in
+`tests/wpt/KNOWN_DIVERGENCES.md` and tracked with `test.fails`), by hand-written conformance
+suites under `tests/conformance` (WebVTT file structure, cue text, SSA/ASS), and by per-format
+suites. Rendering is measured in Chromium under
 `tests/browser` (stacking, line snapping, percentage lines, position/size/align, vertical text,
 RTL, regions, resize, SSA layout, transforms). `tests/browser/visual.test.ts` adds screenshot
 comparisons with a small pixel tolerance; baselines live in `tests/browser/__screenshots__` per
