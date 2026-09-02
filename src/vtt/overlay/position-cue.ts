@@ -96,35 +96,48 @@ export function positionCue(
 
 function createStartingBox(container: Box, cueEl: HTMLElement) {
   const box = createBox(cueEl),
-    pos = getStyledPositions(cueEl);
+    pos = getStyledPositions(container, cueEl);
 
   cueEl[POSITION_OVERRIDE] = false;
 
-  if (pos.top) {
+  if (pos.top !== null) {
     box.top = pos.top;
     box.bottom = pos.top + box.height;
     cueEl[POSITION_OVERRIDE] = 'top';
   }
 
-  if (pos.bottom) {
+  if (pos.bottom !== null) {
     const bottom = container.height - pos.bottom;
     box.top = bottom - box.height;
     box.bottom = bottom;
     cueEl[POSITION_OVERRIDE] = 'bottom';
   }
 
-  if (pos.left) box.left = pos.left;
-  if (pos.right) box.right = container.width - pos.right;
+  if (pos.left !== null) box.left = pos.left;
+  if (pos.right !== null) box.right = container.width - pos.right;
 
   return createCSSBox(container, box);
 }
 
-function getStyledPositions(el: HTMLElement) {
-  const positions = {};
+/**
+ * Reads explicit `--cue-{side}` positions set via `VTTCue.style` (e.g., SSA/ASS margins).
+ * Percentages are resolved against the container, anything else is treated as pixels.
+ */
+function getStyledPositions(container: Box, el: HTMLElement) {
+  const positions: Record<string, number | null> = {};
   for (const side of BOX_SIDES) {
-    positions[side] = parseFloat(el.style.getPropertyValue(`--cue-${side}`));
+    const value = el.style.getPropertyValue(`--cue-${side}`).trim(),
+      num = parseFloat(value);
+    if (!value || Number.isNaN(num)) {
+      positions[side] = null;
+    } else if (value.endsWith('%')) {
+      const size = side === 'top' || side === 'bottom' ? container.height : container.width;
+      positions[side] = (num / 100) * size;
+    } else {
+      positions[side] = num;
+    }
   }
-  return positions as Omit<Box, 'width' | 'height'>;
+  return positions as Record<(typeof BOX_SIDES)[number], number | null>;
 }
 
 export function computeCueLine(cue: VTTCue): number {

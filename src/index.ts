@@ -8,7 +8,10 @@ export * from './vtt/vtt-header';
 export * from './vtt/vtt-cue';
 export * from './vtt/vtt-region';
 export { parseVTTTimestamp } from './vtt/vtt-parser';
+export { loadEmbeddedFonts } from './ssa/fonts';
 
 export * from './vtt/tokenize-cue';
 export * from './vtt/render-cue';
 export * from './vtt/overlay/render-overlay';
+export * from './vtt/overlay/sync-renderer';
+export * from './vtt/vtt-timestamp-map';

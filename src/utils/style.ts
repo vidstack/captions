@@ -8,6 +8,8 @@ export function setDataAttr(el: Element, name: string, value: string | true | nu
 
 export function setPartAttr(el: Element, name: string) {
   el.setAttribute('data-part', name);
+  // Also expose `part` so hosts rendering inside a shadow root can style via `::part()`.
+  el.setAttribute('part', name);
 }
 
 export function getLineHeight(el: Element) {
