@@ -22,7 +22,13 @@ Captions parsing and rendering library built for the modern web.
 - 🎤 Timed text-tracks for karaoke-style captions (VTT, LRC, and ASS `\k` tags).
 - 🎞️ Frame-accurate cue timing via `requestVideoFrameCallback`.
 - 🛠️ Supports custom captions parser and cue renderer.
-- 🔒 Cue text is sanitized so untrusted caption files can not inject markup.
+- 🔒 Cue text is rendered as DOM nodes, never HTML strings, so untrusted files can not inject
+  markup and strict CSP / Trusted Types policies are satisfied.
+- 📡 Live-ready: a `CueTrack` with incremental updates, open-ended cues, and eviction feeds the
+  renderer from CEA-608/708 stream decoders.
+- 🧩 Structured `cue.layout` / `cue.textStyle` model shared by SSA, TTML, and 708, with JSON
+  round-tripping for Workers.
+- 🧱 Drop-in `<media-captions>` custom element, plus `media-captions/parsers/*` entries.
 - 💥 Collision detection to avoid overlapping or out-of-bounds cues.
 - 🏗️ Fixed and in-order cue rendering (including on font or overlay size changes).
 - 🛑 Adjustable parsing error-tolerance with strict and non-strict modes.
@@ -138,6 +144,8 @@ like so:
   - [`renderVTTTokensString`](#rendervtttokensstring)
   - [`updateTimedVTTCueNodes`](#updatetimedvttcuenodes)
   - [`CaptionsRenderer`](#captionsrenderer)
+  - [`CueTrack`](#cuetrack)
+  - [`<media-captions>`](#media-captions)
   - [`syncCaptionsRenderer`](#synccaptionsrenderer)
   - [`loadEmbeddedFonts`](#loadembeddedfonts)
   - [Styling](#styling)
@@ -336,6 +344,10 @@ const result = await parseResponse(fetch('/media/subs/english.vtt'), {
   },
 });
 ```
+
+Every parser is also published as an explicit entry (`media-captions/parsers/vtt`, `srt`, `ssa`,
+`ttml`, `scc`, `lrc`, `sbv`) for bundlers or runtimes that can not follow dynamic imports; pass the
+default export as `type`.
 
 The captions type is inferred from the response `content-type` header (e.g., `text/vtt`,
 `application/x-subrip`, `application/ttml+xml`) and falls back to the URL file extension for
@@ -613,6 +625,8 @@ and cues should be visually rendered. It includes:
 - Applying SSA/ASS styles and layers (z-order).
 - Setting the overlay `lang` attribute from the track `Language` header.
 - Finding active cues in O(log n) using a sorted index, so large tracks stay cheap.
+- Rendering in three phases (measure, pure layout, write) so a render forces at most two layouts.
+- Dispatching `enter`/`exit` events on cues and optionally announcing them to screen readers.
 - Accepts native `VTTCue` objects.
 
 > **Warning**
@@ -647,22 +661,97 @@ video.addEventListener('timeupdate', () => {
 });
 ```
 
+**Init options**
+
+- `dir`: Text direction (`ltr` or `rtl`).
+- `retention`: Seconds to keep ended cues before evicting them from the track (for live streams).
+- `announce`: `true` / `'polite'` / `'assertive'` adds a visually hidden `aria-live` region after
+  the overlay that receives the plain text of cues as they appear. The visual overlay itself stays
+  `aria-live="off"` because sighted users read it and the audio already carries the words.
+
 **Props**
 
 - `dir`: Sets the text direction (i.e., `ltr` or `rtl`).
 - `currentTime`: Updates the current playback time and schedules a re-render.
 - `activeCues`: The cues currently displayed, in render order (read-only).
+- `track`: The [`CueTrack`](#cuetrack) being rendered. Add, update, or remove cues on it for live
+  content.
 
 **Methods**
 
 - `changeTrack(track: CaptionsRendererTrack)`: Resets the renderer and prepares new regions and
   cues. Pass the parse result directly; its `metadata.Language` is applied as the overlay `lang`
-  and its `styles` (WebVTT `STYLE` blocks) are injected scoped to the overlay.
+  and its `styles` (WebVTT `STYLE` blocks) are injected scoped to the overlay. `cues` may also be a
+  `CueTrack` to follow.
+- `attachTrack(track: CueTrack)`: Renders from an existing track and follows its changes.
 - `addCue(cue: VTTCue)`: Add a new cue to the renderer.
 - `removeCue(cue: VTTCue)`: Remove a cue from the renderer.
 - `update(forceUpdate: boolean)`: Schedules a re-render to happen.
 - `reset()`: Reset the renderer and clear all internal state including region and cue DOM nodes.
 - `destroy()`: Reset the renderer and destroy internal observers and event listeners.
+
+**Cue events**
+
+Every cue dispatches `enter` when it starts showing and `exit` when it stops, matching the native
+`TextTrackCue` events, so analytics or custom effects can hook individual cues:
+
+```ts
+cue.addEventListener('enter', () => console.log('showing', cue.text));
+```
+
+## `CueTrack`
+
+A sorted, incrementally maintained list of cues with O(log n) active-cue lookup, change events,
+mutable end times, and eviction. The renderer uses one internally; use it directly for live
+content where cues arrive continuously and end times are only known later:
+
+```ts
+import { CaptionsRenderer, CueTrack } from 'media-captions';
+import { CEA708Decoder } from 'media-captions/cea';
+
+const track = new CueTrack(undefined, { retention: 30 }),
+  renderer = new CaptionsRenderer(overlay, { retention: 30 });
+
+renderer.changeTrack({ cues: track });
+
+const decoder = new CEA708Decoder({
+  live: true,
+  onCue: (cue) => track.add(cue), // endTime is Infinity while the caption is on screen
+  onCueUpdate: (cue) => track.update(cue), // end time is now known; re-indexed in place
+});
+```
+
+- `add(cue)`, `addAll(cues)`, `remove(cue)`, `update(cue)`, `clear()`, `has(cue)`, `size`, `cues`.
+- `activeAt(time)`: cues active at a time, in start order.
+- `evict(time)`: drops cues that ended more than `retention` seconds ago; `maxCues` caps the total.
+- `on(listener)`: subscribe to `add`, `remove`, `update`, and `clear` events; returns an unsubscribe.
+
+## `<media-captions>`
+
+A framework-agnostic custom element that loads, syncs, and renders captions over a media element:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/media-captions/styles/captions.css" />
+
+<div style="position: relative">
+  <video id="video" src="movie.mp4"></video>
+  <media-captions for="video" src="/subs/english.vtt" edge-style="uniform"></media-captions>
+</div>
+
+<script type="module">
+  import { defineMediaCaptionsElement } from 'media-captions/element';
+  defineMediaCaptionsElement();
+</script>
+```
+
+- Attributes: `src`, `type` (format, inferred when omitted), `for` (media element id) or the
+  `media` property, `dir`, `edge-style`, `frame-accurate` (`"false"` for event-driven sync), and
+  `shadow` to render in a shadow root with stylesheets from the `styles` attribute (defaults to
+  the jsDelivr CSS). In light DOM (the default) the page includes the stylesheets itself.
+- Properties/methods: `renderer`, `track`, `load(result)`, `clear()`, `destroy()`.
+- Events: `load` (detail: parse result), `error` (detail: `Error` or `ParseError[]`), and
+  `cuechange` (detail: `{ activeCues }`).
+- Importing the module has no side effects, so it is safe to import during server rendering.
 
 ## `syncCaptionsRenderer`
 
@@ -788,6 +877,39 @@ decoration and shadow, outline, opacity, visibility, and similar) and anything t
 external resource such as `url()` or `@import` is dropped, so untrusted files can style captions
 but never the page. `transformVTTStyle(css, scope)` is exported if you want to apply the same
 rewriting yourself.
+
+### Cue layout and text style model
+
+Formats with absolute positioning (SSA/ASS, TTML, CEA-708) express placement and styling through
+two structured fields on the cue rather than CSS strings, so custom renderers can read them
+directly and cues survive `structuredClone` / `postMessage`:
+
+```ts
+cue.layout = {
+  left: 50, // percentages of the overlay
+  bottom: 5,
+  width: 'max-content', // or 'auto' or a percentage
+  maxWidth: 90,
+  translate: { x: -0.5 }, // fraction of the cue box; centres the box on `left`
+  fixed: false, // true: never moved by collision avoidance (SSA \pos)
+};
+
+cue.textStyle = {
+  color: 'rgba(255,255,255,1)',
+  fontSize: 'calc(var(--overlay-height) * 0.0667)',
+  textStroke: '2px black', // painted behind the glyphs
+  textAlign: 'center',
+};
+
+cue.style = { '--cue-padding-x': '0' }; // raw CSS escape hatch, applied last
+
+JSON.stringify(cue); // plain object, region referenced by id
+VTTCue.from(JSON.parse(json), regions); // rebuilds the cue
+```
+
+The stylesheet defaults live in `@layer media-captions`, so any unlayered author rule overrides
+them regardless of specificity or order, and the colour and overlay size variables are registered
+with `@property` so they are typed, have fallbacks, and can be transitioned.
 
 Cue text uses `text-wrap: balance`, which is what the WebVTT rendering rules ask for and which
 browsers now support natively, and region (roll-up) cues use `text-wrap: stable` so earlier lines
@@ -1151,7 +1273,7 @@ pnpm test            # unit suites (node + jsdom) and real-browser layout suites
 pnpm test:unit
 pnpm test:browser    # needs `pnpm exec playwright install chromium` once
 pnpm typecheck
-pnpm build           # tsdown -> dist/prod.js, dist/dev.js, dist/prod.d.ts
+pnpm build           # tsdown -> dist/prod.js (+ cea, element, parsers/* entries) and .d.ts
 pnpm sandbox         # interactive scenarios at http://localhost:3100/.sandbox/index.html
 pnpm screenshots     # regenerates the README images from the sandbox scenarios
 ```
