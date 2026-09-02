@@ -1,47 +1,52 @@
 import { setCSSVar } from '../../utils/style';
 import type { VTTRegion } from '../vtt-region';
 import {
-  avoidBoxCollisions,
   createBox,
   createCSSBox,
+  LAYOUT_CACHE,
   resolveRelativeBox,
   setBoxCSSVars,
-  STARTING_BOX,
   type Box,
-  type DirectionalAxis,
 } from './box';
+import type { RegionLayoutInput } from './layout';
 
-const REGION_AXIS: DirectionalAxis[] = ['-y', '+y', '-x', '+x'];
-
-export function positionRegion(
-  container: Box,
-  region: VTTRegion,
-  regionEl: HTMLElement,
-  boxes: Box[],
-) {
-  let cues = Array.from(regionEl.querySelectorAll('[data-part="cue-display"]')) as HTMLElement[],
-    height = 0,
+/**
+ * MEASURE (part 1): the region height is the sum of its visible cue lines. This must be written
+ * before the region box can be measured because the region's anchor position depends on it.
+ */
+export function measureRegionHeight(region: VTTRegion, regionEl: HTMLElement): number {
+  const cues = regionEl.querySelectorAll<HTMLElement>('[data-part="cue-display"]'),
     limit = Math.max(0, cues.length - region.lines);
 
-  for (let i = cues.length - 1; i >= limit; i--) {
-    height += cues[i].offsetHeight;
-  }
+  let height = 0;
+  for (let i = cues.length - 1; i >= limit; i--) height += cues[i].offsetHeight;
+  return height;
+}
 
+export function writeRegionHeight(regionEl: HTMLElement, height: number) {
   setCSSVar(regionEl, 'region-height', height + 'px');
+}
 
-  if (!regionEl[STARTING_BOX]) {
-    regionEl[STARTING_BOX] = createCSSBox(container, createBox(regionEl));
+/** MEASURE (part 2): the region box, cached as container fractions until the next resize. */
+export function measureRegion(
+  container: Box,
+  regionEl: HTMLElement,
+  height: number,
+): RegionLayoutInput {
+  if (!regionEl[LAYOUT_CACHE]) {
+    regionEl[LAYOUT_CACHE] = createCSSBox(container, createBox(regionEl));
   }
 
-  let box: Box = { ...regionEl[STARTING_BOX] };
-  box = resolveRelativeBox(container, box);
+  const box = resolveRelativeBox(container, { ...regionEl[LAYOUT_CACHE] } as Box);
   box.width = regionEl.clientWidth;
   box.height = height;
   box.right = box.left + box.width;
   box.bottom = box.top + height;
 
-  box = avoidBoxCollisions(container, box, boxes, REGION_AXIS);
-  setBoxCSSVars(regionEl, container, box, 'region');
+  return { kind: 'region', box };
+}
 
-  return box;
+/** WRITE phase. */
+export function writeRegionBox(container: Box, regionEl: HTMLElement, box: Box) {
+  setBoxCSSVars(regionEl, container, box, 'region');
 }

@@ -1,143 +1,92 @@
 import { getLineHeight } from '../../utils/style';
 import type { VTTCue } from '../vtt-cue';
 import {
-  avoidBoxCollisions,
   BOX_SIDES,
   createBox,
   createCSSBox,
+  LAYOUT_CACHE,
   moveBox,
   resolveRelativeBox,
   setBoxCSSVars,
-  STARTING_BOX,
   type Box,
-  type DirectionalAxis,
 } from './box';
+import type { CueLayoutInput } from './layout';
 
-const POSITION_OVERRIDE = Symbol(__DEV__ ? 'POSITION_OVERRIDE' : 0),
-  TRANSLATE = Symbol(__DEV__ ? 'TRANSLATE' : 0),
-  TRANSLATE_X_RE = /translateX\(\s*(-?[\d.]+)%\s*\)/,
+const TRANSLATE_X_RE = /translateX\(\s*(-?[\d.]+)%\s*\)/,
   TRANSLATE_Y_RE = /translateY\(\s*(-?[\d.]+)%\s*\)/;
 
-// Adapted from: https://github.com/videojs/vtt.js
-export function positionCue(
-  container: Box,
-  cue: VTTCue,
-  displayEl: HTMLElement,
-  boxes: Box[],
-): Box {
-  let cueEl = displayEl.firstElementChild!,
-    line = computeCueLine(cue),
-    displayBox: Box,
-    axis: DirectionalAxis[] = [];
-
-  if (!displayEl[STARTING_BOX]) {
-    displayEl[STARTING_BOX] = createStartingBox(container, displayEl, cue.vertical === '');
-  }
-
-  displayBox = resolveRelativeBox(container, { ...displayEl[STARTING_BOX] });
-
-  // Explicitly positioned cues (e.g., SSA `\pos`) are never moved, but other cues avoid them.
-  if (displayEl.hasAttribute('data-fixed')) {
-    setBoxCSSVars(displayEl, container, untranslateBox(displayEl, displayBox), 'cue');
-    return displayBox;
-  }
-
-  if (displayEl[POSITION_OVERRIDE]) {
-    axis = [displayEl[POSITION_OVERRIDE] === 'top' ? '+y' : '-y', '+x', '-x'];
-  } else if (cue.snapToLines) {
-    const isHorizontal = cue.vertical === '',
-      isRL = cue.vertical === 'rl',
-      containerSize = isHorizontal ? container.height : container.width,
-      boxSize = isHorizontal ? displayBox.height : displayBox.width,
-      step = getLineHeight(cueEl),
-      maxOffset = containerSize + step,
-      fromStart = line >= 0;
-
-    let offset = step * Math.round(line);
-
-    if (Math.abs(offset) > maxOffset) {
-      offset = (offset < 0 ? -1 : 1) * Math.ceil(maxOffset / step) * step;
-    }
-
-    // Lines count from the top (horizontal), the left (vertical-lr), or the right (vertical-rl).
-    // Negative lines count from the opposite edge.
-    let position: number;
-    if (isRL) {
-      position = fromStart ? containerSize - boxSize - offset : -offset - step;
-      axis = fromStart ? ['-x', '+x'] : ['+x', '-x'];
-    } else {
-      // Negative lines anchor the far edge of the box to the line so line -1 sits flush with the
-      // edge even though the padded box is taller than one line height.
-      position = fromStart ? offset : containerSize + offset + step - boxSize;
-      axis = isHorizontal
-        ? fromStart
-          ? ['+y', '-y']
-          : ['-y', '+y']
-        : fromStart
-          ? ['+x', '-x']
-          : ['-x', '+x'];
-    }
-
-    moveBox(displayBox, isHorizontal ? '+y' : '+x', position);
-  } else {
-    const isHorizontal = cue.vertical === '',
-      posAxis = isHorizontal ? '+y' : '+x',
-      size = isHorizontal ? displayBox.height : displayBox.width;
-
-    moveBox(
-      displayBox,
-      posAxis,
-      ((isHorizontal ? container.height : container.width) * line) / 100,
-    );
-
-    // Line alignment: start puts the box's leading edge on the line, center its middle, and end
-    // its trailing edge, so the box shifts back by half or all of its size.
-    moveBox(
-      displayBox,
-      posAxis,
-      -(cue.lineAlign === 'center' ? size / 2 : cue.lineAlign === 'end' ? size : 0),
-    );
-
-    axis = isHorizontal ? ['-y', '+y', '-x', '+x'] : ['-x', '+x', '-y', '+y'];
-  }
-
-  displayBox = avoidBoxCollisions(container, displayBox, boxes, axis);
-  setBoxCSSVars(displayEl, container, untranslateBox(displayEl, displayBox), 'cue');
-
-  return displayBox;
+/** Measurements that only change when the cue's content or the overlay size changes. */
+export interface CueMeasureCache {
+  /** Starting box as fractions of the container so it survives resizes until invalidated. */
+  box: { top: number; left: number; right: number; bottom: number };
+  /** Pixel translation folded into the box (from `--cue-transform`). */
+  translate: { x: number; y: number } | null;
+  positionOverride: false | 'top' | 'bottom';
+  lineHeight: number;
 }
 
 /**
- * CSS positions are applied before `transform`, so the written box must exclude the translation
- * that was folded into the visual box for collision detection.
+ * MEASURE phase: reads everything the layout needs for a cue. Results are cached on the element
+ * until the overlay is resized so repeated renders do not touch layout.
  */
-function untranslateBox(el: HTMLElement, box: Box): Box {
-  const translate = el[TRANSLATE];
-  if (!translate) return box;
-  const result = { ...box };
-  moveBox(result, '+x', -translate.x);
-  moveBox(result, '+y', -translate.y);
-  return result;
+export function measureCue(container: Box, cue: VTTCue, displayEl: HTMLElement): CueLayoutInput {
+  let cache: CueMeasureCache | null = displayEl[LAYOUT_CACHE];
+
+  if (!cache) {
+    cache = displayEl[LAYOUT_CACHE] = createMeasureCache(container, displayEl, cue.vertical === '');
+  }
+
+  return {
+    kind: 'cue',
+    box: resolveRelativeBox(container, { ...cache.box } as Box),
+    lineHeight: cache.lineHeight,
+    snapToLines: cue.snapToLines,
+    line: computeCueLine(cue),
+    lineAlign: cue.lineAlign,
+    vertical: cue.vertical,
+    fixed: displayEl.hasAttribute('data-fixed'),
+    positionOverride: cache.positionOverride,
+  };
 }
 
-function createStartingBox(container: Box, cueEl: HTMLElement, isHorizontal: boolean) {
-  const box = createBox(cueEl),
-    pos = getStyledPositions(container, cueEl);
+/**
+ * WRITE phase: applies the laid out box. CSS positions are applied before `transform`, so the
+ * written box excludes the translation that was folded into the visual box.
+ */
+export function writeCueBox(container: Box, displayEl: HTMLElement, box: Box) {
+  const translate = (displayEl[LAYOUT_CACHE] as CueMeasureCache | null)?.translate;
+  let written = box;
+  if (translate) {
+    written = { ...box };
+    moveBox(written, '+x', -translate.x);
+    moveBox(written, '+y', -translate.y);
+  }
+  setBoxCSSVars(displayEl, container, written, 'cue');
+}
 
-  cueEl[POSITION_OVERRIDE] = false;
+function createMeasureCache(
+  container: Box,
+  displayEl: HTMLElement,
+  isHorizontal: boolean,
+): CueMeasureCache {
+  const box = createBox(displayEl),
+    pos = getStyledPositions(container, displayEl),
+    cueEl = displayEl.firstElementChild ?? displayEl;
+
+  let positionOverride: CueMeasureCache['positionOverride'] = false;
 
   if (pos.top !== null) {
     box.top = pos.top;
     box.bottom = pos.top + box.height;
     // For vertical cues the top offset is the cue position, not a line override.
-    if (isHorizontal) cueEl[POSITION_OVERRIDE] = 'top';
+    if (isHorizontal) positionOverride = 'top';
   }
 
   if (pos.bottom !== null) {
     const bottom = container.height - pos.bottom;
     box.top = bottom - box.height;
     box.bottom = bottom;
-    if (isHorizontal) cueEl[POSITION_OVERRIDE] = 'bottom';
+    if (isHorizontal) positionOverride = 'bottom';
   }
 
   if (pos.left !== null) box.left = pos.left;
@@ -145,16 +94,20 @@ function createStartingBox(container: Box, cueEl: HTMLElement, isHorizontal: boo
 
   // Fold percentage translations (e.g., `translateX(-50%)` for centred SSA cues) into the visual
   // box so collisions are detected where the cue is actually painted.
-  const transform = cueEl.style.getPropertyValue('--cue-transform'),
+  const transform = displayEl.style.getPropertyValue('--cue-transform'),
     tx = parseFloat(transform.match(TRANSLATE_X_RE)?.[1] ?? '0') || 0,
     ty = parseFloat(transform.match(TRANSLATE_Y_RE)?.[1] ?? '0') || 0,
     translate = { x: (tx / 100) * box.width, y: (ty / 100) * box.height };
 
-  cueEl[TRANSLATE] = translate.x || translate.y ? translate : null;
   moveBox(box, '+x', translate.x);
   moveBox(box, '+y', translate.y);
 
-  return createCSSBox(container, box);
+  return {
+    box: createCSSBox(container, box),
+    translate: translate.x || translate.y ? translate : null,
+    positionOverride,
+    lineHeight: getLineHeight(cueEl),
+  };
 }
 
 /**

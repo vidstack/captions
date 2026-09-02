@@ -2,7 +2,8 @@
 
 import { setCSSVar } from '../../utils/style';
 
-export const STARTING_BOX = Symbol(__DEV__ ? 'STARTING_BOX' : 0);
+/** Per-element cache of measurements that only change with content or overlay size. */
+export const LAYOUT_CACHE = Symbol(__DEV__ ? 'LAYOUT_CACHE' : 0);
 
 export type DirectionalAxis = '-x' | '+x' | '-y' | '+y';
 

@@ -5,9 +5,20 @@ import type { VTTCue } from '../vtt-cue';
 import type { VTTHeaderMetadata } from '../vtt-header';
 import type { VTTRegion } from '../vtt-region';
 import { transformVTTStyle } from '../vtt-style';
-import { createBox, STARTING_BOX, type Box } from './box';
-import { computeCuePosition, computeCuePositionAlignment, positionCue } from './position-cue';
-import { positionRegion } from './position-region';
+import { createBox, LAYOUT_CACHE, type Box } from './box';
+import { layoutItems, type LayoutInput } from './layout';
+import {
+  computeCuePosition,
+  computeCuePositionAlignment,
+  measureCue,
+  writeCueBox,
+} from './position-cue';
+import {
+  measureRegion,
+  measureRegionHeight,
+  writeRegionBox,
+  writeRegionHeight,
+} from './position-region';
 
 export class CaptionsRenderer {
   readonly overlay: HTMLElement;
@@ -116,11 +127,11 @@ export class CaptionsRenderer {
     this._updateOverlay();
 
     for (const el of this._regions.values()) {
-      el[STARTING_BOX] = null;
+      el[LAYOUT_CACHE] = null;
     }
 
     for (const el of this._cues.values()) {
-      if (el) el[STARTING_BOX] = null;
+      if (el) el[LAYOUT_CACHE] = null;
     }
 
     this._render(true);
@@ -263,26 +274,53 @@ export class CaptionsRenderer {
       }
     }
 
-    if (forceUpdate) {
-      const boxes: Box[] = [],
-        seen = new Set<VTTRegion | VTTCue>(),
-        ordered = orderForPositioning(activeCues);
-      for (let i = 0; i < ordered.length; i++) {
-        cue = ordered[i];
-        if (seen.has(cue.region || cue)) continue;
-        const isRegion = this._hasRegion(cue),
-          el = isRegion ? this._regions.get(cue.region!.id)! : this._cues.get(cue)!;
-        if (isRegion) {
-          boxes.push(positionRegion(this._overlayBox, cue.region!, el, boxes));
-        } else {
-          boxes.push(positionCue(this._overlayBox, cue, el, boxes));
-        }
-        seen.add(isRegion ? cue.region! : cue);
-      }
-    }
+    if (forceUpdate) this._layout(activeCues);
 
     updateTimedVTTCueNodes(this.overlay, this._currentTime);
     this._activeCues = activeCues;
+  }
+
+  /**
+   * Positions all active cues and regions in three phases so the browser lays out at most twice
+   * per render: measure (reads), layout (pure math), write (CSS variables).
+   */
+  private _layout(activeCues: VTTCue[]) {
+    const container = this._overlayBox,
+      seen = new Set<VTTRegion | VTTCue>(),
+      targets: { el: HTMLElement; region: VTTRegion | null; cue: VTTCue }[] = [];
+
+    for (const cue of orderForPositioning(activeCues)) {
+      const key = cue.region || cue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const isRegion = this._hasRegion(cue),
+        el = isRegion ? this._regions.get(cue.region!.id)! : this._cues.get(cue)!;
+      targets.push({ el, region: isRegion ? cue.region! : null, cue });
+    }
+
+    // Measure 1 + write: region heights depend on their cue lines and feed the region anchor.
+    const regionHeights = new Map<HTMLElement, number>();
+    for (const target of targets) {
+      if (target.region)
+        regionHeights.set(target.el, measureRegionHeight(target.region, target.el));
+    }
+    for (const [el, height] of regionHeights) writeRegionHeight(el, height);
+
+    // Measure 2: every box, cached until the next resize.
+    const inputs: LayoutInput[] = targets.map((target) =>
+      target.region
+        ? measureRegion(container, target.el, regionHeights.get(target.el)!)
+        : measureCue(container, target.cue, target.el),
+    );
+
+    // Layout: pure.
+    const boxes = layoutItems(container, inputs);
+
+    // Write.
+    for (let i = 0; i < targets.length; i++) {
+      if (targets[i].region) writeRegionBox(container, targets[i].el, boxes[i]);
+      else writeCueBox(container, targets[i].el, boxes[i]);
+    }
   }
 
   private _findNextConnectedCue(activeCues: VTTCue[], index: number, parent: Element) {
