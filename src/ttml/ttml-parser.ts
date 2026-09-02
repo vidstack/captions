@@ -69,7 +69,22 @@ const ENTITIES: Record<string, string> = {
 const DEFAULT_FRAME_RATE = 30,
   DEFAULT_DURATION = 10,
   DEFAULT_ROOT_WIDTH = 1920,
-  DEFAULT_ROOT_HEIGHT = 1080;
+  DEFAULT_ROOT_HEIGHT = 1080,
+  DEFAULT_CELL_COLUMNS = 32,
+  DEFAULT_CELL_ROWS = 15,
+  /** Font size (as a fraction of the overlay height) that a `100%` TTML font size maps to. */
+  BASE_FONT_SIZE = 0.05;
+
+/** Maps `tts:writingMode` values to the WebVTT cue `vertical` setting. */
+const WRITING_MODES: Record<string, VTTCue['vertical']> = {
+  lrtb: '',
+  rltb: '',
+  lr: '',
+  rl: '',
+  tbrl: 'rl',
+  tb: 'rl',
+  tblr: 'lr',
+};
 
 // -------------------------------------------------------------------------------------------
 // Time Expressions
@@ -379,6 +394,8 @@ export class TTMLParser implements CaptionsParser {
   protected _time: TTMLTimeContext = {};
   protected _rootWidth = DEFAULT_ROOT_WIDTH;
   protected _rootHeight = DEFAULT_ROOT_HEIGHT;
+  protected _cellColumns = DEFAULT_CELL_COLUMNS;
+  protected _cellRows = DEFAULT_CELL_ROWS;
   protected _styleEls: Record<string, XMLElement> = {};
   protected _styles: Record<string, TTMLStyle> = {};
   protected _regions: Record<string, TTMLRegion> = {};
@@ -456,6 +473,17 @@ export class TTMLParser implements CaptionsParser {
     this._time = time;
 
     if (attrs.lang) this._metadata.Language = attrs.lang;
+
+    // `ttp:timeBase` (`media`, `smpte`, `clock`), `ttp:clockMode` and `ttp:dropMode` are accepted
+    // but all times are resolved as media time; they must not cause an error.
+
+    if (attrs.cellResolution) {
+      const [columns, rows] = attrs.cellResolution.trim().split(WHITESPACE_RE).map(toPositive);
+      if (columns && rows) {
+        this._cellColumns = columns;
+        this._cellRows = rows;
+      }
+    }
 
     if (attrs.extent) {
       const [w, h] = attrs.extent
@@ -541,13 +569,16 @@ export class TTMLParser implements CaptionsParser {
     if (!value) return null;
     const parts = value.trim().split(WHITESPACE_RE);
     if (parts.length !== 2) return null;
-    const x = this._parseLength(parts[0], this._rootWidth),
-      y = this._parseLength(parts[1], this._rootHeight);
+    const x = this._parseLength(parts[0], this._rootWidth, this._cellColumns),
+      y = this._parseLength(parts[1], this._rootHeight, this._cellRows);
     return x !== null && y !== null ? [x, y] : null;
   }
 
-  /** Parses a TTML length into a percentage of the root container. */
-  protected _parseLength(value: string, rootSize: number): number | null {
+  /**
+   * Parses a TTML length into a percentage of the root container. Cell units (`c`) are resolved
+   * against `ttp:cellResolution` on the given axis.
+   */
+  protected _parseLength(value: string, rootSize: number, cells: number): number | null {
     const match = LENGTH_RE.exec(value);
     if (!match) return null;
     const num = parseFloat(match[1]);
@@ -556,6 +587,8 @@ export class TTMLParser implements CaptionsParser {
         return num;
       case 'px':
         return (num / rootSize) * 100;
+      case 'c':
+        return (num / cells) * 100;
       default:
         return null;
     }
@@ -652,11 +685,14 @@ export class TTMLParser implements CaptionsParser {
         region: el.attrs.region ?? ctx.region,
       };
 
-    for (const node of el.children) {
+    const nodes = el.children;
+
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
       if (typeof node === 'string') continue;
       switch (node.name) {
         case 'p':
-          this._parseParagraph(node, child);
+          this._parseParagraph(node, child, nextParagraph(nodes, i + 1));
           break;
         case 'metadata':
         case 'set':
@@ -668,7 +704,7 @@ export class TTMLParser implements CaptionsParser {
     }
   }
 
-  protected _parseParagraph(el: XMLElement, ctx: ContainerContext) {
+  protected _parseParagraph(el: XMLElement, ctx: ContainerContext, next?: XMLElement) {
     const timing = this._resolveTiming(el, ctx);
     if (timing.badBegin) return;
 
@@ -704,6 +740,13 @@ export class TTMLParser implements CaptionsParser {
 
     let { begin, end } = timing;
 
+    if (end === undefined && el.attrs.end === undefined && el.attrs.dur === undefined && next) {
+      // Common in live EBU-TT-D and auto-generated files: a paragraph without `end`/`dur` runs
+      // until the next paragraph begins. The sibling reports its own timing errors when parsed.
+      const nextBegin = next.attrs.begin ? parseTTMLTime(next.attrs.begin, this._time) : null;
+      if (nextBegin !== null && ctx.begin + nextBegin > begin) end = ctx.begin + nextBegin;
+    }
+
     if (end === undefined) {
       end = begin + DEFAULT_DURATION;
       this._handleError(
@@ -733,25 +776,58 @@ export class TTMLParser implements CaptionsParser {
 
     if (el.attrs.id) cue.id = el.attrs.id;
 
+    // `tts:writingMode` is a region property but we also accept it inherited from content.
+    const vertical = WRITING_MODES[style.writingMode?.trim() ?? ''] ?? '';
+    cue.vertical = vertical;
+
     if (region) {
       cue.snapToLines = false;
-      cue.position = clamp(region.x);
       cue.positionAlign = 'line-left';
-      cue.size = clamp(region.w);
-      if (region.displayAlign === 'after') {
-        cue.line = clamp(region.y + region.h);
+
+      // WebVTT `position`/`size` run along the inline axis and `line` along the block axis. For
+      // horizontal text that is x/w and y/h; for vertical text the axes swap: `position`/`size`
+      // come from origin-y/extent-h and `line` from origin-x/extent-w.
+      let start: number, length: number;
+      if (vertical) {
+        cue.position = clamp(region.y);
+        cue.size = clamp(region.h);
+        start = region.x;
+        length = region.w;
+      } else {
+        cue.position = clamp(region.x);
+        cue.size = clamp(region.w);
+        start = region.y;
+        length = region.h;
+      }
+
+      // `tts:displayAlign` aligns along the block progression direction. Horizontal (`lrtb`)
+      // and `tblr` (lr) progress top->bottom / left->right, so `before` is the region start
+      // (origin-y / origin-x). `tbrl` (rl) progresses right->left, so `before` is the far edge
+      // (origin-x + extent-w) and `after` is origin-x. The renderer anchors `line` from the
+      // left for both vertical directions, so we flip the alignment for `rl` here.
+      let displayAlign = region.displayAlign;
+      if (vertical === 'rl') {
+        if (displayAlign === 'before') displayAlign = 'after';
+        else if (displayAlign === 'after') displayAlign = 'before';
+      }
+
+      if (displayAlign === 'after') {
+        cue.line = clamp(start + length);
         cue.lineAlign = 'end';
-      } else if (region.displayAlign === 'center') {
-        cue.line = clamp(region.y + region.h / 2);
+      } else if (displayAlign === 'center') {
+        cue.line = clamp(start + length / 2);
         cue.lineAlign = 'center';
       } else {
-        cue.line = clamp(region.y);
+        cue.line = clamp(start);
       }
     }
 
     if (style.textAlign && TEXT_ALIGNS.has(style.textAlign)) {
       cue.align = style.textAlign as VTTCue['align'];
     }
+
+    const fontSize = toCSSFontSize(style.fontSize, this._cellRows, this._rootHeight);
+    if (fontSize) cue.style = { ...cue.style, 'font-size': fontSize };
 
     this._cues.push(cue);
     this._init.onCue?.(cue);
@@ -841,6 +917,53 @@ function parsePixels(text: string): number | undefined {
 
 function clamp(num: number) {
   return Math.min(100, Math.max(0, num));
+}
+
+function round(num: number, precision = 5) {
+  const factor = 10 ** precision;
+  return Math.round(num * factor) / factor;
+}
+
+/** Returns the next `p` element sibling starting at `from`, if any. */
+function nextParagraph(nodes: (XMLElement | string)[], from: number): XMLElement | undefined {
+  for (let i = from; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (typeof node !== 'string' && node.name === 'p') return node;
+  }
+}
+
+/**
+ * Converts a TTML `tts:fontSize` into a CSS value relative to the overlay. Two-value font sizes
+ * use the second (vertical) value. Returns `null` for unsupported units.
+ *
+ * - `%`: relative to the default font size (5% of the overlay height).
+ * - `c`: cell units, one cell being `1 / rows` of the overlay height.
+ * - `px`: relative to the root container height (`tts:extent` on `<tt>`, default 1080).
+ * - `em`: passed through, relative to the inherited font size.
+ */
+function toCSSFontSize(value: string | undefined, rows: number, rootHeight: number) {
+  if (!value) return null;
+
+  const parts = value.trim().split(WHITESPACE_RE),
+    match = LENGTH_RE.exec(parts[parts.length - 1]);
+
+  if (!match) return null;
+
+  const num = parseFloat(match[1]);
+  if (!(num > 0)) return null;
+
+  switch (match[2]) {
+    case '%':
+      return `calc(var(--overlay-height) * ${BASE_FONT_SIZE} * ${round(num / 100)})`;
+    case 'c':
+      return `calc(var(--overlay-height) * ${round(num / rows)})`;
+    case 'px':
+      return `calc(var(--overlay-height) * ${round(num / rootHeight)})`;
+    case 'em':
+      return `${num}em`;
+    default:
+      return null;
+  }
 }
 
 /** Drops style properties that are not inherited by descendant elements. */
