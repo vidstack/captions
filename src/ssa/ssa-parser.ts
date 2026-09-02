@@ -479,7 +479,8 @@ export class SSAParser implements CaptionsParser {
 
     css['--cue-white-space'] = 'pre-wrap';
     css['--cue-line-height'] = 'normal';
-    css['--cue-width'] = 'auto';
+    // Boxes hug the text like libass so unrelated cues do not collide across the whole width.
+    css['--cue-width'] = 'max-content';
 
     const horizontal = (style.alignment - 1) % 3, // 0 left, 1 center, 2 right
       vertical = Math.floor((style.alignment - 1) / 3); // 0 bottom, 1 middle, 2 top
@@ -496,9 +497,23 @@ export class SSAParser implements CaptionsParser {
       else if (horizontal === 2) transform.push('translateX(-100%)');
       if (vertical === 0) transform.push('translateY(-100%)');
       else if (vertical === 1) transform.push('translateY(-50%)');
+      // Explicitly positioned cues are not subject to collision avoidance (matches libass).
+      css.__fixed = '1';
     } else {
-      css['--cue-left'] = pctX(style.marginL);
-      css['--cue-right'] = pctX(style.marginR);
+      const left = (style.marginL / this._playResX) * 100,
+        right = (style.marginR / this._playResX) * 100;
+
+      css['--cue-max-width'] = `${round(Math.max(0, 100 - left - right))}%`;
+
+      if (horizontal === 0) {
+        css['--cue-left'] = `${round(left)}%`;
+      } else if (horizontal === 2) {
+        css['--cue-right'] = `${round(right)}%`;
+      } else {
+        css['--cue-left'] = `${round((left + (100 - right)) / 2)}%`;
+        transform.push('translateX(-50%)');
+      }
+
       if (vertical === 2) {
         css['--cue-top'] = pctY(style.marginV);
       } else if (vertical === 1) {
