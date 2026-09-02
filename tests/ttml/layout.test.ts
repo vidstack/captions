@@ -276,8 +276,8 @@ test('GOOD: missing end uses the next sibling paragraph begin', async () => {
   expect(errors[1].line).toBe(8);
 });
 
-test('GOOD: clock timeBase with clockMode and dropMode does not error', async () => {
-  const { cues, errors } = await parseText(
+test('GOOD: clock timeBase is made relative to the earliest paragraph', async () => {
+  const { cues, errors, metadata } = await parseText(
     `<tt ${TTML_NS} ttp:timeBase="clock" ttp:clockMode="local" ttp:dropMode="nonDrop" ttp:frameRate="30">
   <body>
     <div>
@@ -290,11 +290,12 @@ test('GOOD: clock timeBase with clockMode and dropMode does not error', async ()
   );
 
   expect(errors).toHaveLength(0);
+  expect(metadata).toEqual({ TimeBase: 'clock', ClockStart: '10:00:00.000' });
   expect(cues).toHaveLength(2);
-  expect(cues[0].startTime).toBe(36000);
-  expect(cues[0].endTime).toBe(36002);
-  expect(cues[1].startTime).toBe(36002.5);
-  expect(cues[1].endTime).toBe(36004);
+  expect(cues[0].startTime).toBe(0);
+  expect(cues[0].endTime).toBe(2);
+  expect(cues[1].startTime).toBe(2.5);
+  expect(cues[1].endTime).toBe(4);
 });
 
 test('GOOD: region background colour does not affect cue text', async () => {

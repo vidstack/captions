@@ -20,6 +20,20 @@ test('clock-time with frames', () => {
   expect(parseTTMLTime('00:00:00:01.1', { frameRate: 10, subFrameRate: 2 })).toBeCloseTo(0.15);
 });
 
+test('drop-frame timecodes', () => {
+  const ntsc = { frameRate: 30, dropMode: 'dropNTSC' } as const;
+  // 18000 nominal frames minus 2 dropped per minute except every tenth (9 minutes).
+  expect(parseTTMLTime('00:10:00:00', ntsc)).toBeCloseTo((17982 * 1001) / 30000, 6);
+  expect(parseTTMLTime('00:00:01:00', ntsc)).toBeCloseTo(1.001, 6);
+  // Frame 2 is the first real frame of a dropped minute.
+  expect(parseTTMLTime('00:01:00:02', ntsc)).toBeCloseTo((1800 * 1001) / 30000, 6);
+  // An explicit multiplier wins over the implied 1000/1001.
+  expect(parseTTMLTime('00:00:01:00', { ...ntsc, frameRateMultiplier: 1 })).toBe(1);
+  // Non-drop and the (unsupported) PAL rule count frames linearly.
+  expect(parseTTMLTime('00:10:00:00', { frameRate: 30, dropMode: 'nonDrop' })).toBe(600);
+  expect(parseTTMLTime('00:10:00:00', { frameRate: 25, dropMode: 'dropPAL' })).toBe(600);
+});
+
 test('offset-time expressions', () => {
   expect(parseTTMLTime('1h')).toBe(3600);
   expect(parseTTMLTime('1.5m')).toBe(90);

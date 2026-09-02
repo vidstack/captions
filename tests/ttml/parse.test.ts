@@ -294,7 +294,8 @@ test('GOOD: styling features', async () => {
   expect(cues[2].text).toBe('No colour <c.red>red</c>');
   expect(cues[3].text).toBe('<c.cyan.bg_black>cyan on black</c>');
   expect(cues[4].text).toBe('<ruby>漢<rt>kan</rt></ruby>');
-  expect(cues[5].text).toBe('Unknown elements kept');
+  // A `<set>` with no end/dur applies for the whole paragraph.
+  expect(cues[5].text).toBe('<c.red>Unknown elements kept</c>');
 });
 
 test('GOOD: CRLF line endings parse identically', async () => {
