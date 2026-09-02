@@ -222,17 +222,30 @@ test('GOOD: align settings', async () => {
 
 test('BAD: align settings', async () => {
   const { cues, errors } = await parseText(
-    ['WEBVTT', '', '00:00 --> 00:02 align:middle', 'Text A'].join('\n'),
+    ['WEBVTT', '', '00:00 --> 00:02 align:top', 'Text A'].join('\n'),
   );
 
   expect(cues).toHaveLength(1);
   expect(errors).toMatchInlineSnapshot(`
     [
-      [Error: invalid value for cue setting \`align\` on line 3 (value: middle)],
+      [Error: invalid value for cue setting \`align\` on line 3 (value: top)],
     ]
   `);
 
   expect(cues[0].align).toBe('center');
+});
+
+test('TOLERANT: legacy align:middle maps to center outside strict mode', async () => {
+  const { cues, errors } = await parseText(
+    ['WEBVTT', '', '00:00 --> 00:02 align:middle', 'Text A'].join('\n'),
+  );
+  expect(errors).toHaveLength(0);
+  expect(cues[0].align).toBe('center');
+  await expect(
+    parseText(['WEBVTT', '', '00:00.000 --> 00:02.000 align:middle', 'Text A'].join('\n'), {
+      strict: true,
+    }),
+  ).rejects.toThrow(/align/);
 });
 
 // -------------------------------------------------------------------------------

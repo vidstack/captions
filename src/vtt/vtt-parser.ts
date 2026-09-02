@@ -1,11 +1,13 @@
 import type { ParseErrorBuilder } from '../parse/errors';
 import type { ParseError } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit } from '../parse/types';
-import { toCoords, toFloat, toNumber, toPercentage } from '../utils/unit';
+import { toCoords, toFloat, toNumber, toPercentage as toPercentageUnit } from '../utils/unit';
 import { VTTCue } from './vtt-cue';
 import { VTTRegion } from './vtt-region';
 
 const HEADER_MAGIC = 'WEBVTT',
+  // https://www.w3.org/TR/webvtt1/#webvtt-file-structure (optional BOM, then WEBVTT + space/tab/EOL)
+  HEADER_RE = /^\uFEFF?WEBVTT(?:$|[ \t])/,
   COMMA = ',',
   PERCENT_SIGN = '%',
   SETTING_SEP_RE = /[:=]/,
@@ -17,10 +19,13 @@ const HEADER_MAGIC = 'WEBVTT',
   SPACE_RE = /[\s\t]+/,
   TIMESTAMP_SEP = '-->',
   TIMESTAMP_SEP_RE = /[\s\t]*-->[\s\t]*/,
-  ALIGN_RE = /start|center|end|left|right/,
-  LINE_ALIGN_RE = /start|center|end/,
-  POS_ALIGN_RE = /line-(?:left|right)|center|auto/,
-  TIMESTAMP_RE = /^(?:(\d+):)?(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/;
+  ALIGN_RE = /^(?:start|center|end|left|right)$/,
+  LINE_ALIGN_RE = /^(?:start|center|end)$/,
+  POS_ALIGN_RE = /^(?:line-(?:left|right)|center|auto)$/,
+  // Lenient: any hour digits, 1-3 fraction digits, `,` or `.` separator. Strict follows the spec.
+  TIMESTAMP_RE = /^(?:(\d+):)?(\d{2}):(\d{2})(?:[.,](\d{1,3}))?$/,
+  STRICT_TIMESTAMP_RE = /^(?:(\d{2,}):)?(\d{2}):(\d{2})\.(\d{3})$/,
+  TIMING_LINE_RE = /^[\s\t]*\d/;
 
 export const enum VTTBlock {
   None = 0,
@@ -32,6 +37,15 @@ export const enum VTTBlock {
 }
 
 export class VTTParser implements CaptionsParser {
+  /** Whether strict mode applies the WebVTT timestamp grammar (SRT has its own grammar). */
+  protected _strictTimestamps = true;
+
+  /** Percentages must carry a `%` sign per spec; lenient mode also accepts bare numbers. */
+  protected _toPercentage(text: string) {
+    if (this._init.strict && !text.includes(PERCENT_SIGN)) return null;
+    return toPercentageUnit(text);
+  }
+
   protected _init!: CaptionsParserInit;
   protected _block = VTTBlock.None;
   protected _metadata: Record<string, any> = {};
@@ -47,11 +61,22 @@ export class VTTParser implements CaptionsParser {
 
   async init(init: CaptionsParserInit) {
     this._init = init;
-    if (init.strict) this._block = VTTBlock.Header;
     if (init.errors) this._errorBuilder = (await import('../parse/errors')).ParseErrorBuilder;
   }
 
   parse(line: string, lineCount: number) {
+    if (lineCount === 1) {
+      if (HEADER_RE.test(line)) {
+        this._block = VTTBlock.Header;
+        this._prevLine = line;
+        return;
+      }
+
+      // Invalid or missing signature: strict mode throws, otherwise report and keep going so
+      // real-world files without a header still play.
+      this._handleError(this._errorBuilder?._badVTTHeader());
+    }
+
     if (line === '') {
       if (this._cue) {
         this._cues.push(this._cue);
@@ -75,6 +100,14 @@ export class VTTParser implements CaptionsParser {
           this._parseHeader(line, lineCount);
           break;
         case VTTBlock.Cue:
+          // A timing line inside cue text ends the current cue and starts the next one
+          // (https://www.w3.org/TR/webvtt1/#collect-a-webvtt-block).
+          if (line.includes(TIMESTAMP_SEP) && TIMING_LINE_RE.test(line)) {
+            this.parse('', lineCount);
+            this.parse(line, lineCount);
+            return;
+          }
+
           if (this._cue) {
             const hasText = this._cue!.text.length > 0;
             if (!hasText && SETTING_LINE_RE.test(line)) {
@@ -114,8 +147,6 @@ export class VTTParser implements CaptionsParser {
         this._parseCueSettings(result[2], lineCount);
       }
       this._block = VTTBlock.Cue;
-    } else if (lineCount === 1) {
-      this._parseHeader(line, lineCount);
     }
 
     this._prevLine = line;
@@ -141,25 +172,21 @@ export class VTTParser implements CaptionsParser {
   }
 
   protected _parseHeader(line: string, lineCount: number) {
-    if (lineCount > 1) {
-      const sepIndex = line.search(SETTING_SEP_RE);
-      if (sepIndex > 0) {
-        const key = line.slice(0, sepIndex).trim(),
-          value = line.slice(sepIndex + 1).trim();
-        if (key) this._metadata[key] = value;
-      }
-    } else if (line.startsWith(HEADER_MAGIC)) {
-      this._block = VTTBlock.Header;
-    } else {
-      this._handleError(this._errorBuilder?._badVTTHeader());
+    if (lineCount <= 1 || line.startsWith(HEADER_MAGIC)) return;
+    const sepIndex = line.search(SETTING_SEP_RE);
+    if (sepIndex > 0) {
+      const key = line.slice(0, sepIndex).trim(),
+        value = line.slice(sepIndex + 1).trim();
+      if (key) this._metadata[key] = value;
     }
   }
 
   protected _parseTimestamp(line: string, lineCount: number) {
     const [startTimeText, trailingText = ''] = line.split(TIMESTAMP_SEP_RE),
       [endTimeText, ...settingsText] = trailingText.split(SPACE_RE),
-      startTime = parseVTTTimestamp(startTimeText),
-      endTime = parseVTTTimestamp(endTimeText);
+      strict = !!this._init.strict && this._strictTimestamps,
+      startTime = parseVTTTimestamp(startTimeText, strict),
+      endTime = parseVTTTimestamp(endTimeText, strict);
     if (startTime !== null && endTime !== null && endTime > startTime) {
       return [startTime, endTime, settingsText] as const;
     } else {
@@ -189,7 +216,7 @@ export class VTTParser implements CaptionsParser {
             this._region!.id = value;
             break;
           case 'width':
-            const width = toPercentage(value);
+            const width = this._toPercentage(value);
             if (width !== null) this._region!.width = width;
             else badValue = true;
             break;
@@ -250,7 +277,7 @@ export class VTTParser implements CaptionsParser {
             const [linePos, lineAlign] = value.split(COMMA);
 
             if (linePos.includes(PERCENT_SIGN)) {
-              const percentage = toPercentage(linePos);
+              const percentage = toPercentageUnit(linePos);
               if (percentage !== null) {
                 this._cue!.line = percentage;
                 this._cue!.snapToLines = false;
@@ -271,7 +298,7 @@ export class VTTParser implements CaptionsParser {
             break;
           case 'position':
             const [colPos, colAlign] = value.split(COMMA),
-              position = toPercentage(colPos);
+              position = this._toPercentage(colPos);
 
             if (position !== null) this._cue!.position = position;
             else badValue = true;
@@ -283,7 +310,7 @@ export class VTTParser implements CaptionsParser {
             }
             break;
           case 'size':
-            const size = toPercentage(value);
+            const size = this._toPercentage(value);
             if (size !== null) {
               this._cue!.size = size;
               if (size < 100) this._cue!.region = null;
@@ -294,6 +321,9 @@ export class VTTParser implements CaptionsParser {
           case 'align':
             if (ALIGN_RE.test(value)) {
               this._cue!.align = value as VTTCue['align'];
+            } else if (value === 'middle' && !this._init.strict) {
+              // Pre-2013 WebVTT drafts used `middle`; still common in the wild.
+              this._cue!.align = 'center';
             } else {
               badValue = true;
             }
@@ -324,8 +354,8 @@ export class VTTParser implements CaptionsParser {
 /**
  * @see {@link https://www.w3.org/TR/webvtt1/#collect-a-webvtt-timestamp}
  */
-export function parseVTTTimestamp(timestamp: string): number | null {
-  const match = timestamp.match(TIMESTAMP_RE);
+export function parseVTTTimestamp(timestamp: string, strict = false): number | null {
+  const match = timestamp.match(strict ? STRICT_TIMESTAMP_RE : TIMESTAMP_RE);
   if (!match) return null;
 
   const hours = match[1] ? parseInt(match[1], 10) : 0,

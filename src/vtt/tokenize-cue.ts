@@ -2,7 +2,7 @@ import type { VTTCue } from './vtt-cue';
 import { parseVTTTimestamp } from './vtt-parser';
 
 const DIGIT_RE = /[0-9]/,
-  MULTI_SPACE_RE = /[\s\t]+/,
+  MULTI_SPACE_RE = /[\s\t]+/g,
   TAG_NAME = {
     c: 'span',
     i: 'i',
@@ -264,11 +264,9 @@ export function replaceHTMLEntities(text: string) {
 }
 
 function fromCodePoint(code: number) {
-  try {
-    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '\u{fffd}';
-  } catch {
-    return '\u{fffd}';
-  }
+  // Null, surrogates, and out-of-range code points are replaced per the HTML tokenizer rules.
+  if (code <= 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) return '\u{fffd}';
+  return String.fromCodePoint(code);
 }
 
 /**

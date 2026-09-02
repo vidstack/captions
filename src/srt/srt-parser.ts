@@ -45,6 +45,10 @@ const MILLISECOND_SEP_RE = /,/g,
   };
 
 export class SRTParser extends VTTParser implements CaptionsParser {
+  // SRT timestamps use `HH:MM:SS,mmm` and frequently omit milliseconds, so the WebVTT strict
+  // grammar does not apply.
+  protected override _strictTimestamps = false;
+
   override parse(line: string, lineCount: number): void {
     if (line === '') {
       if (this._cue) {
