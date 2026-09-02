@@ -521,8 +521,14 @@ const tokens = tokenizeVTTCue(cue);
 
 Nodes can be a `VTTBlockNode` which can have children (i.e., class, italic, bold, underline,
 ruby, ruby text, voice, lang, timestamp) or a `VTTLeafNode` (i.e., text nodes). Text data and
-annotations are entity-decoded (named, decimal, and hex references), so escape them yourself if
-you render to HTML. Unknown or mismatched end tags are ignored and never corrupt nesting. As an
+annotations are entity-decoded (decimal and hex references plus the Latin-1 subset of named
+references, including legacy forms without `;`), so escape them yourself if you render to HTML.
+For the complete HTML table (2,125 names, about 12 kB gzipped) register the optional entry once:
+
+```ts
+import { registerFullHTMLEntities } from 'media-captions/entities';
+registerFullHTMLEntities();
+``` Unknown or mismatched end tags are ignored and never corrupt nesting. As an
 extension, `<c.#rrggbb>` and `<c.bg_#rrggbb>` classes are treated as colours so other formats can
 carry arbitrary colours through cue text. The tokens can be used for custom rendering like so:
 
@@ -721,6 +727,8 @@ const decoder = new CEA708Decoder({
 });
 ```
 
+- Open-ended cues use `endTime = Infinity`. This works on top of the native `VTTCue` too (a finite
+  sentinel is stored internally), and serialises as `null` in JSON.
 - `add(cue)`, `addAll(cues)`, `remove(cue)`, `update(cue)`, `clear()`, `has(cue)`, `size`, `cues`.
 - `activeAt(time)`: cues active at a time, in start order.
 - `evict(time)`: drops cues that ended more than `retention` seconds ago; `maxCues` caps the total.
@@ -1277,6 +1285,15 @@ pnpm build           # tsdown -> dist/prod.js (+ cea, element, parsers/* entries
 pnpm sandbox         # interactive scenarios at http://localhost:3100/.sandbox/index.html
 pnpm screenshots     # regenerates the README images from the sandbox scenarios
 ```
+
+Sandbox scenarios: `cues`, `regions`, `region-scroll`, `collisions`, `ssa`, `edge-styles`,
+`layout` (the cue layout/text style model), `live` (a `CueTrack` fed incrementally), and
+`element` (`<media-captions>`).
+
+CI (`.github/workflows/ci.yml`) runs formatting, type-checking, the unit and WPT suites, the
+Chromium layout suites, and the build. Screenshot baselines are per platform, so the visual suite
+is excluded in CI until Linux baselines exist; the manual `record-baselines.yml` workflow records
+them and opens a pull request.
 
 Parsing is covered by the vendored web-platform-tests WebVTT suites under `tests/wpt` (118
 tests; the handful of intentional real-world tolerances are listed in
