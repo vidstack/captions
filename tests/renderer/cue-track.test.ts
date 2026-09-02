@@ -23,6 +23,7 @@ test('open-ended cues are active until updated', () => {
   track.on((c, type) => events.push(`${type}:${c?.text ?? '*'}`));
 
   track.add(live);
+  expect(live.endTime).toBe(Infinity);
   expect(track.activeAt(1000)).toEqual([live]);
 
   live.endTime = 12;

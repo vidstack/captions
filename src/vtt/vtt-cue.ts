@@ -17,8 +17,10 @@ const IS_NATIVE = !IS_SERVER && typeof window.VTTCue === 'function',
  */
 export class VTTCue extends CueBase {
   constructor(startTime: number, endTime: number, text: string) {
-    super(startTime, Number.isFinite(endTime) ? endTime : OPEN_END_SENTINEL, text);
-    if (!Number.isFinite(endTime)) this[OPEN_END] = true;
+    // Only the native base rejects non-finite times; the fallback stores Infinity directly.
+    const open = IS_NATIVE && !Number.isFinite(endTime);
+    super(startTime, open ? OPEN_END_SENTINEL : endTime, text);
+    if (open) this[OPEN_END] = true;
   }
 
   /**
