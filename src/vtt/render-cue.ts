@@ -3,6 +3,8 @@ import { setDataAttr } from '../utils/style';
 import { tokenizeVTTCue, type VTTNode } from './tokenize-cue';
 import type { VTTCue } from './vtt-cue';
 
+const CLASS_TOKEN_RE = /*#__PURE__*/ /[^\w-]+/g;
+
 export function createVTTCueTemplate(cue: VTTCue): VTTCueTemplate {
   if (IS_SERVER) {
     throw Error(
@@ -24,18 +26,22 @@ export function renderVTTCueString(cue: VTTCue, currentTime = 0): string {
   return renderVTTTokensString(tokenizeVTTCue(cue), currentTime);
 }
 
+/**
+ * Renders VTT tokens to a HTML string. All text and attribute values are escaped, so the output
+ * is safe to assign to `innerHTML` even when the cue text comes from an untrusted captions file.
+ */
 export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): string {
-  let attrs: Record<string, any>,
+  let attrs: Record<string, string | number | boolean | undefined>,
     result = '';
 
   for (const token of tokens) {
     if (token.type === 'text') {
-      result += token.data;
+      result += escapeHTML(token.data);
     } else {
       const isTimestamp = token.type === 'timestamp';
 
       attrs = {};
-      attrs.class = token.class;
+      attrs.class = token.class && sanitizeClassList(token.class);
       attrs.title = token.type === 'v' && token.voice;
       attrs.lang = token.type === 'lang' && token.lang;
       attrs['data-part'] = token.type === 'v' && 'voice';
@@ -53,11 +59,12 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
 
       const attributes = Object.entries(attrs)
         .filter((v) => v[1])
-        .map((v) => `${v[0]}="${v[1] === true ? '' : v[1]}"`)
+        .map((v) => `${v[0]}="${v[1] === true ? '' : escapeAttribute(v[1] + '')}"`)
         .join(' ');
 
       result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${renderVTTTokensString(
         token.children,
+        currentTime,
       )}</${token.tagName}>`;
     }
   }
@@ -75,4 +82,30 @@ export function updateTimedVTTCueNodes(root: Element, currentTime: number) {
     if (time < currentTime) setDataAttr(el, 'past');
     else el.removeAttribute('data-past');
   }
+}
+
+/**
+ * Escapes text so it can be safely inserted as HTML text content.
+ */
+export function escapeHTML(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Escapes text so it can be safely inserted inside a double-quoted HTML attribute value.
+ */
+export function escapeAttribute(text: string): string {
+  return escapeHTML(text).replace(/"/g, '&quot;');
+}
+
+/**
+ * Restricts class names to word characters and hyphens so a crafted class can never break out
+ * of the attribute or introduce CSS selectors it should not.
+ */
+function sanitizeClassList(classList: string): string {
+  return classList
+    .split(' ')
+    .map((name) => name.replace(CLASS_TOKEN_RE, ''))
+    .filter(Boolean)
+    .join(' ');
 }

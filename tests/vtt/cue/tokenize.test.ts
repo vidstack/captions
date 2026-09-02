@@ -309,7 +309,7 @@ test('html entities', () => {
   expect(tokens).toMatchInlineSnapshot(`
     [
       {
-        "data": "&<>\\"' ‎‏",
+        "data": "&<>"' ‎‏",
         "type": "text",
       },
     ]
