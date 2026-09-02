@@ -3,7 +3,8 @@ import type { VTTHeaderMetadata } from '../vtt/vtt-header';
 import type { VTTRegion } from '../vtt/vtt-region';
 import type { ParseError } from './parse-error';
 
-export type CaptionsFileFormat = 'vtt' | 'srt' | 'ssa' | 'ass';
+export type CaptionsFileFormat =
+  'vtt' | 'srt' | 'ssa' | 'ass' | 'ttml' | 'dfxp' | 'xml' | 'scc' | 'lrc' | 'sbv';
 
 export interface CaptionsParserFactory {
   (): CaptionsParser;
@@ -31,6 +32,18 @@ export interface ParsedCaptionsResult {
   regions: VTTRegion[];
   cues: VTTCue[];
   errors: ParseError[];
+  /**
+   * Fonts embedded in the captions file (e.g., SSA/ASS `[Fonts]` section). Use
+   * `loadEmbeddedFonts` to register them with the document.
+   */
+  fonts?: EmbeddedFont[];
+}
+
+export interface EmbeddedFont {
+  /** File name as declared in the captions file (e.g., `arial.ttf`). */
+  name: string;
+  /** Raw font file bytes. */
+  data: Uint8Array;
 }
 
 export interface CaptionsParserInit extends ParseCaptionsOptions {
@@ -59,7 +72,8 @@ export interface ParseCaptionsOptions {
   errors?: boolean;
   /**
    * The captions file format to be parsed or a custom parser factory (functions that returns a
-   * captions parser). Supported types include: 'vtt', 'srt', 'ssa', and 'ass'.
+   * captions parser). Supported types include: 'vtt', 'srt', 'ssa', 'ass', 'ttml' (also 'dfxp'
+   * and 'xml'), 'scc' (CEA-608), 'lrc', and 'sbv'.
    */
   type?: CaptionsFileFormat | CaptionsParserFactory;
   /**

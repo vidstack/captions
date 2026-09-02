@@ -42,20 +42,19 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
   delete cues[0].style!['--cue-text-shadow'];
   expect(cues[0].style).toMatchInlineSnapshot(`
     {
-      "--cue-bg-color": "none",
-      "--cue-bottom": "10px",
+      "--cue-bg-color": "transparent",
+      "--cue-bottom": "3.472%",
       "--cue-color": "rgba(255,255,255,1)",
-      "--cue-left": "10px",
+      "--cue-left": "2.604%",
       "--cue-line-height": "normal",
       "--cue-padding-y": "0",
-      "--cue-right": "10px",
+      "--cue-right": "2.604%",
       "--cue-text-align": "center",
-      "--cue-transform": "scaleX(1) scaleY(1) rotate(0deg)",
-      "--cue-white-space": "normal",
+      "--cue-text-stroke": "calc(var(--overlay-height) * 0.01389) rgba(0,0,0,1)",
+      "--cue-white-space": "pre-wrap",
       "--cue-width": "auto",
-      "font-family": "Arial",
-      "font-size": "calc(36 / var(--overlay-height))",
-      "letter-spacing": "0px",
+      "font-family": ""Arial", sans-serif",
+      "font-size": "calc(var(--overlay-height) * 0.125)",
     }
   `);
 
@@ -65,23 +64,22 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
   delete cues[1].style!['--cue-text-shadow'];
   expect(cues[1].style).toMatchInlineSnapshot(`
     {
-      "--cue-bg-color": "none",
-      "--cue-bottom": "10px",
+      "--cue-bg-color": "transparent",
+      "--cue-bottom": "3.472%",
       "--cue-color": "rgba(255,255,255,1)",
-      "--cue-left": "10px",
+      "--cue-left": "2.604%",
       "--cue-line-height": "normal",
       "--cue-padding-y": "0",
-      "--cue-right": "10px",
+      "--cue-right": "2.604%",
       "--cue-text-align": "center",
-      "--cue-transform": "scaleX(1) scaleY(1) rotate(0deg)",
-      "--cue-white-space": "normal",
+      "--cue-text-stroke": "calc(var(--overlay-height) * 0.01389) rgba(0,0,0,1)",
+      "--cue-white-space": "pre-wrap",
       "--cue-width": "auto",
-      "font-family": "Arial",
-      "font-size": "calc(24 / var(--overlay-height))",
+      "font-family": ""Arial", sans-serif",
+      "font-size": "calc(var(--overlay-height) * 0.08333)",
       "font-style": "italic",
       "font-weight": "bold",
-      "letter-spacing": "0px",
-      "text-decoration": "line-through",
+      "text-decoration": "underline line-through",
     }
   `);
 
