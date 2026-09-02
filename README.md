@@ -1102,7 +1102,11 @@ and inline styling, regions (`tts:origin`, `tts:extent`, `tts:displayAlign`, `tt
 percentages, pixels, or cells (`ttp:cellResolution`) mapped to cue positioning, `tts:fontSize`
 mapped to a scaled cue font size, vertical writing modes (`tbrl`, `tblr`), italics, bold,
 underline, colours, `xml:lang`, ruby, `<br/>`, `xml:space`, and timed spans mapped to WebVTT
-timestamp tags. Not supported: `<set>` animations, images, and wall-clock time bases.
+timestamp tags, `<set>` animations (paragraphs are split into styled slices), `tts:visibility`
+and `tts:opacity`, SMPTE-TT / IMSC image cues (rendered as background images in the region box),
+wall-clock time bases (made relative to the earliest cue, with `ClockStart` metadata so you can
+re-offset with `shiftVTTCues`), and `ttp:dropMode="dropNTSC"`. Not supported: `<set>` on `body`
+or `div`, `dropPAL` (treated as non-drop), and external image URLs (never fetched).
 
 ## SCC (CEA-608)
 
@@ -1157,8 +1161,11 @@ The decoders live in the separate `media-captions/cea` entry so the core bundle 
 Both expose `cues` (everything emitted so far), `reset()`, and `flush(endTime?)`. The
 608 decoder also accepts raw byte pairs via `decodePair(byte1, byte2, time, field)`, and is the
 engine behind the SCC parser. The 708 decoder assembles DTVCC packets and service blocks, models
-the eight caption windows with pen attributes, and maps window anchors to cue `line`/`position`,
-so positioned captions land where the broadcaster placed them.
+the eight caption windows with pen attributes (sizes, edges, colours), window fill and borders,
+print and scroll directions, display effects (fade and wipe via `cue.textStyle.animation`), and
+word wrapping, and maps window anchors to cue `line`/`position`, so positioned captions land where
+the broadcaster placed them. Both decoders support `live: true`, which emits open-ended cues and
+updates them in place through `onCueUpdate` (see [`CueTrack`](#cuetrack)).
 
 ## LRC
 
