@@ -26,6 +26,16 @@ test('auto position follows text alignment', () => {
   expect(computeCuePosition(cue)).toBe(33.3);
 });
 
+test('auto position for start/end follows the base direction', () => {
+  const cue = new VTTCue(0, 1, 'x');
+  cue.align = 'start';
+  expect(computeCuePosition(cue, 'rtl')).toBe(100);
+  cue.align = 'end';
+  expect(computeCuePosition(cue, 'rtl')).toBe(0);
+  cue.align = 'left';
+  expect(computeCuePosition(cue, 'rtl')).toBe(0);
+});
+
 test('auto position alignment respects direction', () => {
   const cue = new VTTCue(0, 1, 'x');
   cue.align = 'start';

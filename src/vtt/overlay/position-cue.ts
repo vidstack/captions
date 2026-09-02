@@ -45,38 +45,40 @@ export function positionCue(
   if (displayEl[POSITION_OVERRIDE]) {
     axis = [displayEl[POSITION_OVERRIDE] === 'top' ? '+y' : '-y', '+x', '-x'];
   } else if (cue.snapToLines) {
-    let size: string;
-    switch (cue.vertical) {
-      case '':
-        axis = ['+y', '-y'];
-        size = 'height';
-        break;
-      case 'rl':
-        axis = ['+x', '-x'];
-        size = 'width';
-        break;
-      case 'lr':
-        axis = ['-x', '+x'];
-        size = 'width';
-        break;
+    const isHorizontal = cue.vertical === '',
+      isRL = cue.vertical === 'rl',
+      containerSize = isHorizontal ? container.height : container.width,
+      boxSize = isHorizontal ? displayBox.height : displayBox.width,
+      step = getLineHeight(cueEl),
+      maxOffset = containerSize + step,
+      fromStart = line >= 0;
+
+    let offset = step * Math.round(line);
+
+    if (Math.abs(offset) > maxOffset) {
+      offset = (offset < 0 ? -1 : 1) * Math.ceil(maxOffset / step) * step;
     }
 
-    let step = getLineHeight(cueEl),
-      position = step * Math.round(line),
-      maxPosition = container[size] + step,
-      initialAxis = axis[0];
-
-    if (Math.abs(position) > maxPosition) {
-      position = position < 0 ? -1 : 1;
-      position *= Math.ceil(maxPosition / step) * step;
+    // Lines count from the top (horizontal), the left (vertical-lr), or the right (vertical-rl).
+    // Negative lines count from the opposite edge.
+    let position: number;
+    if (isRL) {
+      position = fromStart ? containerSize - boxSize - offset : -offset - step;
+      axis = fromStart ? ['-x', '+x'] : ['+x', '-x'];
+    } else {
+      // Negative lines anchor the far edge of the box to the line so line -1 sits flush with the
+      // edge even though the padded box is taller than one line height.
+      position = fromStart ? offset : containerSize + offset + step - boxSize;
+      axis = isHorizontal
+        ? fromStart
+          ? ['+y', '-y']
+          : ['-y', '+y']
+        : fromStart
+          ? ['+x', '-x']
+          : ['-x', '+x'];
     }
 
-    if (line < 0) {
-      position += cue.vertical === '' ? container.height : container.width;
-      axis = axis.reverse();
-    }
-
-    moveBox(displayBox, initialAxis, position);
+    moveBox(displayBox, isHorizontal ? '+y' : '+x', position);
   } else {
     const isHorizontal = cue.vertical === '',
       posAxis = isHorizontal ? '+y' : '+x',
@@ -88,10 +90,12 @@ export function positionCue(
       ((isHorizontal ? container.height : container.width) * line) / 100,
     );
 
+    // Line alignment: start puts the box's leading edge on the line, center its middle, and end
+    // its trailing edge, so the box shifts back by half or all of its size.
     moveBox(
       displayBox,
       posAxis,
-      cue.lineAlign === 'center' ? size / 2 : cue.lineAlign === 'end' ? size : 0,
+      -(cue.lineAlign === 'center' ? size / 2 : cue.lineAlign === 'end' ? size : 0),
     );
 
     axis = isHorizontal ? ['-y', '+y', '-x', '+x'] : ['-x', '+x', '-y', '+y'];
@@ -186,15 +190,17 @@ export function computeCueLine(cue: VTTCue): number {
   return cue.line;
 }
 
-export function computeCuePosition(cue: VTTCue): number {
+export function computeCuePosition(cue: VTTCue, dir: 'ltr' | 'rtl' = 'ltr'): number {
   if (cue.position === 'auto') {
     switch (cue.align) {
-      case 'start':
       case 'left':
         return 0;
       case 'right':
-      case 'end':
         return 100;
+      case 'start':
+        return dir === 'ltr' ? 0 : 100;
+      case 'end':
+        return dir === 'ltr' ? 100 : 0;
       default:
         return 50;
     }

@@ -321,7 +321,7 @@ export class CaptionsRenderer {
 
   private _createCueElement(cue: VTTCue): HTMLDivElement {
     const display = document.createElement('div'),
-      position = computeCuePosition(cue),
+      position = computeCuePosition(cue, this._dir),
       positionAlignment = computeCuePositionAlignment(cue, this._dir);
 
     setPartAttr(display, 'cue-display');

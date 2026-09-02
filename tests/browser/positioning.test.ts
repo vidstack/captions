@@ -78,20 +78,33 @@ test('snap-to-lines line:0 renders at the top, line:-1 at the bottom', async () 
 
 test('percentage line positions the cue relative to the overlay height', async () => {
   await show([
-    cue(0, 10, 'Middle', { snapToLines: false, line: 50 }),
-    cue(0, 10, 'Middle end', { snapToLines: false, line: 50, lineAlign: 'end' }),
+    cue(0, 10, 'Start', { snapToLines: false, line: 50, size: 40, position: 25, align: 'center' }),
+    cue(0, 10, 'Center', {
+      snapToLines: false,
+      line: 50,
+      lineAlign: 'center',
+      size: 40,
+      position: 75,
+      align: 'center',
+    }),
+    cue(0, 10, 'End', {
+      snapToLines: false,
+      line: 90,
+      lineAlign: 'end',
+      size: 40,
+      position: 25,
+      align: 'center',
+    }),
   ]);
 
-  const [start, end] = cueDisplays(fixture.overlay).map(rect),
+  const [start, center, end] = cueDisplays(fixture.overlay).map(rect),
     overlay = rect(fixture.overlay),
     middle = overlay.top + overlay.height / 2;
 
-  // lineAlign start: top edge at 50%. Collision avoidance may shift one of them, so the other
-  // must still be exactly placed.
-  const startPlaced = Math.abs(start.top - middle) < 2,
-    endPlaced = Math.abs(end.bottom - middle) < 2;
-  expect(startPlaced || endPlaced).toBe(true);
-  expect(intersects(start, end)).toBe(false);
+  // lineAlign start: top edge on the line; center: box centred on the line; end: bottom on it.
+  expect(Math.abs(start.top - middle)).toBeLessThan(2);
+  expect(Math.abs((center.top + center.bottom) / 2 - middle)).toBeLessThan(2);
+  expect(Math.abs(end.bottom - (overlay.top + overlay.height * 0.9))).toBeLessThan(2);
 });
 
 test('position, size, and align control the horizontal box', async () => {

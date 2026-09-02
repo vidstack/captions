@@ -100,6 +100,8 @@ export function resolveRelativeBox(container: Box, box: Box): Box {
   box.left = box.left * container.width;
   box.right = container.width - box.right * container.width;
   box.bottom = container.height - box.bottom * container.height;
+  box.width = box.right - box.left;
+  box.height = box.bottom - box.top;
   return box;
 }
 
