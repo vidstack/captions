@@ -23,3 +23,5 @@ for (const name in globals) {
     });
   }
 }
+
+export {};

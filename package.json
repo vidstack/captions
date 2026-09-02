@@ -9,7 +9,7 @@
   "sideEffects": false,
   "jsdelivr": "./dist/prod.js",
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "files": [
     "*.d.ts",
@@ -21,31 +21,29 @@
     "build": "pnpm clean && rollup -c && pnpm types",
     "types": "tsc -p tsconfig.build.json",
     "clean": "rimraf dist",
-    "format": "prettier src --write --loglevel warn",
+    "format": "prettier src tests --write --log-level warn",
     "changelog": "pnpm exec git cliff --output CHANGELOG.md",
     "test": "vitest --run",
-    "test:watch": "vitest --watch --single-thread",
+    "test:watch": "vitest --watch",
     "sandbox": "node ./.sandbox/launch.js",
     "release": "pnpm validate && pnpm changelog && git push --follow-tags origin main && npm publish --tag next",
     "validate": "pnpm test && pnpm build"
   },
   "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^3.7.0",
-    "acorn": "^8.8.2",
-    "acorn-walk": "^8.2.0",
-    "conventional-changelog-cli": "^4.1.0",
-    "esbuild": "^0.18.1",
-    "git-cliff": "^1.4.0",
-    "magic-string": "^0.30.0",
-    "prettier": "^2.8.4",
-    "rimraf": "^4.4.1",
-    "rollup": "^3.25.1",
-    "rollup-plugin-esbuild": "^5.0.0",
-    "tslib": "^2.5.0",
-    "typescript": "^5.0.0",
-    "undici": "^5.21.0",
-    "vite": "^4.2.0",
-    "vitest": "^0.29.0"
+    "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
+    "@types/node": "^26.4.1",
+    "esbuild": "^0.25.0",
+    "git-cliff": "^2.6.1",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.5.3",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.40.0",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.3",
+    "undici": "^7.8.0",
+    "vite": "^6.3.5",
+    "vitest": "^3.1.3"
   },
   "contributors": [
     "Rahim Alwer <rahim.alwer@gmail.com>"
@@ -91,5 +89,10 @@
     "vidstack",
     "vtt",
     "web"
-  ]
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
 }
