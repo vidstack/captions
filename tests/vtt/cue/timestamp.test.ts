@@ -20,13 +20,16 @@ test('GOOD: tolerates missing whitespace around separator', async () => {
   expect(cues[0].endTime).toBe(2);
 });
 
-test('BAD: end timestamp not after start', async () => {
+test('BAD: end timestamp not after start is kept but reported', async () => {
   const { cues, errors } = await parseText(
     ['WEBVTT', '', '00:05.000 --> 00:02.000', 'Text', '', '00:03.000 --> 00:03.000', 'Text'].join(
       '\n',
     ),
   );
-  expect(cues).toHaveLength(0);
+  // Per spec the cues exist (they are just never active); strict mode throws instead.
+  expect(cues).toHaveLength(2);
+  expect(cues[0].startTime).toBe(5);
+  expect(cues[0].endTime).toBe(2);
   expect(errors).toMatchInlineSnapshot(`
     [
       [Error: cue end timestamp \`2\` is not greater than start \`5\` on line 3],

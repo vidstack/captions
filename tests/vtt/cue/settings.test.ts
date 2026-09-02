@@ -100,7 +100,8 @@ test('BAD: line settings', async () => {
   expect(cues[0].snapToLines).toBe(true);
   expect(cues[0].lineAlign).toBe('start');
 
-  expect(cues[1].line).toBe(10);
+  // Compound settings are atomic: an invalid alignment discards the whole setting.
+  expect(cues[1].line).toBe('auto');
   expect(cues[1].snapToLines).toBe(true);
   expect(cues[1].lineAlign).toBe('start');
 });
@@ -162,7 +163,8 @@ test('BAD: position settings', async () => {
   expect(cues[0].position).toBe('auto');
   expect(cues[0].positionAlign).toBe('auto');
 
-  expect(cues[1].position).toBe(45);
+  // Compound settings are atomic: an invalid alignment discards the whole setting.
+  expect(cues[1].position).toBe('auto');
   expect(cues[1].positionAlign).toBe('auto');
 });
 

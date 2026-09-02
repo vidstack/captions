@@ -88,158 +88,32 @@ const cueTextParsing = loadFixture<CueTextTest>('cue-text-parsing.json');
 const KNOWN_FILE_DIVERGENCES: Record<string, string[]> = {
   // T4: a cue text line containing `-->` is kept as text instead of ending the cue.
   'arrows.html': ['cues[0].text', 'cues[1].text', 'cues[2].text', 'cues[3].text'],
-  // B3: `region:` (empty value) binds to the id-less region instead of being skipped.
-  'header-regions.html': ['cues[8].region'],
-  // B1: a timing line directly after the header (no blank line) is swallowed by the header.
-  'header-space.html': ['cues.length', 'cues[0].text', 'cues[0].startTime', 'cues[0].endTime'],
-  'header-tab.html': ['cues.length', 'cues[0].text', 'cues[0].startTime', 'cues[0].endTime'],
-  'header-timings.html': ['cues.length', 'cues[0].text', 'cues[0].startTime', 'cues[0].endTime'],
-  // B9 (NUL not replaced by U+FFFD), B1, B2 (end timestamp followed by non-whitespace).
-  'nulls.html': [
-    'cues.length',
-    'cues[0].id',
-    'cues[0].text',
-    'cues[1].id',
-    'cues[1].text',
-    'cues[2].id',
-    'cues[2].text',
-    'cues[3].text',
-    'cues[4].align',
-    'cues[4].text',
-    'cues[5].align',
-    'cues[5].text',
-    'cues[6].align',
-    'cues[6].text',
-  ],
-  // B8: a `-->` line inside a REGION block does not abort the block.
-  'regions-edge-case.html': ['cues[2].region.lines'],
-  // B3: `id:` (empty value) clears the region id instead of being skipped.
-  'regions-id.html': ['cues[2].region.lines'],
-  // B6: region `lines` accepts `-0`, `1.5`, `-1`.
-  'regions-lines.html': ['cues[7].region.lines', 'cues[8].region.lines', 'cues[9].region.lines'],
-  // B7: anchors accept bare numbers (no `%`) and `-0%`.
+  // T3: anchors accept bare numbers (no `%`) outside strict mode.
   'regions-regionanchor.html': [
     'cues[6].region.regionAnchorY',
     'cues[7].region.regionAnchorY',
     'cues[8].region.regionAnchorY',
-    'cues[13].region.regionAnchorX',
-    'cues[13].region.regionAnchorY',
-    'cues[14].region.regionAnchorY',
     'cues[19].region.regionAnchorX',
   ],
   'regions-viewportanchor.html': [
     'cues[6].region.viewportAnchorY',
     'cues[7].region.viewportAnchorY',
     'cues[8].region.viewportAnchorY',
-    'cues[13].region.viewportAnchorX',
-    'cues[13].region.viewportAnchorY',
-    'cues[14].region.viewportAnchorY',
     'cues[19].region.viewportAnchorX',
   ],
   // T2: legacy `align:middle` is mapped to `center`.
   'settings-align.html': ['cues[10].align'],
-  // B4 (loose numeric parsing) and B5 (compound settings are not atomic).
-  'settings-line.html': [
-    'cues[2].line',
-    'cues[19].line',
-    'cues[19].snapToLines',
-    'cues[21].line',
-    'cues[21].snapToLines',
-    'cues[22].line',
-    'cues[23].line',
-    'cues[23].snapToLines',
-    'cues[24].line',
-    'cues[24].snapToLines',
-    'cues[25].line',
-    'cues[25].snapToLines',
-    'cues[27].line',
-    'cues[27].snapToLines',
-    'cues[30].line',
-    'cues[31].line',
-    'cues[32].line',
-    'cues[33].line',
-    'cues[34].line',
-    'cues[35].line',
-    'cues[36].line',
-    'cues[36].snapToLines',
-    'cues[37].line',
-    'cues[37].snapToLines',
-    'cues[46].line',
-    'cues[46].snapToLines',
-  ],
-  // T3 (`position:1` bare number, cue 11), B4 (`1x`, `1%x`), B5 (compound settings).
-  'settings-position.html': [
-    'cues[8].position',
-    'cues[9].position',
-    'cues[11].position',
-    'cues[12].position',
-    'cues[13].position',
-    'cues[19].positionAlign',
-    'cues[20].positionAlign',
-    'cues[21].positionAlign',
-    'cues[22].position',
-    'cues[23].position',
-    'cues[24].position',
-  ],
-  // B3: `region:` with an empty value binds to the id-less region.
-  'settings-region.html': ['cues[5].region', 'cues[6].region', 'cues[7].region'],
-  // B4: `size:1%%` and `size:1%x` parse as 1.
-  'settings-size.html': ['cues[11].size', 'cues[12].size'],
-  // T5: cues whose end time is not after the start time are dropped.
-  'timings-negative.html': [
-    'cues.length',
-    'cues[0].text',
-    'cues[0].startTime',
-    'cues[0].endTime',
-    'cues[1].text',
-    'cues[1].startTime',
-    'cues[1].endTime',
-    'cues[2].text',
-    'cues[2].startTime',
-    'cues[2].endTime',
-    'cues[3].text',
-    'cues[3].startTime',
-    'cues[3].endTime',
-  ],
+  // T3: `position:1` (bare number) is accepted.
+  'settings-position.html': ['cues[11].position'],
   // T1: 1-2 fraction digits and missing fractions are accepted in default mode.
   'timings-too-short.html': ['cues.length', 'cues[1].text'],
-  // B2: leading whitespace before the start timestamp rejects the cue.
-  'whitespace-chars.html': [
-    'cues.length',
-    'cues[0].id',
-    'cues[0].text',
-    'cues[1].id',
-    'cues[1].text',
-    'cues[2].id',
-    'cues[2].text',
-  ],
 };
 
 /** WPT cue text test names that currently fail (see KNOWN_DIVERGENCES.md). */
 const KNOWN_CUE_TEXT_DIVERGENCES = new Set<string>([
-  // T8: limited named character reference table, no legacy no-semicolon references.
-  'WebVTT cue data parser test entities - f1869f6e2853635eec81cc3afa3e2b8148ccbdc0', // &amp
-  'WebVTT cue data parser test entities - 261cd4e9df4a12535b66a0c39e9635aab2bb19aa', // &AMP;
+  // T8: only a Latin-1 subset of the HTML named character reference table ships.
   'WebVTT cue data parser test entities - e3ac2060b915f0f499b2863f999dcdb38a5db79b', // &ClockwiseContourIntegral;
   'WebVTT cue data parser test entities - 31c8a5ecfa5c54d8c0ec5b4ee8f0bbea0d6d40af', // &nsubE;
-  'WebVTT cue data parser test entities - 9ed59950764468c4ef2948d71cf75c3f2b60c74d', // &notin;
-  'WebVTT cue data parser test entities - 71a6efcfab81264fb95bb3234c59687c11c72baf', // &not;
-  'WebVTT cue data parser test entities - 86d7c20ca3c060f9e699c7da43927c4a07a5d569', // &not
-  'WebVTT cue data parser test entities - 314cd94292df37044e90ce27b5606bf8ec636b94', // &notit;
-  // B10: a pending start tag / timestamp tag at end of input is dropped.
-  'WebVTT cue data parser test entities - b1fff1ac42688d16e00f6c758d84e5152e39702d', // &<c
-  'WebVTT cue data parser test timestamps - 47fa4306a695161da88533d456ce94829e53b13d', // <00:00.500
-  'WebVTT cue data parser test timestamps - c1036a4322c1852e02e5a1843a9a81dfca6d7af3', // <00:00:00.500
-  // B12: end tag names are trimmed, so `</\nc>` closes `<c>`.
-  'WebVTT cue data parser test tags - fe3b6277edf5c2f84e7a6779eddd0cac30552bca',
-  // B11: `<rt>` outside `<ruby>` creates a node instead of being ignored.
-  'WebVTT cue data parser test tags - 68e1d0376f827ebe0c047751a2067594ff41b612',
-  // B9: NUL is not replaced by U+FFFD.
-  'WebVTT cue data parser test text - 6805ac5ddce21cfceb4eccf04a6a9013760f5d5b',
-  // T6: timestamp tags outside the cue's time range are dropped.
-  'WebVTT cue data parser test timestamps - 66ba641ff047a226fa60fe867fd2479d40f3ff0f',
-  'WebVTT cue data parser test timestamps - 398e8da1aaaf392739ca72057fef58bd5333f74d',
-  'WebVTT cue data parser test timestamps - 391fce67644cf4dd9967e1436d1449ef5baf675f',
   // T7: a mismatched end tag closes through open ancestors instead of being ignored.
   'WebVTT cue data parser test tree-building - 325c1e590e74f1ff33ca5b4838c04cf6b6dd71ba',
   'WebVTT cue data parser test tree-building - 92847ed2694c9639ba96f4cc61e2215362a74904',

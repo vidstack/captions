@@ -41,9 +41,10 @@ describe('tags', () => {
     expect(render('<b>bold <i>both')).toBe('<b>bold <i>both</i></b>');
   });
 
-  test('a stray < at the end of text is dropped', () => {
+  test('a stray < at the end of text is dropped, a pending tag is emitted', () => {
     expect(render('trailing <')).toBe('trailing ');
-    expect(render('trailing <b')).toBe('trailing ');
+    expect(render('trailing <b')).toBe('trailing <b></b>');
+    expect(render('<c')).toBe('<span></span>');
   });
 
   test('end tags without a matching start are ignored', () => {
@@ -104,8 +105,21 @@ describe('timestamps', () => {
     );
   });
 
-  test('timestamps outside the cue range are ignored', () => {
-    expect(renderVTTCueString(cue('a<00:05:00.000>b', 0, 10))).toBe('ab');
+  test('timestamps outside the cue range are kept (the spec does not range-check them)', () => {
+    expect(renderVTTCueString(cue('a<00:05:00.000>b', 0, 10), 1)).toBe(
+      'a<span data-part="timed" data-time="300" data-future="">b</span>',
+    );
+  });
+
+  test('rt outside ruby is ignored and end tag names are matched verbatim', () => {
+    expect(render('<rt>x')).toBe('x');
+    expect(render('<c></\nc>x')).toBe('<span>x</span>');
+  });
+
+  test('NUL characters become U+FFFD', async () => {
+    const { parseText } = await import('media-captions');
+    const { cues } = await parseText('WEBVTT\n\n00:00.000 --> 00:01.000\nfoo\0bar');
+    expect(cues[0].text).toBe('foo\ufffdbar');
   });
 
   test('timestamps accept both timestamp forms', () => {

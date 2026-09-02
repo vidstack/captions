@@ -1,7 +1,7 @@
 import type { ParseErrorBuilder } from '../parse/errors';
 import type { ParseError } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit } from '../parse/types';
-import { toCoords, toFloat, toNumber, toPercentage as toPercentageUnit } from '../utils/unit';
+import { toCoords, toFloat, toNumber, toPercentage } from '../utils/unit';
 import { VTTCue } from './vtt-cue';
 import { VTTRegion } from './vtt-region';
 
@@ -11,21 +11,24 @@ const HEADER_MAGIC = 'WEBVTT',
   COMMA = ',',
   PERCENT_SIGN = '%',
   SETTING_SEP_RE = /[:=]/,
-  SETTING_LINE_RE = /^[\s\t]*(region|vertical|line|position|size|align)[:=]/,
+  SETTING_LINE_RE = /^[ \t\f\r\n]*(region|vertical|line|position|size|align)[:=]/,
   NOTE_BLOCK_START = 'NOTE',
   STYLE_BLOCK_START = 'STYLE',
   REGION_BLOCK_START = 'REGION',
-  REGION_BLOCK_START_RE = /^REGION:?[\s\t]+/,
-  SPACE_RE = /[\s\t]+/,
+  REGION_BLOCK_START_RE = /^REGION:?[ \t\f\r\n]+/,
+  // WebVTT whitespace is TAB, LF, FF, CR, and SPACE (not U+000B or Unicode spaces).
+  SPACE_RE = /[ \t\f\r\n]+/,
+  TRIM_RE = /^[ \t\f\r\n]+|[ \t\f\r\n]+$/g,
+  NUL_RE = /\0/g,
   TIMESTAMP_SEP = '-->',
-  TIMESTAMP_SEP_RE = /[\s\t]*-->[\s\t]*/,
+  TIMESTAMP_SEP_RE = /[ \t\f\r\n]*-->[ \t\f\r\n]*/,
   ALIGN_RE = /^(?:start|center|end|left|right)$/,
   LINE_ALIGN_RE = /^(?:start|center|end)$/,
-  POS_ALIGN_RE = /^(?:line-(?:left|right)|center|auto)$/,
+  POS_ALIGN_RE = /^(?:line-(?:left|right)|center)$/,
   // Lenient: any hour digits, 1-3 fraction digits, `,` or `.` separator. Strict follows the spec.
   TIMESTAMP_RE = /^(?:(\d+):)?(\d{2}):(\d{2})(?:[.,](\d{1,3}))?$/,
-  STRICT_TIMESTAMP_RE = /^(?:(\d{2,}):)?(\d{2}):(\d{2})\.(\d{3})$/,
-  TIMING_LINE_RE = /^[\s\t]*\d/;
+  STRICT_TIMESTAMP_RE = /^(?:(\d+):)?(\d{2}):(\d{2})\.(\d{3})$/,
+  TIMING_LINE_RE = /^[ \t\f\r\n]*\d/;
 
 export const enum VTTBlock {
   None = 0,
@@ -42,8 +45,7 @@ export class VTTParser implements CaptionsParser {
 
   /** Percentages must carry a `%` sign per spec; lenient mode also accepts bare numbers. */
   protected _toPercentage(text: string) {
-    if (this._init.strict && !text.includes(PERCENT_SIGN)) return null;
-    return toPercentageUnit(text);
+    return toPercentage(text, !this._init.strict);
   }
 
   protected _init!: CaptionsParserInit;
@@ -65,6 +67,9 @@ export class VTTParser implements CaptionsParser {
   }
 
   parse(line: string, lineCount: number) {
+    // https://www.w3.org/TR/webvtt1/#webvtt-parser-algorithm step 2: NUL becomes U+FFFD.
+    if (line.includes('\0')) line = line.replace(NUL_RE, '\uFFFD');
+
     if (lineCount === 1) {
       if (HEADER_RE.test(line)) {
         this._block = VTTBlock.Header;
@@ -97,6 +102,15 @@ export class VTTParser implements CaptionsParser {
     } else if (this._block) {
       switch (this._block) {
         case VTTBlock.Header:
+          // A timing line ends the header even without the blank separator.
+          if (line.includes(TIMESTAMP_SEP)) {
+            this._init.onHeaderMetadata?.(this._metadata);
+            this._block = VTTBlock.None;
+            // Header lines are never cue identifiers.
+            this._prevLine = '';
+            this.parse(line, lineCount);
+            return;
+          }
           this._parseHeader(line, lineCount);
           break;
         case VTTBlock.Cue:
@@ -118,6 +132,13 @@ export class VTTParser implements CaptionsParser {
           }
           break;
         case VTTBlock.Region:
+          // A `-->` line inside a region block discards the region and is parsed as timings.
+          if (line.includes(TIMESTAMP_SEP)) {
+            this._region = null;
+            this._block = VTTBlock.None;
+            this.parse(line, lineCount);
+            return;
+          }
           this._parseRegionSettings(line.split(SPACE_RE), lineCount);
           break;
         case VTTBlock.Style:
@@ -182,24 +203,37 @@ export class VTTParser implements CaptionsParser {
   }
 
   protected _parseTimestamp(line: string, lineCount: number) {
-    const [startTimeText, trailingText = ''] = line.split(TIMESTAMP_SEP_RE),
-      [endTimeText, ...settingsText] = trailingText.split(SPACE_RE),
+    const [startTimeText, trailingText = ''] = line.replace(TRIM_RE, '').split(TIMESTAMP_SEP_RE),
+      // The end timestamp is collected as a prefix; whatever follows (even without whitespace) is
+      // settings text, per "collect a WebVTT timestamp".
+      endMatch = trailingText.match(/^([\d:.,]*)(.*)$/)!,
+      endTimeText = endMatch[1],
+      remainder = endMatch[2],
+      settingsText = remainder.split(SPACE_RE).filter(Boolean),
       strict = !!this._init.strict && this._strictTimestamps,
-      startTime = parseVTTTimestamp(startTimeText, strict),
-      endTime = parseVTTTimestamp(endTimeText, strict);
-    if (startTime !== null && endTime !== null && endTime > startTime) {
-      return [startTime, endTime, settingsText] as const;
-    } else {
-      if (startTime === null) {
-        this._handleError(this._errorBuilder?._badStartTimestamp(startTimeText, lineCount));
-      }
-      if (endTime === null) {
-        this._handleError(this._errorBuilder?._badEndTimestamp(endTimeText, lineCount));
-      }
-      if (startTime !== null && endTime !== null && endTime <= startTime) {
-        this._handleError(this._errorBuilder?._badRangeTimestamp(startTime, endTime, lineCount));
-      }
+      startTime = parseVTTTimestamp(startTimeText, strict);
+
+    // Text glued to the end timestamp is only settings when the timestamp itself is complete per
+    // the spec grammar; otherwise (e.g. `00:00:01.00x` in lenient mode) the timing is invalid.
+    let endTime = parseVTTTimestamp(endTimeText, strict);
+    if (endTime !== null && remainder && !SPACE_RE.test(remainder[0])) {
+      if (!STRICT_TIMESTAMP_RE.test(endTimeText)) endTime = null;
     }
+    if (startTime === null) {
+      this._handleError(this._errorBuilder?._badStartTimestamp(startTimeText, lineCount));
+    }
+    if (endTime === null) {
+      this._handleError(this._errorBuilder?._badEndTimestamp(endTimeText, lineCount));
+    }
+    if (startTime === null || endTime === null) return;
+
+    // The spec keeps cues whose end is not after their start (they are simply never active).
+    // Report it so authors notice; strict mode throws.
+    if (endTime <= startTime) {
+      this._handleError(this._errorBuilder?._badRangeTimestamp(startTime, endTime, lineCount));
+    }
+
+    return [startTime, endTime, settingsText] as const;
   }
 
   /**
@@ -208,9 +242,9 @@ export class VTTParser implements CaptionsParser {
   protected _parseRegionSettings(settings: string[], line: number) {
     let badValue: boolean;
     for (let i = 0; i < settings.length; i++) {
-      if (SETTING_SEP_RE.test(settings[i])) {
+      const [name, value] = splitSetting(settings[i]);
+      if (name && value) {
         badValue = false;
-        const [name, value] = settings[i].split(SETTING_SEP_RE);
         switch (name) {
           case 'id':
             this._region!.id = value;
@@ -226,14 +260,14 @@ export class VTTParser implements CaptionsParser {
             else badValue = true;
             break;
           case 'regionanchor':
-            const region = toCoords(value);
+            const region = toCoords(value, !this._init.strict);
             if (region !== null) {
               this._region!.regionAnchorX = region[0];
               this._region!.regionAnchorY = region[1];
             } else badValue = true;
             break;
           case 'viewportanchor':
-            const viewport = toCoords(value);
+            const viewport = toCoords(value, !this._init.strict);
             if (viewport !== null) {
               this._region!.viewportAnchorX = viewport[0];
               this._region!.viewportAnchorY = viewport[1];
@@ -260,8 +294,8 @@ export class VTTParser implements CaptionsParser {
     let badValue: boolean;
     for (let i = 0; i < settings.length; i++) {
       badValue = false;
-      if (SETTING_SEP_RE.test(settings[i])) {
-        const [name, value] = settings[i].split(SETTING_SEP_RE);
+      const [name, value] = splitSetting(settings[i]);
+      if (name && value) {
         switch (name) {
           case 'region':
             const region = this._regions[value];
@@ -273,42 +307,38 @@ export class VTTParser implements CaptionsParser {
               this._cue!.region = null;
             } else badValue = true;
             break;
-          case 'line':
-            const [linePos, lineAlign] = value.split(COMMA);
+          case 'line': {
+            // The whole setting is ignored if any component is invalid.
+            const [linePos, lineAlign, ...extra] = value.split(COMMA),
+              isPercent = linePos.includes(PERCENT_SIGN),
+              lineValue = isPercent ? toPercentage(linePos, false) : toFloat(linePos),
+              alignValid = lineAlign === undefined || LINE_ALIGN_RE.test(lineAlign);
 
-            if (linePos.includes(PERCENT_SIGN)) {
-              const percentage = toPercentageUnit(linePos);
-              if (percentage !== null) {
-                this._cue!.line = percentage;
-                this._cue!.snapToLines = false;
-              } else badValue = true;
-            } else {
-              const number = toFloat(linePos);
-              if (number !== null) this._cue!.line = number;
-              else badValue = true;
-            }
-
-            if (LINE_ALIGN_RE.test(lineAlign)) {
-              this._cue!.lineAlign = lineAlign as VTTCue['lineAlign'];
-            } else if (lineAlign) {
+            if (lineValue === null || !alignValid || extra.length) {
               badValue = true;
+              break;
             }
 
-            if (this._cue!.line !== 'auto') this._cue!.region = null;
+            this._cue!.line = lineValue;
+            this._cue!.snapToLines = !isPercent;
+            if (lineAlign) this._cue!.lineAlign = lineAlign as VTTCue['lineAlign'];
+            this._cue!.region = null;
             break;
-          case 'position':
-            const [colPos, colAlign] = value.split(COMMA),
-              position = this._toPercentage(colPos);
+          }
+          case 'position': {
+            const [colPos, colAlign, ...extra] = value.split(COMMA),
+              position = this._toPercentage(colPos),
+              alignValid = colAlign === undefined || POS_ALIGN_RE.test(colAlign);
 
-            if (position !== null) this._cue!.position = position;
-            else badValue = true;
-
-            if (colAlign && POS_ALIGN_RE.test(colAlign)) {
-              this._cue!.positionAlign = colAlign as VTTCue['positionAlign'];
-            } else if (colAlign) {
+            if (position === null || !alignValid || extra.length) {
               badValue = true;
+              break;
             }
+
+            this._cue!.position = position;
+            if (colAlign) this._cue!.positionAlign = colAlign as VTTCue['positionAlign'];
             break;
+          }
           case 'size':
             const size = this._toPercentage(value);
             if (size !== null) {
@@ -349,6 +379,16 @@ export class VTTParser implements CaptionsParser {
       this._init.onError?.(error);
     }
   }
+}
+
+/**
+ * Splits `name:value` on the first separator. Settings whose separator is the first or last
+ * character are skipped per spec (returned as empty name/value).
+ */
+function splitSetting(setting: string): [string, string] {
+  const index = setting.search(SETTING_SEP_RE);
+  if (index <= 0 || index === setting.length - 1) return ['', ''];
+  return [setting.slice(0, index), setting.slice(index + 1)];
 }
 
 /**

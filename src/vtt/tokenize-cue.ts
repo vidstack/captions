@@ -49,8 +49,61 @@ const DIGIT_RE = /[0-9]/,
     pound: '\u{a3}',
     yen: '\u{a5}',
     cent: '\u{a2}',
+    not: '\u{ac}',
+    notin: '\u{2209}',
+    para: '\u{b6}',
+    sect: '\u{a7}',
+    shy: '\u{ad}',
+    plusmn: '\u{b1}',
+    micro: '\u{b5}',
+    sup2: '\u{b2}',
+    sup3: '\u{b3}',
+    AMP: '&',
+    LT: '<',
+    GT: '>',
+    QUOT: '"',
+    COPY: '\u{a9}',
+    REG: '\u{ae}',
   },
-  HTML_ENTITY_RE = /&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([a-zA-Z][a-zA-Z0-9]*));/g,
+  // HTML legacy references that decode even without a trailing `;` (Latin-1 subset we ship).
+  LEGACY_ENTITIES = new Set([
+    'amp',
+    'AMP',
+    'lt',
+    'LT',
+    'gt',
+    'GT',
+    'quot',
+    'QUOT',
+    'nbsp',
+    'copy',
+    'COPY',
+    'reg',
+    'REG',
+    'not',
+    'para',
+    'sect',
+    'shy',
+    'deg',
+    'plusmn',
+    'micro',
+    'middot',
+    'iexcl',
+    'iquest',
+    'laquo',
+    'raquo',
+    'frac12',
+    'frac14',
+    'frac34',
+    'times',
+    'divide',
+    'pound',
+    'yen',
+    'cent',
+    'sup2',
+    'sup3',
+  ]),
+  HTML_ENTITY_RE = /&(?:#(\d+);|#[xX]([0-9a-fA-F]+);|([a-zA-Z][a-zA-Z0-9]*)(;?))/g,
   COLORS = /*#__PURE__*/ new Set([
     'white',
     'lime',
@@ -145,10 +198,7 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
         break;
       case Mode.Annotation:
         if (char === '>') {
-          buffer = buffer.replace(MULTI_SPACE_RE, ' ').trim();
-          if (node?.type === 'v') node.voice = replaceHTMLEntities(buffer);
-          else if (node?.type === 'lang') node.lang = replaceHTMLEntities(buffer);
-          buffer = '';
+          setAnnotation();
           mode = Mode.Data;
         } else {
           buffer += char;
@@ -156,7 +206,8 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
         break;
       case Mode.EndTag:
         if (char === '>') {
-          closeNode(buffer.trim());
+          // End tag names are matched verbatim; `</ c>` does not close `<c>`.
+          closeNode(buffer);
           buffer = '';
           mode = Mode.Data;
         } else {
@@ -165,17 +216,7 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
         break;
       case Mode.Timestamp:
         if (char === '>') {
-          const time = parseVTTTimestamp(buffer);
-
-          if (time !== null && time >= cue.startTime && time <= cue.endTime) {
-            // Timestamps do not nest: a new timestamp ends the previous timed segment.
-            if (node?.type === 'timestamp') node = stack.pop();
-            buffer = 'timestamp';
-            addNode();
-            (node as VTTTimestampNode).time = time;
-          }
-
-          buffer = '';
+          addTimestamp();
           mode = Mode.Data;
         } else {
           buffer += char;
@@ -184,8 +225,46 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
     }
   }
 
+  // End of input: emit whatever tag was being read (the spec's tokenizer returns the pending
+  // start tag / timestamp tag on EOF).
+  switch (mode as Mode) {
+    case Mode.Tag:
+      addNode();
+      break;
+    case Mode.Class:
+      addClass();
+      break;
+    case Mode.Annotation:
+      setAnnotation();
+      break;
+    case Mode.Timestamp:
+      addTimestamp();
+      break;
+  }
+
+  function addTimestamp() {
+    const time = parseVTTTimestamp(buffer);
+    // The spec does not range-check timestamps; renderers simply treat them as past or future.
+    if (time !== null) {
+      // Timestamps do not nest: a new timestamp ends the previous timed segment.
+      if (node?.type === 'timestamp') node = stack.pop();
+      buffer = 'timestamp';
+      addNode();
+      (node as VTTTimestampNode).time = time;
+    }
+    buffer = '';
+  }
+
+  function setAnnotation() {
+    buffer = buffer.replace(MULTI_SPACE_RE, ' ').trim();
+    if (node?.type === 'v') node.voice = replaceHTMLEntities(buffer);
+    else if (node?.type === 'lang') node.lang = replaceHTMLEntities(buffer);
+    buffer = '';
+  }
+
   function addNode() {
-    if (BLOCK_TYPES.has(buffer)) {
+    // `<rt>` is only meaningful directly inside `<ruby>`; elsewhere it is an unknown tag.
+    if (BLOCK_TYPES.has(buffer) && (buffer !== 'rt' || node?.type === 'ruby')) {
       const parent = node;
       node = createBlockNode(buffer);
       if (parent) {
@@ -256,10 +335,17 @@ function createBlockNode(type: string): VTTBlockNode {
  * Decodes named and numeric HTML character references in WebVTT cue text.
  */
 export function replaceHTMLEntities(text: string) {
-  return text.replace(HTML_ENTITY_RE, (entity, decimal, hex, name) => {
+  return text.replace(HTML_ENTITY_RE, (entity, decimal, hex, name, semicolon) => {
     if (decimal) return fromCodePoint(parseInt(decimal, 10));
     if (hex) return fromCodePoint(parseInt(hex, 16));
-    return HTML_ENTITIES[name] ?? entity;
+    if (semicolon && HTML_ENTITIES[name]) return HTML_ENTITIES[name];
+    // Unknown or unterminated names still decode a leading legacy reference (`&notit;` -> `¬it;`,
+    // `&amp` -> `&`), matching the HTML character reference rules for text.
+    for (let end = name.length; end > 0; end--) {
+      const prefix = name.slice(0, end);
+      if (LEGACY_ENTITIES.has(prefix)) return HTML_ENTITIES[prefix] + name.slice(end) + semicolon;
+    }
+    return entity;
   });
 }
 

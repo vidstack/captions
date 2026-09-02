@@ -234,8 +234,15 @@ test('out of range timestamp', () => {
   expect(tokens).toMatchInlineSnapshot(`
     [
       {
-        "data": "Timestamp",
-        "type": "text",
+        "children": [
+          {
+            "data": "Timestamp",
+            "type": "text",
+          },
+        ],
+        "tagName": "span",
+        "time": 4200,
+        "type": "timestamp",
       },
     ]
   `);

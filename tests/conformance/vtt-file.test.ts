@@ -228,11 +228,11 @@ describe('cue settings', () => {
     expect(cue.snapToLines).toBe(false);
   });
 
-  test('line rejects out-of-range percentages and bad alignments', async () => {
+  test('line rejects out-of-range percentages and bad alignments atomically', async () => {
     const { cues, errors } = await parse(
       vtt('WEBVTT', '', '00:00.000 --> 00:01.000 line:150% line:5,middle', 'Hi'),
     );
-    expect(cues[0].line).toBe(5);
+    expect(cues[0].line).toBe('auto');
     expect(cues[0].lineAlign).toBe('start');
     expect(errors).toHaveLength(2);
   });
