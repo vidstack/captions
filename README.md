@@ -9,26 +9,27 @@ Captions parsing and rendering library built for the modern web.
 
 - 🚯 0 dependencies.
 - 💪 Built with TypeScript (TS 5 bundle mode ready).
-- 🪶 5kB total + modular (parser/renderer split) + tree-shaking support.
-- 💤 Parsers are lazy loaded on-demand.
+- 🪶 ~13kB core (gzipped) + modular (parser/renderer split) + tree-shaking support.
+- 💤 Parsers are lazy loaded on-demand (each format is its own chunk).
 - 🚄 Efficiently load and apply styles in parallel via CSS files.
-- 🗂️ Supports VTT, SRT, and SSA/ASS.
+- 🗂️ Supports VTT, SRT, SSA/ASS, TTML/IMSC1/DFXP, SCC (CEA-608), LRC, and SBV.
 - ⬆️ Roll-up captions via VTT regions.
 - 🧰 Modern `fetch` and `ReadableStream` APIs.
-- 📡 Chunked text and response streaming support.
-- 📝 WebVTT spec-compliant settings and rendering.
-- 🎤 Timed text-tracks for karaoke-style captions.
+- 📡 Chunked text and response streaming support (including HLS `X-TIMESTAMP-MAP`).
+- 📝 WebVTT spec-compliant settings and rendering, with balanced line wrapping.
+- 🎤 Timed text-tracks for karaoke-style captions (VTT, LRC, and ASS `\k` tags).
+- 🎞️ Frame-accurate cue timing via `requestVideoFrameCallback`.
 - 🛠️ Supports custom captions parser and cue renderer.
+- 🔒 Cue text is sanitized so untrusted caption files can not inject markup.
 - 💥 Collision detection to avoid overlapping or out-of-bounds cues.
 - 🏗️ Fixed and in-order cue rendering (including on font or overlay size changes).
 - 🛑 Adjustable parsing error-tolerance with strict and non-strict modes.
 - 🖥️ Works in the browser and server-side (string renderer).
-- 🎨 Easy customization via CSS.
+- 🎨 Easy customization via CSS, including FCC edge-style presets.
 
-➕ Planning to also add a TTML, CEA-608, and CEA-708 parser that will map to VTT and render
-correctly. In addition, custom font loading and text codes support is planned for SSA/ASS captions.
-We don't have an exact date but most likely after the [Vidstack Player][vidstack-player] 1.0. If
-urgent and you're willing to sponsor, feel free to email me at rahim.alwer@gmail.com.
+➕ CEA-708 is not supported yet as it has no common text container format; SCC files carrying
+CEA-608 are supported. If you need 708 and you're willing to sponsor, feel free to email me at
+rahim.alwer@gmail.com.
 
 🔗 **Quicklinks**
 
@@ -129,6 +130,7 @@ like so:
   - [`parseTextStream`](#parsetextstream)
   - [`parseResponse`](#parseresponse)
   - [`parseByteStream`](#parsebytestream)
+  - [`inferCaptionsFormat`](#infercaptionsformat)
   - [`CaptionsParser`](#captionsparser)
 - **Rendering**
   - [`createVTTCueTemplate`](#createvttcuetemplate)
@@ -137,12 +139,19 @@ like so:
   - [`renderVTTTokensString`](#rendervtttokensstring)
   - [`updateTimedVTTCueNodes`](#updatetimedvttcuenodes)
   - [`CaptionsRenderer`](#captionsrenderer)
+  - [`syncCaptionsRenderer`](#synccaptionsrenderer)
+  - [`loadEmbeddedFonts`](#loadembeddedfonts)
   - [Styling](#styling)
 - **Formats**
   - [VTT](#vtt)
   - [SRT](#srt)
   - [SSA/ASS](#ssaass)
+  - [TTML](#ttml)
+  - [SCC (CEA-608)](#scc-cea-608)
+  - [LRC](#lrc)
+  - [SBV](#sbv)
 - [Streaming](#streaming)
+- [HLS Segments](#hls-segments)
 - [Types](#types)
 
 ## Parse Options
@@ -157,7 +166,8 @@ All parsing functions exported from this package accept the following options:
   Do note, setting this to true will dynamically load error builders which will slightly increase
   bundle size (~1kB).
 - `type`: The type of the captions file format so the correct parser is loaded. Options
-  include `vtt`, `srt`, `ssa`, `ass`, or a custom [`CaptionsParser`](#captionsparser) object.
+  include `vtt`, `srt`, `ssa`, `ass`, `ttml` (also `dfxp`/`xml`), `scc`, `lrc`, `sbv`, or a
+  custom [`CaptionsParser`](#captionsparser) object.
 - `onHeaderMetadata`: Callback that is invoked when the metadata from the header block has been
   parsed.
 - `onCue`: Invoked when parsing a VTT cue block has finished parsing and a `VTTCue` has
@@ -199,6 +209,8 @@ All parsing functions exported from this package return a `Promise` which will r
 - `errors`: An array containing `ParseError` objects. Do note, errors will only be collected if
   in development mode, if `strict` parsing option is set to true, or the `errors` parsing option is
   set to true.
+- `fonts`: Fonts embedded in the file (SSA/ASS `[Fonts]` section), see
+  [`loadEmbeddedFonts`](#loadembeddedfonts).
 
 ```ts
 import { parseText } from 'media-captions';
@@ -318,8 +330,9 @@ const result = await parseResponse(fetch('/media/subs/english.vtt'), {
 });
 ```
 
-The captions type will inferred from the response header `content-type` field. You can specify
-the specific captions format like so:
+The captions type is inferred from the response `content-type` header (e.g., `text/vtt`,
+`application/x-subrip`, `application/ttml+xml`) and falls back to the URL file extension for
+generic types like `text/plain`. You can specify the specific captions format like so:
 
 ```ts
 parseResponse(..., { type: 'vtt' });
@@ -351,6 +364,18 @@ const result = await parseByteStream(byteStream, {
     // ...
   },
 });
+```
+
+## `inferCaptionsFormat`
+
+Returns the captions format for a `content-type` header value and optional URL, or `undefined`
+when it can not be determined. This is what [`parseResponse`](#parseresponse) uses internally.
+
+```ts
+import { inferCaptionsFormat } from 'media-captions';
+
+inferCaptionsFormat('application/ttml+xml'); // 'ttml'
+inferCaptionsFormat('text/plain', '/subs/en.srt?token=1'); // 'srt'
 ```
 
 ## `CaptionsParser`
@@ -418,7 +443,9 @@ const cueHTML = template.content.cloneNode(true);
 
 ## `renderVTTCueString`
 
-This function takes a `VTTCue` and renders the cue text string into a HTML string. This
+This function takes a `VTTCue` and renders the cue text string into a HTML string. All text and
+attribute values are escaped, so the result is safe to assign to `innerHTML` even when the cue
+came from an untrusted captions file. Class names are restricted to `[A-Za-z0-9_-]`. This
 function can be used server-side to render cue content like so:
 
 ```ts
@@ -474,8 +501,11 @@ const tokens = tokenizeVTTCue(cue);
 ```
 
 Nodes can be a `VTTBlockNode` which can have children (i.e., class, italic, bold, underline,
-ruby, ruby text, voice, lang, timestamp) or a `VTTLeafNode` (i.e., text nodes). The tokens
-can be used for custom rendering like so:
+ruby, ruby text, voice, lang, timestamp) or a `VTTLeafNode` (i.e., text nodes). Text data and
+annotations are entity-decoded (named, decimal, and hex references), so escape them yourself if
+you render to HTML. Unknown or mismatched end tags are ignored and never corrupt nesting. As an
+extension, `<c.#rrggbb>` and `<c.bg_#rrggbb>` classes are treated as colours so other formats can
+carry arbitrary colours through cue text. The tokens can be used for custom rendering like so:
 
 ```ts
 function renderTokens(tokens: VTTNode[]) {
@@ -573,7 +603,9 @@ and cues should be visually rendered. It includes:
 - Collision detection to avoid overlapping cues.
 - Updating timed text nodes with `data-past` and `data-future` attributes.
 - Updating when the overlay is resized.
-- Applying SSA/ASS styles.
+- Applying SSA/ASS styles and layers (z-order).
+- Setting the overlay `lang` attribute from the track `Language` header.
+- Finding active cues in O(log n) using a sorted index, so large tracks stay cheap.
 - Accepts native `VTTCue` objects.
 
 > **Warning**
@@ -600,6 +632,7 @@ parseResponse(fetch('/media/subs/english.vtt')).then((result) => {
   renderer.changeTrack(result);
 });
 
+// Or use `syncCaptionsRenderer(renderer, video)` for frame-accurate updates.
 video.addEventListener('timeupdate', () => {
   renderer.currentTime = video.currentTime;
 });
@@ -609,15 +642,50 @@ video.addEventListener('timeupdate', () => {
 
 - `dir`: Sets the text direction (i.e., `ltr` or `rtl`).
 - `currentTime`: Updates the current playback time and schedules a re-render.
+- `activeCues`: The cues currently displayed, in render order (read-only).
 
 **Methods**
 
-- `changeTrack(track: CaptionsRendererTrack)`: Resets the renderer and prepares new regions and cues.
+- `changeTrack(track: CaptionsRendererTrack)`: Resets the renderer and prepares new regions and
+  cues. Pass the parse result directly; its `metadata.Language` is applied as the overlay `lang`.
 - `addCue(cue: VTTCue)`: Add a new cue to the renderer.
 - `removeCue(cue: VTTCue)`: Remove a cue from the renderer.
 - `update(forceUpdate: boolean)`: Schedules a re-render to happen.
 - `reset()`: Reset the renderer and clear all internal state including region and cue DOM nodes.
 - `destroy()`: Reset the renderer and destroy internal observers and event listeners.
+
+## `syncCaptionsRenderer`
+
+The media `timeupdate` event only fires a few times per second, which makes short cues and
+karaoke timed text visibly late. This helper drives a [`CaptionsRenderer`](#captionsrenderer)
+from `requestVideoFrameCallback` while playing (falling back to `requestAnimationFrame`) and
+only relies on events while paused or seeking. It returns a function that stops syncing.
+
+```ts
+import { CaptionsRenderer, syncCaptionsRenderer } from 'media-captions';
+
+const renderer = new CaptionsRenderer(captions),
+  stop = syncCaptionsRenderer(renderer, video);
+
+// Later...
+stop();
+```
+
+## `loadEmbeddedFonts`
+
+SSA/ASS files can embed fonts in a `[Fonts]` section. The parser decodes them into the `fonts`
+array on the parse result, and this helper registers them with the document using the
+`FontFace` API so styled cues render with the intended typeface.
+
+```ts
+import { loadEmbeddedFonts, parseResponse } from 'media-captions';
+
+const result = await parseResponse(fetch('/subs/english.ass'));
+const faces = await loadEmbeddedFonts(result.fonts ?? []);
+
+// Remove them later if needed.
+for (const face of faces) document.fonts.delete(face);
+```
 
 ## Styling
 
@@ -631,10 +699,14 @@ easily customized with CSS. Here are all the parts you can select and customize:
   --overlay-padding: 1%;
   --cue-color: white;
   --cue-bg-color: rgba(0, 0, 0, 0.8);
-  --cue-font-size: calc(var(--overlay-height) / 100 * 5);
+  --cue-font-size: 5cqh; /* 5% of the overlay height via container query units */
   --cue-line-height: calc(var(--cue-font-size) * 1.2);
   --cue-padding-x: calc(var(--cue-font-size) * 0.6);
   --cue-padding-y: calc(var(--cue-font-size) * 0.4);
+  --cue-edge-color: black;
+  /* uniform outline drawn with `paint-order: stroke fill` (cheaper and cleaner than shadows) */
+  --cue-text-stroke: 0.08em black;
+  --cue-text-shadow: none;
 }
 
 #captions [data-part='region'] {
@@ -669,6 +741,23 @@ easily customized with CSS. Here are all the parts you can select and customize:
 
 #captions [data-part='timed'][data-future] {
 }
+```
+
+Every part also exposes a matching `part` attribute, so the overlay can be styled from outside a
+shadow root with `::part(cue)`, `::part(region)`, and so on.
+
+Cue text uses `text-wrap: balance`, which is what the WebVTT rendering rules ask for and which
+browsers now support natively, and region (roll-up) cues use `text-wrap: stable` so earlier lines
+never reflow. Japanese cues get `word-break: auto-phrase`.
+
+### Edge Styles
+
+FCC/CVAA guidelines require user-selectable character edge styles. Set `data-edge-style` on the
+overlay element to `uniform`, `drop-shadow`, `raised`, `depressed`, or `none`, and customize the
+colour with `--cue-edge-color`:
+
+```html
+<div id="captions" data-edge-style="uniform"></div>
 ```
 
 ## VTT
@@ -752,7 +841,13 @@ cue.lineAlign = 'end';
 ## SRT
 
 SubRip Subtitle (SRT) is a simple captions format that only contains cues. There are no
-regions or positioning settings as found in [VTT](#vtt).
+regions as found in [VTT](#vtt), but the parser understands the common extensions:
+
+- `<b>`, `<i>`, `<u>` tags, and `<font color="...">` which maps to a WebVTT colour class (named
+  WebVTT colours, hex values, and common HTML colour names).
+- `{\anN}` numpad alignment tags left over from ASS conversions (e.g., `{\an8}` for top placement).
+- Extended `X1: X2: Y1: Y2:` coordinates on the timing line are ignored instead of rendered.
+- `-->` without surrounding whitespace, and `.` or `,` as the milliseconds separator.
 
 SRT is a plain-text file that looks like this:
 
@@ -803,27 +898,100 @@ parseResponse(fetch('/subs/english.ssa'), { type: 'ssa' });
 
 The following features are supported:
 
-- Multiple styles blocks and all format fields (e.g., PrimaryColour, Bold, ScaleX, etc.).
-- Multiple events blocks and associating them with styles.
+- `[Script Info]` (`PlayResX`/`PlayResY`, `WrapStyle`, `ScriptType`) with all sizes, margins,
+  outlines, and positions scaled to the play resolution so they track the overlay size.
+- Multiple styles blocks and all format fields (colours with alpha, bold/italic/underline/strike,
+  scale, spacing, angle, border style, outline, shadow, alignment, margins), including legacy SSA
+  v4.00 alignment values.
+- Multiple events blocks, `Layer` (rendered as z-order), `Name` (rendered as a voice span), and
+  per-dialogue margins.
+- Override tags: `\i`, `\b`, `\u`, `\c`/`\1c` (colour), `\r` (reset), `\an`/`\a` (alignment),
+  `\pos` (position), `\k`/`\K`/`\kf`/`\ko` (karaoke, mapped to WebVTT timestamp tags), and `\p`
+  (drawings are hidden). Other tags are stripped. `\N`, `\n`, and `\h` are handled.
+- Outlines are rendered with `paint-order: stroke fill` and text stroke instead of stacked text
+  shadows, and BorderStyle 3 renders an opaque box.
+- Embedded fonts in `[Fonts]`, see [`loadEmbeddedFonts`](#loadembeddedfonts).
 
-The following features are not supported yet:
+The following features are not supported:
 
-- Layers
-- Movie
-- Picture
-- Sound
-- Command
-- Font Loading
-- Text Codes (stripped out for now)
+- Animations (`\t`, `\move`, `\fad`), per-span font size/name, `\clip`, vector drawings.
+- Movie, Picture, Sound, Command, and Effect (`Banner`, `Scroll`) events.
 
-It is very likely we will implement custom font loading, layers, and text codes in the
-near future. The rest is unlikely for now. You can always try and implement custom transitions
-or animations using CSS (see [Styling](#styling)).
+If you need full typesetting fidelity, [SubtitlesOctopus](https://github.com/libass/JavascriptSubtitlesOctopus)
+is a performant WASM wrapper of [libass](https://github.com/libass/libass). You'll need to fall
+back to this implementation on iOS Safari (iPhone) as custom captions are not supported there.
 
-We recommend using [SubtitlesOctopus](https://github.com/libass/JavascriptSubtitlesOctopus) for
-SSA/ASS captions as it supports most features and is a performant WASM wrapper of
-[libass](https://github.com/libass/libass). You'll need to fall back to this implementation on
-iOS Safari (iPhone) as custom captions are not supported there.
+## TTML
+
+Timed Text Markup Language (TTML) and its profiles IMSC1, DFXP, EBU-TT-D, and SMPTE-TT are XML
+based and widely used in broadcast and DASH. The parser is a small tolerant XML tokenizer that
+works server-side (no `DOMParser`).
+
+```ts
+parseResponse(fetch('/subs/english.ttml'), { type: 'ttml' });
+```
+
+Supported: clock and offset time expressions (including frames and ticks), time inheritance
+across `body`/`div`/`p`/`span`, referential and inline styling, regions (`tts:origin`,
+`tts:extent`, `tts:displayAlign`, `tts:textAlign`) mapped to cue positioning, italics, bold,
+underline, colours, `xml:lang`, ruby, `<br/>`, `xml:space`, and timed spans mapped to WebVTT
+timestamp tags. Not supported: `<set>` animations, vertical writing modes, images, and
+clock-based time bases.
+
+## SCC (CEA-608)
+
+Scenarist Closed Caption (SCC) files carry raw CEA-608 byte pairs with SMPTE timecodes and are the
+standard interchange format for broadcast captions in the US.
+
+```text
+Scenarist_SCC V1.0
+
+00:00:01:15	9420 9420 94ae 94ae 9452 9452 97a1 97a1 c8e5 ecec ef2e 942f 942f
+00:00:03:00	942c 942c
+```
+
+```ts
+parseResponse(fetch('/subs/english.scc'), { type: 'scc' });
+```
+
+The parser decodes CC1 pop-on, roll-up, and paint-on captions, including special and extended
+characters, colours, italics, underline, and the 15x32 row/column grid which is mapped to cue
+`line`/`position`. Drop-frame (`;`) and non-drop timecodes are supported. CC2-CC4, text mode,
+XDS, and CEA-708 are not supported.
+
+## LRC
+
+LRC is the lyrics format used by music players. Enhanced LRC word timings are mapped to WebVTT
+timestamp tags so karaoke styling works out of the box.
+
+```text
+[ti:Song Title]
+[offset:-200]
+[00:12.00]Line one
+[00:17.20]<00:17.20>Word <00:17.80>by <00:18.40>word
+```
+
+```ts
+parseResponse(fetch('/lyrics/song.lrc'), { type: 'lrc' });
+```
+
+ID tags are returned as metadata, `offset` is applied, and each cue ends when the next begins.
+
+## SBV
+
+SubViewer (SBV) is the simple format exported by YouTube:
+
+```text
+0:00:00.000,0:00:02.000
+Hello, Joe!
+
+0:00:02.000,0:00:04.000
+Hello, [br]Jane!
+```
+
+```ts
+parseResponse(fetch('/subs/english.sbv'), { type: 'sbv' });
+```
 
 ## Streaming
 
@@ -858,6 +1026,24 @@ async function handle() {
 }
 ```
 
+## HLS Segments
+
+WebVTT segments served over HLS carry an `X-TIMESTAMP-MAP` header that maps the segment's local
+time to the MPEG-TS timeline. The header is preserved in the parse result metadata and can be
+applied like so:
+
+```ts
+import { parseResponse, parseVTTTimestampMap, shiftVTTCues } from 'media-captions';
+
+const { metadata, cues } = await parseResponse(fetch(segmentURL));
+const map = parseVTTTimestampMap(metadata);
+
+if (map) {
+  // `initialPTS` is the first video PTS (90kHz) of the stream, as exposed by your HLS client.
+  shiftVTTCues(cues, map.offset - initialPTS / 90000);
+}
+```
+
 ## Types
 
 Here's the types that are available from this package for use in TypeScript:
@@ -869,6 +1055,7 @@ import type {
   CaptionsParserInit,
   CaptionsRenderer,
   CaptionsRendererTrack,
+  EmbeddedFont,
   ParseByteStreamOptions,
   ParseCaptionsOptions,
   ParsedCaptionsResult,
@@ -880,6 +1067,8 @@ import type {
   VTTCueTemplate,
   VTTHeaderMetadata,
   VTTRegion,
+  VTTTimestampMap,
+  SyncCaptionsRendererOptions,
 } from 'media-captions';
 ```
 
