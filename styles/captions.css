@@ -18,7 +18,8 @@
      overlay without waiting on JS resize observers. */
   container-type: size;
   margin: var(--overlay-padding);
-  font-size: var(--cue-font-size);
+  /* The overlay is the size container, so its own font-size can not use cqh units. */
+  font-size: calc(var(--overlay-height) / 100 * 5);
   font-family: sans-serif;
   box-sizing: border-box;
   pointer-events: none;
@@ -29,7 +30,7 @@
 
 @supports (font-size: 1cqh) {
   :where([data-part='captions']) {
-    /* Same 5% of overlay height, but resolved by the browser during layout. */
+    /* Same 5% of overlay height, but resolved by the browser during layout (used by cues). */
     --cue-font-size: 5cqh;
   }
 }
@@ -46,6 +47,7 @@
   width: var(--cue-width, auto);
   height: var(--cue-height, auto);
   z-index: var(--cue-z-index, auto);
+  font-size: var(--cue-font-size);
   box-sizing: border-box;
   transform: var(--cue-transform);
   text-align: var(--cue-text-align);

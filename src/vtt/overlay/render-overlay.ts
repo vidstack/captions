@@ -330,6 +330,16 @@ export class CaptionsRenderer {
         const size = cue.size < maxSize ? cue.size : maxSize;
         if (cue.vertical === '') setCSSVar(display, 'cue-width', size + '%');
         else setCSSVar(display, 'cue-height', size + '%');
+
+        // https://www.w3.org/TR/webvtt1/#processing-cue-settings (position + position alignment)
+        const offset =
+          position -
+          (positionAlignment === 'line-right'
+            ? size
+            : positionAlignment === 'center'
+              ? size / 2
+              : 0);
+        setCSSVar(display, cue.vertical === '' ? 'cue-left' : 'cue-top', offset + '%');
       }
     } else {
       setCSSVar(

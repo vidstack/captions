@@ -28,7 +28,7 @@ export function positionCue(
     axis: DirectionalAxis[] = [];
 
   if (!displayEl[STARTING_BOX]) {
-    displayEl[STARTING_BOX] = createStartingBox(container, displayEl);
+    displayEl[STARTING_BOX] = createStartingBox(container, displayEl, cue.vertical === '');
   }
 
   displayBox = resolveRelativeBox(container, { ...displayEl[STARTING_BOX] });
@@ -94,7 +94,7 @@ export function positionCue(
   return displayBox;
 }
 
-function createStartingBox(container: Box, cueEl: HTMLElement) {
+function createStartingBox(container: Box, cueEl: HTMLElement, isHorizontal: boolean) {
   const box = createBox(cueEl),
     pos = getStyledPositions(container, cueEl);
 
@@ -103,14 +103,15 @@ function createStartingBox(container: Box, cueEl: HTMLElement) {
   if (pos.top !== null) {
     box.top = pos.top;
     box.bottom = pos.top + box.height;
-    cueEl[POSITION_OVERRIDE] = 'top';
+    // For vertical cues the top offset is the cue position, not a line override.
+    if (isHorizontal) cueEl[POSITION_OVERRIDE] = 'top';
   }
 
   if (pos.bottom !== null) {
     const bottom = container.height - pos.bottom;
     box.top = bottom - box.height;
     box.bottom = bottom;
-    cueEl[POSITION_OVERRIDE] = 'bottom';
+    if (isHorizontal) cueEl[POSITION_OVERRIDE] = 'bottom';
   }
 
   if (pos.left !== null) box.left = pos.left;

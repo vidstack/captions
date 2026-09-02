@@ -38,6 +38,7 @@
 :where([data-part='captions'] [data-part='region'] > [data-part='cue-display']) {
   position: relative;
   width: auto;
+  font-size: var(--cue-font-size);
   left: var(--cue-offset);
   height: var(--cue-height, auto);
   text-align: var(--cue-text-align);
