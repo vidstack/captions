@@ -17,7 +17,7 @@ const FORMAT_START_RE = /^Format:[\s\t]*/,
   EVENTS_SECTION_RE = /^\[.*Events\]$/i,
   FONTS_SECTION_RE = /^\[Fonts\]$/i,
   OVERRIDE_BLOCK_RE = /\{([^}]*)\}/g,
-  OVERRIDE_TAG_RE = /\\([a-zA-Z]+)([^\\]*)/g,
+  OVERRIDE_TAG_RE = /\\([1-4]?[a-zA-Z]+)([^\\]*)/g,
   COLOR_TAG_RE = /&H([0-9a-fA-F]{2,8})&?/,
   NEW_LINE_RE = /\\N/g,
   SOFT_LINE_RE = /\\n/g,
@@ -59,12 +59,8 @@ interface SSAStyle {
   alpha?: number;
 }
 
-interface OpenTags {
-  i?: boolean;
-  b?: boolean;
-  u?: boolean;
-  c?: boolean;
-}
+/** Open inline formatting tags, innermost last. */
+type OpenTags = { key: 'i' | 'b' | 'u' | 'c'; open: string; close: string }[];
 
 export class SSAParser implements CaptionsParser {
   protected _init!: CaptionsParserInit;
@@ -355,7 +351,7 @@ export class SSAParser implements CaptionsParser {
    */
   protected _transformText(cue: VTTCue, style: SSAStyle, text: string): string {
     let result = '',
-      open: OpenTags = {},
+      open: OpenTags = [],
       karaokeTime = cue.startTime,
       drawing = false,
       lastIndex = 0,
@@ -391,14 +387,10 @@ export class SSAParser implements CaptionsParser {
             result += toggleTag(open, 'u', '<u>', '</u>', arg);
             break;
           case 'c':
-          case 'c1': {
+          case '1c': {
             const color = parseColor(arg, true);
-            if (open.c) result += '</c>';
-            open.c = false;
-            if (color) {
-              result += `<c.${color}>`;
-              open.c = true;
-            }
+            result += closeTag(open, 'c');
+            if (color) result += openTag(open, 'c', `<c.${color}>`, '</c>');
             break;
           }
           case 'r':
@@ -633,25 +625,41 @@ export function toNumpadAlignment(alignment: number): number {
   return horizontal;
 }
 
-function toggleTag(open: OpenTags, key: keyof OpenTags, start: string, end: string, arg: string) {
-  const enabled = arg === '' ? !open[key] : parseInt(arg, 10) > 0;
-  if (enabled && !open[key]) {
-    open[key] = true;
-    return start;
-  } else if (!enabled && open[key]) {
-    open[key] = false;
-    return end;
-  }
+function toggleTag(open: OpenTags, key: 'i' | 'b' | 'u', start: string, end: string, arg: string) {
+  const isOpen = open.some((tag) => tag.key === key),
+    enabled = arg === '' ? !isOpen : parseInt(arg, 10) > 0;
+  if (enabled && !isOpen) return openTag(open, key, start, end);
+  if (!enabled && isOpen) return closeTag(open, key);
   return '';
+}
+
+function openTag(open: OpenTags, key: OpenTags[number]['key'], start: string, end: string) {
+  open.push({ key, open: start, close: end });
+  return start;
+}
+
+/**
+ * Closes the given tag. Tags opened after it are closed first and re-opened afterwards so the
+ * output is always properly nested (SSA tags toggle independently, HTML tags nest).
+ */
+function closeTag(open: OpenTags, key: OpenTags[number]['key']) {
+  const index = open.findIndex((tag) => tag.key === key);
+  if (index === -1) return '';
+
+  let result = '';
+  const reopen = open.splice(index + 1);
+  for (let i = reopen.length - 1; i >= 0; i--) result += reopen[i].close;
+  result += open.pop()!.close;
+  for (const tag of reopen) {
+    result += tag.open;
+    open.push(tag);
+  }
+  return result;
 }
 
 function closeTags(open: OpenTags) {
   let result = '';
-  if (open.c) result += '</c>';
-  if (open.u) result += '</u>';
-  if (open.b) result += '</b>';
-  if (open.i) result += '</i>';
-  open.i = open.b = open.u = open.c = false;
+  while (open.length) result += open.pop()!.close;
   return result;
 }
 
