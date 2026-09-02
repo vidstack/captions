@@ -6,6 +6,7 @@ export * from './parse/types';
 export * from './vtt/text-cue';
 export * from './vtt/vtt-header';
 export * from './vtt/vtt-cue';
+export * from './vtt/cue-track';
 export * from './vtt/vtt-region';
 export { parseVTTTimestamp } from './vtt/vtt-parser';
 export { loadEmbeddedFonts } from './ssa/fonts';
