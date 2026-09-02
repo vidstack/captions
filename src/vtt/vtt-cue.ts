@@ -4,14 +4,23 @@ import type { VTTRegion } from './vtt-region';
 
 // Fall back to our own implementation on the server and in DOM environments that do not ship a
 // native `VTTCue` (e.g., jsdom, happy-dom, some WebViews).
-const CueBase: typeof TextCue =
-  !IS_SERVER && typeof window.VTTCue === 'function' ? (window.VTTCue as any) : TextCue;
+const IS_NATIVE = !IS_SERVER && typeof window.VTTCue === 'function',
+  CueBase: typeof TextCue = IS_NATIVE ? (window.VTTCue as any) : TextCue,
+  // Native cues reject non-finite times; open-ended (live) cues store this internally and report
+  // `Infinity`.
+  OPEN_END_SENTINEL = Number.MAX_VALUE,
+  OPEN_END = Symbol(__DEV__ ? 'OPEN_END' : 0);
 
 /**
  * @see {@link https://www.w3.org/TR/webvtt1/#model-cues}
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/VTTCue}
  */
 export class VTTCue extends CueBase {
+  constructor(startTime: number, endTime: number, text: string) {
+    super(startTime, Number.isFinite(endTime) ? endTime : OPEN_END_SENTINEL, text);
+    if (!Number.isFinite(endTime)) this[OPEN_END] = true;
+  }
+
   /**
    * A `VTTRegion` object describing the video's sub-region that the cue will be drawn onto,
    * or `null` if none is assigned.
@@ -104,6 +113,26 @@ export class VTTCue extends CueBase {
   }
 }
 
+if (IS_NATIVE) {
+  // Shadow the native accessor so `endTime = Infinity` works for live cues while the underlying
+  // native cue keeps a finite value (required by the constructor and by native text tracks).
+  const native =
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(CueBase.prototype), 'endTime') ??
+    Object.getOwnPropertyDescriptor(CueBase.prototype, 'endTime');
+  if (native?.get && native.set) {
+    Object.defineProperty(VTTCue.prototype, 'endTime', {
+      configurable: true,
+      get(this: VTTCue) {
+        return this[OPEN_END] ? Infinity : native.get!.call(this);
+      },
+      set(this: VTTCue, value: number) {
+        this[OPEN_END] = !Number.isFinite(value);
+        native.set!.call(this, this[OPEN_END] ? OPEN_END_SENTINEL : value);
+      },
+    });
+  }
+}
+
 /**
  * Explicit cue box placement. Offsets are percentages of the overlay, sizes are percentages or
  * CSS sizing keywords, and the translation is a fraction of the cue box itself (so `x: -0.5`
@@ -158,7 +187,8 @@ export interface CueTextStyle {
 export interface VTTCueInit {
   id?: string;
   startTime: number;
-  endTime: number;
+  /** `null` (from JSON) means an open-ended cue (`Infinity`). */
+  endTime: number | null;
   text: string;
   /** Region id, resolved by `VTTCue.from`. */
   region?: string | null;
@@ -203,7 +233,8 @@ export function cueFromJSON(
   init: VTTCueInit,
   regions?: VTTRegion[] | Record<string, VTTRegion>,
 ): VTTCue {
-  const cue = new VTTCue(init.startTime, init.endTime, init.text);
+  // JSON has no Infinity: open-ended cues serialise their end as `null`.
+  const cue = new VTTCue(init.startTime, init.endTime ?? Infinity, init.text);
   if (init.id) cue.id = init.id;
   if (init.vertical !== undefined) cue.vertical = init.vertical;
   if (init.snapToLines !== undefined) cue.snapToLines = init.snapToLines;
