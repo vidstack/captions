@@ -27,14 +27,14 @@ function mount(label?: string, small = false) {
 }
 
 function cue(start: number, end: number, text: string, settings: Partial<VTTCue> = {}) {
-  const cue = new VTTCue(start, end, text);
-  Object.assign(cue, settings);
-  return cue;
+  const result = new VTTCue(start, end, text);
+  Object.assign(result, settings);
+  return result;
 }
 
 const scenarios: Record<string, Scenario> = {
-  cues(mount) {
-    const renderer = mount();
+  cues(attach) {
+    const renderer = attach();
     renderer.changeTrack({
       cues: [
         cue(0, 10, 'line:0 (snap to first line)', { line: 0 }),
@@ -63,8 +63,8 @@ const scenarios: Record<string, Scenario> = {
     });
   },
 
-  regions(mount) {
-    const renderer = mount();
+  regions(attach) {
+    const renderer = attach();
     const top = new VTTRegion();
     Object.assign(top, {
       id: 'top',
@@ -98,8 +98,8 @@ const scenarios: Record<string, Scenario> = {
     renderer.changeTrack({ regions: [top, bottom], cues });
   },
 
-  'region-scroll'(mount) {
-    const renderer = mount();
+  'region-scroll'(attach) {
+    const renderer = attach();
     const region = new VTTRegion();
     Object.assign(region, { id: 'rollup', width: 70, lines: 3, viewportAnchorX: 15, scroll: 'up' });
     region.regionAnchorX = 0;
@@ -115,8 +115,8 @@ const scenarios: Record<string, Scenario> = {
     renderer.changeTrack({ regions: [region], cues });
   },
 
-  async ssa(mount) {
-    const renderer = mount();
+  async ssa(attach) {
+    const renderer = attach();
     const ass = `[Script Info]
 ScriptType: v4.00+
 PlayResX: 1280
@@ -140,19 +140,19 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an1}{\\k60}Ka{\\k60}ra{\\k6
     renderer.changeTrack(result);
   },
 
-  'edge-styles'(mount) {
+  'edge-styles'(attach) {
     root.classList.add('grid');
     for (const style of ['uniform', 'drop-shadow', 'raised', 'depressed'] as const) {
-      const renderer = mount(`data-edge-style="${style}"`, true);
+      const renderer = attach(`data-edge-style="${style}"`, true);
       renderer.overlay.setAttribute('data-edge-style', style);
       renderer.overlay.style.setProperty('--cue-bg-color', 'transparent');
       renderer.changeTrack({ cues: [cue(0, 10, `${style} edge style`)] });
     }
   },
 
-  layout(mount) {
+  layout(attach) {
     // The structured cue model: parsers of positioned formats emit these instead of CSS.
-    const renderer = mount();
+    const renderer = attach();
     const centered = cue(0, 10, 'layout: left 50%, translate x -0.5, max-content');
     centered.layout = { left: 50, bottom: 6, width: 'max-content', translate: { x: -0.5 } };
     centered.textStyle = {
@@ -188,9 +188,9 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an1}{\\k60}Ka{\\k60}ra{\\k6
     renderer.changeTrack({ cues: [centered, fixed, boxed, faded] });
   },
 
-  live(mount) {
+  live(attach) {
     // A CueTrack fed incrementally, the way CEA-608/708 stream decoders do in live mode.
-    const renderer = mount('CueTrack live: open-ended cues updated in place');
+    const renderer = attach('CueTrack live: open-ended cues updated in place');
     const track = new CueTrack(undefined, { retention: 30 });
     renderer.changeTrack({ cues: track });
 
@@ -207,7 +207,7 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an1}{\\k60}Ka{\\k60}ra{\\k6
     track.update(second);
   },
 
-  element(mount) {
+  element(attach) {
     // The <media-captions> custom element in light DOM (page stylesheets apply).
     defineMediaCaptionsElement();
     const viewport = document.createElement('div');
@@ -227,11 +227,11 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an1}{\\k60}Ka{\\k60}ra{\\k6
       ],
     });
     renderers.push(el.renderer);
-    void mount; // handled manually above
+    void attach; // handled manually above
   },
 
-  collisions(mount) {
-    const renderer = mount();
+  collisions(attach) {
+    const renderer = attach();
     renderer.changeTrack({
       cues: [
         cue(0, 10, 'Three cues share the same line setting'),

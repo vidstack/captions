@@ -16,13 +16,14 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm prettier --check src tests styles scripts
+      # Formatting (oxfmt) and linting (oxlint) through Vite+.
+      - run: pnpm check
       - run: pnpm typecheck
-      - run: pnpm vitest --run --project unit
+      - run: pnpm test:unit
       - run: pnpm exec playwright install --with-deps chromium
       # Screenshot baselines are recorded per platform; until Linux baselines are committed
       # (see record-baselines.yml) the visual suite is skipped here.
-      - run: pnpm vitest --run --project browser --exclude tests/browser/visual.test.ts
+      - run: pnpm vp test --run --project browser --exclude tests/browser/visual.test.ts
       - run: pnpm build
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -228,7 +228,7 @@ function decodeEntities(text: string) {
           : parseInt(entity.slice(1), 10);
       try {
         return String.fromCodePoint(code);
-      } catch (e) {
+      } catch {
         return match;
       }
     }

@@ -47,6 +47,7 @@ const HOST_CSS = 'display: block; position: absolute; inset: 0; pointer-events: 
 
 // Server-safe: the module can be imported (and the class referenced) where the DOM is missing.
 const Base: typeof HTMLElement =
+  // oxlint-disable-next-line typescript/no-extraneous-class -- SSR-safe placeholder base
   typeof HTMLElement === 'function' ? HTMLElement : (class {} as unknown as typeof HTMLElement);
 
 /**
@@ -62,6 +63,7 @@ const Base: typeof HTMLElement =
  *
  * Register with `defineMediaCaptionsElement()`; importing this module has no side effects.
  */
+// oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- typed event map on the class
 export class MediaCaptionsElement extends Base {
   static readonly observedAttributes = [
     'src',
@@ -431,6 +433,7 @@ export class MediaCaptionsElement extends Base {
 }
 
 // Typed listeners for the custom events (merged into the class).
+// oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- typed event map
 export interface MediaCaptionsElement {
   addEventListener<K extends keyof MediaCaptionsElementEventMap>(
     type: K,

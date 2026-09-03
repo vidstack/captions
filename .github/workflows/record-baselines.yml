@@ -20,7 +20,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm vitest --run --project browser tests/browser/visual.test.ts --update
+      - run: pnpm vp test --run --project browser tests/browser/visual.test.ts --update
       - uses: peter-evans/create-pull-request@v6
         with:
           commit-message: 'test(browser): record linux visual baselines'

@@ -73,8 +73,8 @@ function rewriteInner(inner: string | undefined, isRegion: boolean): string {
       /\bv\[voice=("|')?([^"'\]]*)\1?\]/g,
       (_, __, voice) => `[data-part="voice"][title="${escapeAttr(voice)}"]`,
     )
-    .replace(/(^|[\s>+~,])v(?=$|[\s.:\[>+~,])/g, '$1[data-part="voice"]')
-    .replace(/(^|[\s>+~,])c(?=$|[\s.:\[>+~,])/g, '$1span')
+    .replace(/(^|[\s>+~,])v(?=$|[\s.:[>+~,])/g, '$1[data-part="voice"]')
+    .replace(/(^|[\s>+~,])c(?=$|[\s.:[>+~,])/g, '$1span')
     .replace(/:past\b/g, '[data-part="timed"][data-past]')
     .replace(/:future\b/g, '[data-part="timed"][data-future]');
 

@@ -447,7 +447,7 @@ export class CEA708Decoder {
   }
 
   /** Extended character/command following EXT1: C2, G2, C3, or G3. */
-  protected _extended(bytes: number[], i: number, length: number) {
+  protected _extended(bytes: number[], i: number, _length: number) {
     const code = bytes[i];
     if (code >= 0x20 && code < 0x80) {
       const char = G2_CHARS[code];

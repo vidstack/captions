@@ -229,12 +229,9 @@ describe('WPT webvtt/parsing/file-parsing', () => {
       assertAll(await parseFixture(wpt), passing);
     });
 
-    test.fails(
-      `${title} (known divergences: ${diverging.map((a) => a.path).join(', ')})`,
-      async () => {
-        assertAll(await parseFixture(wpt), diverging);
-      },
-    );
+    test.fails(`${title} (known divergences: ${diverging.map((a) => a.path).join(', ')})`, async () => {
+      assertAll(await parseFixture(wpt), diverging);
+    });
   }
 
   test('skipped tests are documented', () => {

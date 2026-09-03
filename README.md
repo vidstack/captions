@@ -1284,14 +1284,18 @@ import type {
 
 ```bash
 pnpm install
+pnpm check           # oxfmt + oxlint via Vite+ (`vp check`)
+pnpm typecheck       # tsc
 pnpm test            # unit suites (node + jsdom) and real-browser layout suites (Playwright)
 pnpm test:unit
 pnpm test:browser    # needs `pnpm exec playwright install chromium` once
-pnpm typecheck
-pnpm build           # tsdown -> dist/prod.js (+ cea, element, parsers/* entries) and .d.ts
+pnpm build           # vp pack (tsdown) -> dist/prod.js (+ cea, element, entities, parsers/* entries)
 pnpm sandbox         # interactive scenarios at http://localhost:3100/.sandbox/index.html
 pnpm screenshots     # regenerates the README images from the sandbox scenarios
 ```
+
+The whole toolchain is [Vite+](https://viteplus.dev): Vite, Vitest, Oxlint, Oxfmt, and tsdown are
+configured together in `vite.config.ts` (`test`, `lint`, `fmt`, `pack`).
 
 Sandbox scenarios: `cues`, `regions`, `region-scroll`, `collisions`, `ssa`, `edge-styles`,
 `layout` (the cue layout/text style model), `live` (a `CueTrack` fed incrementally), and

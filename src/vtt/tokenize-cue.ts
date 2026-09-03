@@ -314,7 +314,8 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
   function addText() {
     if (!buffer) return;
     const text: VTTextNode = { type: 'text', data: replaceHTMLEntities(buffer) };
-    node ? node.children.push(text) : result.push(text);
+    if (node) node.children.push(text);
+    else result.push(text);
     buffer = '';
   }
 

@@ -241,7 +241,7 @@ export class CaptionsRenderer {
       activeSet = new Set(activeCues),
       activeRegions = new Set<VTTRegion>();
 
-    for (const cue of activeCues) if (cue.region) activeRegions.add(cue.region);
+    for (const active of activeCues) if (active.region) activeRegions.add(active.region);
 
     // Remove cues that are no longer active (diffed by identity so unrelated cues are untouched).
     for (let i = 0; i < this._activeCues.length; i++) {
@@ -292,11 +292,11 @@ export class CaptionsRenderer {
     const previous = this._activeCues;
     this._activeCues = activeCues;
     const entered: VTTCue[] = [];
-    for (const cue of previous) if (!activeSet.has(cue)) cue.dispatchEvent(new Event('exit'));
-    for (const cue of activeCues) {
-      if (!previous.includes(cue)) {
-        entered.push(cue);
-        cue.dispatchEvent(new Event('enter'));
+    for (const old of previous) if (!activeSet.has(old)) old.dispatchEvent(new Event('exit'));
+    for (const active of activeCues) {
+      if (!previous.includes(active)) {
+        entered.push(active);
+        active.dispatchEvent(new Event('enter'));
       }
     }
     if (entered.length) this._announce(entered);

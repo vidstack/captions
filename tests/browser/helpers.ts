@@ -72,7 +72,7 @@ export function contains(outer: DOMRect, inner: DOMRect, tolerance = 1) {
 }
 
 export function cue(start: number, end: number, text: string, settings: Partial<VTTCue> = {}) {
-  const cue = new VTTCue(start, end, text);
-  Object.assign(cue, settings);
-  return cue;
+  const result = new VTTCue(start, end, text);
+  Object.assign(result, settings);
+  return result;
 }

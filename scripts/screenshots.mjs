@@ -2,7 +2,7 @@
 // Usage: pnpm screenshots
 
 import { chromium } from 'playwright';
-import { createServer } from 'vite';
+import { createServer } from 'vite-plus';
 
 const SCENARIOS = [
   { name: 'cues', file: 'vtt-cues.png', time: 3 },

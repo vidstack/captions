@@ -4,7 +4,16 @@ import type { VTTRegion } from '../vtt/vtt-region';
 import type { ParseError } from './parse-error';
 
 export type CaptionsFileFormat =
-  'vtt' | 'srt' | 'ssa' | 'ass' | 'ttml' | 'dfxp' | 'xml' | 'scc' | 'lrc' | 'sbv';
+  | 'vtt'
+  | 'srt'
+  | 'ssa'
+  | 'ass'
+  | 'ttml'
+  | 'dfxp'
+  | 'xml'
+  | 'scc'
+  | 'lrc'
+  | 'sbv';
 
 export interface CaptionsParserFactory {
   (): CaptionsParser;
