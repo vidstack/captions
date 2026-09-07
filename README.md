@@ -12,8 +12,8 @@ Captions parsing and rendering library built for the modern web.
 - 🪶 ~13kB core (gzipped) + modular (parser/renderer split) + tree-shaking support.
 - 💤 Parsers are lazy loaded on-demand (each format is its own chunk).
 - 🚄 Efficiently load and apply styles in parallel via CSS files.
-- 🗂️ Supports VTT, SRT, SSA/ASS, TTML/IMSC1/DFXP, SCC, LRC, SBV, and CEA-608/708 from video
-  streams.
+- 🗂️ Supports VTT, SRT, SSA/ASS, TTML/IMSC1/DFXP, SCC, LRC, SBV, SAMI, MicroDVD, CEA-608/708 from
+  video streams, and fMP4 `wvtt`/`stpp` tracks.
 - ⬆️ Roll-up captions via VTT regions.
 - 🧰 Modern `fetch` and `ReadableStream` APIs.
 - 📡 Chunked text and response streaming support (including HLS `X-TIMESTAMP-MAP`).
@@ -157,8 +157,12 @@ like so:
   - [CEA-608/708 from video streams](#cea-608708-from-video-streams)
   - [LRC](#lrc)
   - [SBV](#sbv)
+  - [SAMI](#sami)
+  - [MicroDVD](#microdvd)
 - [Streaming](#streaming)
 - [HLS Segments](#hls-segments)
+- [fMP4 subtitle tracks](#fmp4-subtitle-tracks)
+- [Player integration (hls.js)](#player-integration-hlsjs)
 - [Types](#types)
 
 ## Parse Options
@@ -1265,6 +1269,31 @@ Hello, [br]Jane!
 parseResponse(fetch('/subs/english.sbv'), { type: 'sbv' });
 ```
 
+## SAMI
+
+Synchronized Accessible Media Interchange (`.smi`) is the HTML-like format from Windows Media
+Player, still common in archives and in Korean subtitle distribution:
+
+```ts
+parseResponse(fetch('/subs/movie.smi'), { type: 'smi' });
+```
+
+Every language class in the file is emitted. Each cue's `id` is its class name and its text is
+wrapped in `<lang xx>` when the class declares a language, so hosts can filter by either;
+`metadata.Languages` lists the classes. Unclosed tags, `&nbsp;` clears, `<font color>`, and
+out-of-order `SYNC` blocks are handled.
+
+## MicroDVD
+
+Frame-based `.sub` files (`{start}{end}Text|line`). The optional `{1}{1}25.000` header sets the
+frame rate (default 23.976, reported as `metadata.FrameRate`). Formatting codes (`{y:i}`,
+`{Y:b}`, `{c:$bbggrr}`, `{f:}`, `{s:}`) map to WebVTT tags and span styles; `{P:x,y}` positions map
+to a fixed layout on an assumed 640x480 canvas.
+
+```ts
+parseResponse(fetch('/subs/movie.sub'), { type: 'sub' });
+```
+
 ## Streaming
 
 You can split large captions files into chunks and use the [`parseTextStream`](#parsetextstream)
@@ -1315,6 +1344,85 @@ if (map) {
   shiftVTTCues(cues, map.offset - initialPTS / 90000);
 }
 ```
+
+## fMP4 subtitle tracks
+
+DASH and modern HLS deliver subtitles as ISOBMFF samples: `wvtt` (WebVTT) or `stpp` (TTML,
+including IMSC images). The `media-captions/mp4` entry demuxes init and media segments straight
+into cues, so a player does not have to unwrap the boxes itself:
+
+```ts
+import { CaptionsRenderer, CueTrack } from 'media-captions';
+import { MP4SubtitleDemuxer } from 'media-captions/mp4';
+
+const track = new CueTrack(undefined, { dedupe: true, retention: 60 }),
+  renderer = new CaptionsRenderer(overlay);
+renderer.changeTrack({ cues: track });
+
+const demuxer = new MP4SubtitleDemuxer({ onCue: (cue) => track.add(cue) });
+const tracks = demuxer.init(initSegmentBytes); // [{ id, type: 'wvtt' | 'stpp', timescale, language }]
+demuxer.push(mediaSegmentBytes, { timeOffset: periodStart });
+renderer.changeTrack({ cues: track, regions: demuxer.regions, styles: demuxer.styles });
+```
+
+`parseMP4Subtitles(init, segments)` is the one-shot equivalent that returns a normal parse result.
+
+## Player integration (hls.js)
+
+Wiring the pieces together for an HLS player with both WebVTT subtitle segments and embedded
+CEA-608/708 captions:
+
+```ts
+import Hls from 'hls.js';
+import {
+  CaptionsRenderer,
+  CueTrack,
+  parseText,
+  parseVTTTimestampMap,
+  shiftVTTCues,
+  syncCaptionsRenderer,
+} from 'media-captions';
+import { CEA608Decoder, CEA708Decoder, parseCCData } from 'media-captions/cea';
+
+const track = new CueTrack(undefined, { dedupe: true, retention: 60 }),
+  renderer = new CaptionsRenderer(overlay, { retention: 60 });
+renderer.changeTrack({ cues: track });
+syncCaptionsRenderer(renderer, video);
+
+// Embedded captions: hls.js exposes SEI user data per fragment.
+const cc608 = new CEA608Decoder({
+    channel: 1,
+    live: true,
+    onCue: (c) => track.add(c),
+    onCueUpdate: (c) => track.update(c),
+  }),
+  cc708 = new CEA708Decoder({
+    service: 1,
+    live: true,
+    onCue: (c) => track.add(c),
+    onCueUpdate: (c) => track.update(c),
+  });
+
+hls.on(Hls.Events.FRAG_PARSING_USERDATA, (_, data) => {
+  for (const sample of data.samples) {
+    const triplets = parseCCData(sample.bytes);
+    cc608.decodeCCData(triplets, sample.pts);
+    cc708.decodeCCData(triplets, sample.pts);
+  }
+});
+
+// WebVTT subtitle segments: parse each fragment and align it with X-TIMESTAMP-MAP.
+hls.on(Hls.Events.FRAG_LOADED, async (_, data) => {
+  if (data.frag.type !== 'subtitle') return;
+  const { metadata, cues } = await parseText(new TextDecoder().decode(data.payload));
+  const map = parseVTTTimestampMap(metadata);
+  if (map) shiftVTTCues(cues, map.offset - hls.initPTS / 90000);
+  track.addAll(cues); // dedupe drops the cues repeated across segment boundaries
+});
+```
+
+Disable hls.js's own subtitle rendering (`renderTextTracksNatively: false`, `enableCEA708Captions: false`)
+so cues are not drawn twice.
 
 ## Types
 

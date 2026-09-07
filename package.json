@@ -9,8 +9,11 @@
     "cea-708",
     "cues",
     "custom-element",
+    "dash",
     "engine",
     "fast",
+    "fmp4",
+    "hls",
     "lightweight",
     "media",
     "parser",
@@ -19,6 +22,7 @@
     "scc",
     "srt",
     "ssa",
+    "stpp",
     "streaming",
     "text-tracks",
     "ts",
@@ -28,7 +32,8 @@
     "vidstack",
     "vtt",
     "web",
-    "web-component"
+    "web-component",
+    "wvtt"
   ],
   "bugs": {
     "url": "https://github.com/vidstack/media-captions/issues"
@@ -74,6 +79,12 @@
       "test": "./dist/dev-entities.js",
       "development": "./dist/dev-entities.js",
       "default": "./dist/prod-entities.js"
+    },
+    "./mp4": {
+      "types": "./dist/prod-mp4.d.ts",
+      "test": "./dist/dev-mp4.js",
+      "development": "./dist/dev-mp4.js",
+      "default": "./dist/prod-mp4.js"
     },
     "./parsers/vtt": {
       "types": "./dist/prod-parser-vtt.d.ts",

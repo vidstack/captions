@@ -13,6 +13,7 @@ const BUDGETS = {
   cea: { files: ['dist/prod-cea.js'], limit: 8_000 },
   element: { files: ['dist/prod-element.js'], limit: 4_000 },
   entities: { files: ['dist/prod-entities.js'], limit: 14_000 },
+  mp4: { files: ['dist/prod-mp4.js'], limit: 8_000 },
   'parsers (largest)': { files: ['dist/prod-parser-*.js'], limit: 16_000, each: true },
 };
 
