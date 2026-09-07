@@ -77,9 +77,10 @@ export interface Line {
   width: number;
   /**
    * Height of the ruby annotation band drawn above the line (beside the column for vertical text),
-   * 0 without `<ruby>`. Browsers let annotations overflow the line box rather than grow it (with
+   * 0 without `<ruby>`. Chromium lets annotations overflow the line box rather than grow it (with
    * the default half-size annotations the box grows by about a pixel), so this does not add to
-   * `CueFlow.height`; the band lands in the cue's padding.
+   * `CueFlow.height`; the band lands in the cue's padding. Firefox and WebKit grow the line box by
+   * about the band instead.
    */
   rubyHeight: number;
 }

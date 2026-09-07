@@ -5,6 +5,7 @@ import {
   layoutCaptions,
   paintCaptions,
 } from 'media-captions/canvas';
+import { server } from 'vitest/browser';
 
 import { createFixture, cue, cueDisplays, nextFrame, rect, type Fixture } from './helpers';
 
@@ -289,9 +290,16 @@ test('ruby annotations sit in a band above the base without growing the box, lik
     [line] = flow.lines;
   expect(line.runs.some((run) => run.ruby)).toBe(true);
   expect(line.rubyHeight).toBeGreaterThan(0);
-  // Browsers let the annotation overflow the line box (it lands in the padding), so the box is
-  // about as tall as a plain line in both writers.
-  expect(Math.abs(target.box.height - dom.height)).toBeLessThan(3);
+  // Engines disagree here: Chromium lets the annotation overflow the line box (it lands in the
+  // padding), Firefox and WebKit grow the line box by about the annotation height. The canvas
+  // follows Chromium, so the boxes agree there and differ by at most the band elsewhere.
+  const growth = dom.height - target.box.height;
+  if (server.browser === 'chromium') {
+    expect(Math.abs(growth)).toBeLessThan(3);
+  } else {
+    expect(growth).toBeGreaterThan(0);
+    expect(growth).toBeLessThan(line.rubyHeight + 3);
+  }
 
   paintCaptions(ctx, [c], 1, {});
   const x = theme.container.left + target.box.left + textBox.left,
