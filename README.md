@@ -1096,21 +1096,37 @@ The following features are supported:
   v4.00 alignment values.
 - Multiple events blocks, `Layer` (rendered as z-order), `Name` (rendered as a voice span), and
   per-dialogue margins.
-- Override tags: `\i`, `\b`, `\u`, `\c`/`\1c` (colour), `\r` (reset), `\an`/`\a` (alignment),
-  `\pos` (position), `\k`/`\K`/`\kf`/`\ko` (karaoke, mapped to WebVTT timestamp tags), and `\p`
-  (drawings are hidden). Other tags are stripped. `\N`, `\n`, and `\h` are handled.
-- Outlines are rendered with `paint-order: stroke fill` and text stroke instead of stacked text
-  shadows, and BorderStyle 3 renders an opaque box.
+- Override tags, mapped onto the structured cue model:
+  - Formatting: `\i`, `\b`, `\u`, `\s`, `\c`/`\1c`, `\2c`, `\3c`, `\4c`, `\alpha`/`\1a`, `\3a`, `\4a`, `\r` and
+    `\rStyle`.
+  - Per-run typography via `cue.spans`: `\fs`, `\fn`, `\fsp`, `\fscx`/`\fscy`, `\frx`/`\fry`/`\frz`, `\bord`,
+    `\xbord`/`\ybord`, `\shad`, `\xshad`/`\yshad`, `\blur`, `\be`.
+  - Placement: `\an`/`\a`, `\pos`, `\move` (media-synced position animation), `\clip` with rectangles or
+    drawings on positioned cues (exact polygon clip paths), `\q`.
+  - Animation: `\fad`, `\fade`, and `\t` (colours, alpha, scale, rotation, border, blur, font size,
+    spacing, shadow; acceleration is sampled; chained `\t` blocks compose).
+  - Karaoke: `\k` timestamps, `\kf`/`\K` fill sweeps, `\ko` outline highlights.
+  - Drawings: `\p` vector drawings (`m n l b s p c`, b-splines converted to cubics) rendered as inline SVG,
+    with `\bord` strokes.
+- `Effect` events: `Scroll up`/`Scroll down` (clipped band animation) and `Banner`.
+- `WrapStyle`, `Collisions` (drives the renderer's stacking mode), `ScaledBorderAndShadow`.
 - Embedded fonts in `[Fonts]`, see [`loadEmbeddedFonts`](#loadembeddedfonts).
 
-The following features are not supported:
+All animations are Web Animations driven from media time, so they pause, seek, and scrub with the
+video rather than running on the wall clock.
 
-- Animations (`\t`, `\move`, `\fad`), per-span font size/name, `\clip`, vector drawings.
-- Movie, Picture, Sound, Command, and Effect (`Banner`, `Scroll`) events.
+The following are approximated or not supported:
 
-If you need full typesetting fidelity, [SubtitlesOctopus](https://github.com/libass/JavascriptSubtitlesOctopus)
-is a performant WASM wrapper of [libass](https://github.com/libass/libass). You'll need to fall
-back to this implementation on iOS Safari (iPhone) as custom captions are not supported there.
+- `\iclip`, `\fax`/`\fay` shear, `\org` rotation origin, `\pbo`, `\kt`, `\fe`.
+- `\clip` on non-positioned cues (ignored) and on `\move` cues (travels with the box).
+- Karaoke sweeps use a text-clipped gradient, so strokes and shadows inside the syllable can show
+  through.
+- Movie, Picture, Sound, and Command events.
+
+For pixel-exact libass parity on heavy typesetting (thousands of animated drawings per frame),
+[SubtitlesOctopus](https://github.com/libass/JavascriptSubtitlesOctopus) remains an option. You'll
+need to fall back to this implementation on iOS Safari (iPhone) as custom captions are not
+supported there.
 
 ## TTML
 
