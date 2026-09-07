@@ -39,12 +39,20 @@ export const enum VTTBlock {
 }
 
 export class VTTParser implements CaptionsParser {
-  /** Whether strict mode applies the WebVTT timestamp grammar (SRT has its own grammar). */
+  /** Whether the spec grammar applies to timestamps (SRT has its own grammar). */
   protected _strictTimestamps = true;
+
+  /** A missing signature outside lenient mode: the spec aborts, so nothing else is parsed. */
+  protected _aborted = false;
+
+  /** Real-world tolerances apply unless `lenient: false` or `strict` asks for the spec grammar. */
+  protected get _lenient() {
+    return !this._init.strict && this._init.lenient !== false;
+  }
 
   /** Percentages must carry a `%` sign per spec; lenient mode also accepts bare numbers. */
   protected _toPercentage(text: string) {
-    return toPercentage(text, !this._init.strict);
+    return toPercentage(text, this._lenient);
   }
 
   protected _init!: CaptionsParserInit;
@@ -76,10 +84,13 @@ export class VTTParser implements CaptionsParser {
         return;
       }
 
-      // Invalid or missing signature: strict mode throws, otherwise report and keep going so
-      // real-world files without a header still play.
+      // Invalid or missing signature: strict mode throws, the spec grammar gives up on the file,
+      // and lenient mode reports it and keeps going so real-world files without a header play.
       this._handleError(this._errorBuilder?._badVTTHeader());
+      if (!this._lenient) this._aborted = true;
     }
+
+    if (this._aborted) return;
 
     if (line === '') {
       if (this._cue) {
@@ -114,8 +125,9 @@ export class VTTParser implements CaptionsParser {
           break;
         case VTTBlock.Cue:
           // A timing line inside cue text ends the current cue and starts the next one
-          // (https://www.w3.org/TR/webvtt1/#collect-a-webvtt-block).
-          if (line.includes(TIMESTAMP_SEP) && TIMING_LINE_RE.test(line)) {
+          // (https://www.w3.org/TR/webvtt1/#collect-a-webvtt-block). Per spec any line containing
+          // `-->` does; lenient mode keeps lines that do not look like timings (`a --> b`) as text.
+          if (line.includes(TIMESTAMP_SEP) && (TIMING_LINE_RE.test(line) || !this._lenient)) {
             this.parse('', lineCount);
             this.parse(line, lineCount);
             return;
@@ -204,7 +216,7 @@ export class VTTParser implements CaptionsParser {
       endTimeText = endMatch[1],
       remainder = endMatch[2],
       settingsText = remainder.split(SPACE_RE).filter(Boolean),
-      strict = !!this._init.strict && this._strictTimestamps,
+      strict = !this._lenient && this._strictTimestamps,
       startTime = parseVTTTimestamp(startTimeText, strict);
 
     // Text glued to the end timestamp is only settings when the timestamp itself is complete per
@@ -254,14 +266,14 @@ export class VTTParser implements CaptionsParser {
             else badValue = true;
             break;
           case 'regionanchor':
-            const region = toCoords(value, !this._init.strict);
+            const region = toCoords(value, this._lenient);
             if (region !== null) {
               this._region!.regionAnchorX = region[0];
               this._region!.regionAnchorY = region[1];
             } else badValue = true;
             break;
           case 'viewportanchor':
-            const viewport = toCoords(value, !this._init.strict);
+            const viewport = toCoords(value, this._lenient);
             if (viewport !== null) {
               this._region!.viewportAnchorX = viewport[0];
               this._region!.viewportAnchorY = viewport[1];
@@ -345,7 +357,7 @@ export class VTTParser implements CaptionsParser {
           case 'align':
             if (ALIGN_RE.test(value)) {
               this._cue!.align = value as VTTCue['align'];
-            } else if (value === 'middle' && !this._init.strict) {
+            } else if (value === 'middle' && this._lenient) {
               // Pre-2013 WebVTT drafts used `middle`; still common in the wild.
               this._cue!.align = 'center';
             } else {

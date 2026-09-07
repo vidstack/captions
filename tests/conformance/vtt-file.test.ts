@@ -152,10 +152,63 @@ describe('cue identifiers and blocks', () => {
     expect(cues.map((c) => c.text)).toEqual(['', 'B']);
   });
 
-  test('cue text may contain arbitrary characters including --> inside cue text later lines? no: it starts a new cue', async () => {
+  test('TOLERANT: a cue text line containing --> that does not look like a timing line is kept as text', async () => {
     const { cues } = await parse(vtt('WEBVTT', '', '00:00.000 --> 00:01.000', 'a --> b'));
-    // "a --> b" is not a valid timing line, so it must be kept as text.
     expect(cues.map((c) => c.text)).toEqual(['a --> b']);
+  });
+
+  test('any line containing --> ends the cue when lenient is false (spec)', async () => {
+    const { cues, errors } = await parse(
+      vtt(
+        'WEBVTT',
+        '',
+        '00:00.000 --> 00:01.000',
+        'text0',
+        'a --> b',
+        '00:01.000 --> 00:02.000',
+        'text1',
+      ),
+      { lenient: false },
+    );
+    expect(cues.map((c) => c.text)).toEqual(['text0', 'text1']);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+});
+
+describe('lenient: false (spec grammar without throwing)', () => {
+  test('drops invalid cues and reports them instead of throwing', async () => {
+    const { cues, errors } = await parse(
+      vtt('WEBVTT', '', '00:00.00 --> 00:01.000', 'short', '', '00:01.000 --> 00:02.000', 'ok'),
+      { lenient: false },
+    );
+    expect(cues.map((c) => c.text)).toEqual(['ok']);
+    expect(errors).toHaveLength(1);
+  });
+
+  test('rejects bare percentages and align:middle', async () => {
+    const { cues } = await parse(
+      vtt('WEBVTT', '', '00:00.000 --> 00:01.000 position:25 align:end align:middle', 'Hi'),
+      { lenient: false },
+    );
+    expect(cues[0].position).toBe('auto');
+    expect(cues[0].align).toBe('end');
+  });
+
+  test('gives up on a file without a signature', async () => {
+    const { cues, errors } = await parse(vtt('00:00.000 --> 00:01.000', 'Hi'), {
+      lenient: false,
+    });
+    expect(cues).toEqual([]);
+    expect(errors).toHaveLength(1);
+  });
+
+  test('strict wins over lenient', async () => {
+    await expect(
+      parse(vtt('WEBVTT', '', '00:00.000 --> 00:01.000 position:25', 'Hi'), {
+        strict: true,
+        lenient: true,
+      }),
+    ).rejects.toThrow(/position/);
   });
 });
 

@@ -2,23 +2,19 @@
  * Runs the web-platform-tests WebVTT parsing suites (vendored under `./vendor`, converted to JSON
  * by `./convert.mjs`) against `media-captions`.
  *
- * Parse mode rule
- * ---------------
- * The spec parser never aborts: invalid cues are dropped and parsing continues. Our default
- * (non-strict) mode does the same but also accepts a few documented real-world tolerances the spec
- * rejects (bare percentages, `align:middle`, 1-3 fraction digits, `,` separators, ...). Strict mode
- * follows the spec grammar but throws on the *first* error, so it can only stand in for the spec
- * when a test expects no cues at all. Hence:
+ * Parse mode
+ * ----------
+ * The spec parser never aborts: invalid cues are dropped and parsing continues. That is
+ * `lenient: false`: the spec grammar (no bare percentages, no `align:middle`, exactly three
+ * fraction digits, any `-->` line ends a cue, a bad signature gives up on the file) with the
+ * recovery of the default mode rather than the first-error throw of `strict`. The default lenient
+ * mode deliberately diverges from the spec for real-world files; those tolerances are covered by
+ * `tests/conformance/vtt-file.test.ts` (marked TOLERANT), not here.
  *
- * - a test whose assertions expect `cues.length === 0` is parsed in strict mode, and a thrown
- *   parse error counts as "zero cues" (WPT still expects the track to load, just without cues);
- * - every other test is parsed in default mode.
- *
- * Divergences caused by a documented tolerance can therefore not be "fixed" by switching modes
- * (strict would abort on the file's deliberately invalid cues); they are recorded in
- * `KNOWN_DIVERGENCES.md` and in the tables below. Assertions listed there are excluded from the
- * regular test and exercised by a `test.fails` sibling instead, so the suite stays green while the
- * gap stays visible and any fix flips the `fails` test.
+ * Should a divergence appear again, list its assertions in the tables below: they are excluded
+ * from the regular test and exercised by a `test.fails` sibling instead, so the suite stays green
+ * while the gap stays visible and any fix flips the `fails` test. `KNOWN_DIVERGENCES.md` keeps the
+ * history.
  *
  * Model mapping: `line`/`position` may be `'auto'` on both sides, regions are compared by `id`
  * (`sameAs`/`notSameAs`), missing regions are `null`.
@@ -82,62 +78,20 @@ const cueTextParsing = loadFixture<CueTextTest>('cue-text-parsing.json');
 // --------------------------------------------------------------------------------------------
 
 /**
- * WPT test file -> assertion paths that currently fail. Keyed by file because upstream titles are
- * not unique (`settings-vertical.html` carries the `settings, size` title). The `B*`/`T*` tags
- * reference the entries in KNOWN_DIVERGENCES.md (B = parser bug, T = deliberate tolerance).
+ * WPT test file -> assertion paths that currently fail (none). Keyed by file because upstream
+ * titles are not unique (`settings-vertical.html` carries the `settings, size` title).
  */
-const KNOWN_FILE_DIVERGENCES: Record<string, string[]> = {
-  // T4: a cue text line containing `-->` is kept as text instead of ending the cue.
-  'arrows.html': ['cues[0].text', 'cues[1].text', 'cues[2].text', 'cues[3].text'],
-  // T3: anchors accept bare numbers (no `%`) outside strict mode.
-  'regions-regionanchor.html': [
-    'cues[6].region.regionAnchorY',
-    'cues[7].region.regionAnchorY',
-    'cues[8].region.regionAnchorY',
-    'cues[19].region.regionAnchorX',
-  ],
-  'regions-viewportanchor.html': [
-    'cues[6].region.viewportAnchorY',
-    'cues[7].region.viewportAnchorY',
-    'cues[8].region.viewportAnchorY',
-    'cues[19].region.viewportAnchorX',
-  ],
-  // T2: legacy `align:middle` is mapped to `center`.
-  'settings-align.html': ['cues[10].align'],
-  // T3: `position:1` (bare number) is accepted.
-  'settings-position.html': ['cues[11].position'],
-  // T1: 1-2 fraction digits and missing fractions are accepted in default mode.
-  'timings-too-short.html': ['cues.length', 'cues[1].text'],
-};
+const KNOWN_FILE_DIVERGENCES: Record<string, string[]> = {};
 
-/** WPT cue text test names that currently fail (see KNOWN_DIVERGENCES.md). */
-const KNOWN_CUE_TEXT_DIVERGENCES = new Set<string>([
-  // T7: a mismatched end tag closes through open ancestors instead of being ignored.
-  'WebVTT cue data parser test tree-building - 325c1e590e74f1ff33ca5b4838c04cf6b6dd71ba',
-  'WebVTT cue data parser test tree-building - 92847ed2694c9639ba96f4cc61e2215362a74904',
-  'WebVTT cue data parser test tree-building - c0da62d1c8716ca544c96799f06ac7e4664500fb',
-  'WebVTT cue data parser test tree-building - 132f07c3ab0e86dd1b93bf434c94c0d1cfdd4fde',
-]);
+/** WPT cue text test names that currently fail (none). */
+const KNOWN_CUE_TEXT_DIVERGENCES = new Set<string>();
 
 // --------------------------------------------------------------------------------------------
 // File parsing
 // --------------------------------------------------------------------------------------------
 
-function expectsZeroCues(test: FileParsingTest) {
-  return test.assertions.some((a) => a.path === 'cues.length' && a.expected === 0);
-}
-
 async function parseFixture(test: FileParsingTest): Promise<VTTCue[]> {
-  if (!expectsZeroCues(test)) {
-    return (await parseText(test.vtt, { errors: true })).cues;
-  }
-
-  try {
-    return (await parseText(test.vtt, { strict: true, errors: true })).cues;
-  } catch {
-    // Strict mode rejected the file: the spec equivalent is a track with no cues.
-    return [];
-  }
+  return (await parseText(test.vtt, { lenient: false, errors: true })).cues;
 }
 
 function resolve(root: { cues: VTTCue[] }, path: string): unknown {
@@ -212,8 +166,7 @@ function assertAll(cues: VTTCue[], assertions: Assertion[]) {
 describe('WPT webvtt/parsing/file-parsing', () => {
   for (const wpt of fileParsing.tests) {
     const known = new Set(KNOWN_FILE_DIVERGENCES[wpt.file] ?? []);
-    const mode = expectsZeroCues(wpt) ? 'strict' : 'default';
-    const title = `${wpt.file}: ${wpt.name} [${mode} mode]`;
+    const title = `${wpt.file}: ${wpt.name}`;
 
     if (!known.size) {
       test(title, async () => {

@@ -80,6 +80,17 @@ export interface ParseCaptionsOptions {
    */
   strict?: boolean;
   /**
+   * Whether the WebVTT parser accepts common real-world deviations from the spec grammar: a
+   * missing `WEBVTT` signature, `,` as the millisecond separator, one or two fraction digits or
+   * none, percentages without `%`, the pre-2013 `align:middle`, and `-->` inside cue text lines
+   * that do not look like timings. Set to `false` for browser-exact parsing that still recovers:
+   * invalid cues are dropped and reported through `errors`/`onError` instead of thrown (that is
+   * what `strict` does). Ignored when `strict` is set.
+   *
+   * @defaultValue true
+   */
+  lenient?: boolean;
+  /**
    * Whether errors should be collected and reported in the final parser result. By default, this
    * value will be true in dev mode or if `strict` mode is true. If set to true and `strict` mode
    * is false, the `onError` callback will be invoked.
