@@ -143,6 +143,7 @@ like so:
   - [`renderVTTTokensString`](#rendervtttokensstring)
   - [`updateTimedVTTCueNodes`](#updatetimedvttcuenodes)
   - [`CaptionsRenderer`](#captionsrenderer)
+  - [Composable renderer (`createRenderer`)](#composable-renderer-createrenderer)
   - [`CueTrack`](#cuetrack)
   - [`<media-captions>`](#media-captions)
   - [`syncCaptionsRenderer`](#synccaptionsrenderer)
@@ -672,6 +673,8 @@ video.addEventListener('timeupdate', () => {
 
 **Init options**
 
+- `features`: the renderer features to install. Defaults to every feature; see
+  [Composable renderer](#composable-renderer-createrenderer) to pick a smaller set.
 - `dir`: Text direction (`ltr` or `rtl`).
 - `retention`: Seconds to keep ended cues before evicting them from the track (for live streams).
 - `announce`: `true` / `'polite'` / `'assertive'` adds a visually hidden `aria-live` region after
@@ -715,6 +718,71 @@ Every cue dispatches `enter` when it starts showing and `exit` when it stops, ma
 
 ```ts
 cue.addEventListener('enter', () => console.log('showing', cue.text));
+```
+
+## Composable renderer (`createRenderer`)
+
+`CaptionsRenderer` is the batteries-included build. Underneath it is a small core plus a set of
+**features**, each a separate import, so a player that only shows SRT never ships region
+handling, SSA typesetting, or animation code:
+
+```ts
+import {
+  createRenderer,
+  regions,
+  typesetting,
+  animations,
+  announcer,
+  vttStyles,
+} from 'media-captions/renderer';
+
+// Core only: WebVTT positioning, collision avoidance, timed text, cue events. ~8.5 KB min+gz.
+const renderer = createRenderer(overlay);
+
+// Pick what your content needs.
+const renderer = createRenderer(overlay, {
+  features: [regions(), typesetting(), animations()],
+  dir: 'rtl',
+});
+```
+
+`createRenderer` returns a `CaptionsRendererCore` with the same API as `CaptionsRenderer`
+(`changeTrack`, `currentTime`, `track`, `activeCues`, `reset`, `destroy`, ...) and works with
+`syncCaptionsRenderer`. `CaptionsRenderer` itself is `createRenderer` with `defaultFeatures()`
+installed, plus `announcer()` when `announce` is set; pass `features` to it to override the set.
+
+| Feature           | Renders                                                                                       | Needed by                                             |
+| ----------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `regions()`       | WebVTT regions: region elements, anchors, roll-up scrolling (needs `regions.css`)             | VTT with `REGION` blocks, CEA-608 roll-up via regions |
+| `typesetting()`   | `cue.layout`, `cue.textStyle`, `cue.layer`: absolute boxes, clips, colours, fonts, transforms | SSA/ASS, TTML/IMSC, CEA-708                           |
+| `animations()`    | `cue.animations` as media-synced Web Animations; holds the final state under reduced motion   | SSA `\fad`/`\move`/`\t`/karaoke, TTML `set`           |
+| `vttStyles()`     | WebVTT `STYLE` blocks, rewritten and scoped to the overlay                                    | VTT with `STYLE` blocks                               |
+| `announcer(mode)` | A hidden `aria-live` region receiving the plain text of entering cues                         | Accessibility, opt-in                                 |
+
+Cue text spans (`<c>`, `<v>`, `<b>`, per-span styles) are always rendered by the core, since they
+are content rather than layout.
+
+**What happens without a feature.** A cue that needs one still renders as plain WebVTT text in the
+default slot. In development builds the renderer logs one warning per missing capability, naming
+the feature to add, so a parser/renderer mismatch is visible instead of silent. Parsers do not
+depend on features; they only fill the cue model.
+
+**Writing a feature.** A feature is an object with a `name`, optional `capabilities`, and hooks
+that run in phase order (never array order): `setup`, `changeTrack`, `createCue`/`disposeCue`,
+`containerFor`, `beforeMeasure`/`measureContainer`/`writeContainer`, `writeCue`, `update`,
+`reset`, `resize`, `destroy`. Features with the same `name` replace each other, so a preset can be
+overridden by appending. See `RendererFeature` in `media-captions/renderer` for the contract.
+
+```ts
+import type { RendererFeature } from 'media-captions/renderer';
+
+// Tag every cue element with its start time for styling or analytics.
+export function cueTiming(): RendererFeature {
+  return {
+    name: 'cue-timing',
+    createCue: (_, cue, { display }) => (display.dataset.start = cue.startTime.toFixed(3)),
+  };
+}
 ```
 
 ## `CueTrack`
@@ -1465,7 +1533,7 @@ pnpm test            # unit suites (node + jsdom) and real-browser layout suites
 pnpm test:unit
 pnpm test:browser    # Chromium; BROWSERS=chromium,firefox,webkit widens it (playwright install <engine> once)
 pnpm build           # vp pack (tsdown + publint + attw) -> dist/prod.js and the cea, element, entities, parsers/* entries
-pnpm size            # gzipped size budgets per entry (scripts/size-check.mjs)
+pnpm size            # gzipped size budgets: published entries + tree-shaken usage probes (scripts/size-check.mjs)
 pnpm coverage        # unit suites with V8 coverage
 pnpm docs            # TypeDoc API reference into docs/api
 pnpm playground      # interactive playground at http://localhost:3200/playground/index.html

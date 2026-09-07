@@ -19,7 +19,7 @@ export function createAnnouncer(overlay: HTMLElement, mode: 'polite' | 'assertiv
   return el;
 }
 
-export function announceCues(announcer: HTMLElement, cues: VTTCue[]) {
+export function announceCues(announcer: HTMLElement, cues: readonly VTTCue[]) {
   const text = cues.map((cue) => renderVTTTokensText(tokenizeVTTCue(cue)).trim()).filter(Boolean);
   if (text.length) announcer.textContent = text.join('\n');
 }

@@ -1,4 +1,4 @@
-import type { CaptionsRenderer } from './render-overlay';
+import type { CaptionsRendererCore } from './renderer-core';
 
 export interface SyncCaptionsRendererOptions {
   /**
@@ -19,7 +19,7 @@ export interface SyncCaptionsRendererOptions {
 }
 
 /**
- * Keeps a `CaptionsRenderer` in sync with a media element. The `timeupdate` event only fires a
+ * Keeps a renderer in sync with a media element. The `timeupdate` event only fires a
  * few times per second which makes short cues and karaoke timed text visibly late, so while the
  * media is playing this uses `requestVideoFrameCallback` (or `requestAnimationFrame`) instead and
  * only relies on events while paused or seeking. Provide a `track` and disable `frameAccurate`
@@ -28,7 +28,7 @@ export interface SyncCaptionsRendererOptions {
  * Returns a function that stops syncing.
  */
 export function syncCaptionsRenderer(
-  renderer: CaptionsRenderer,
+  renderer: CaptionsRendererCore,
   media: HTMLMediaElement,
   options: SyncCaptionsRendererOptions = {},
 ): () => void {

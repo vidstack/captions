@@ -3,7 +3,8 @@ import { parseResponse } from '../parse/parse-response';
 import type { CaptionsFileFormat, ParsedCaptionsResult } from '../parse/types';
 import { loadEmbeddedFonts } from '../ssa/fonts';
 import { setDataAttr } from '../utils/style';
-import { CaptionsRenderer, type CaptionsRendererTrack } from '../vtt/overlay/render-overlay';
+import { CaptionsRenderer } from '../vtt/overlay/render-overlay';
+import type { CaptionsRendererTrack } from '../vtt/overlay/renderer-core';
 import { syncCaptionsRenderer } from '../vtt/overlay/sync-renderer';
 import type { VTTCue } from '../vtt/vtt-cue';
 

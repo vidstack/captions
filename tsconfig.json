@@ -21,10 +21,10 @@
     "paths": {
       "media-captions": ["./src/index.ts"],
       "media-captions/cea": ["./src/cea/index.ts"],
-      "media-captions/entities": ["./src/entities/index.ts"],
       "media-captions/element": ["./src/element/index.ts"],
       "media-captions/entities": ["./src/entities/index.ts"],
-      "media-captions/mp4": ["./src/mp4/index.ts"]
+      "media-captions/mp4": ["./src/mp4/index.ts"],
+      "media-captions/renderer": ["./src/renderer/index.ts"]
     },
     "types": ["vitest/globals"],
     "verbatimModuleSyntax": true

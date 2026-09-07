@@ -86,6 +86,12 @@
       "development": "./dist/dev-mp4.js",
       "default": "./dist/prod-mp4.js"
     },
+    "./renderer": {
+      "types": "./dist/prod-renderer.d.ts",
+      "test": "./dist/dev-renderer.js",
+      "development": "./dist/dev-renderer.js",
+      "default": "./dist/prod-renderer.js"
+    },
     "./parsers/vtt": {
       "types": "./dist/prod-parser-vtt.d.ts",
       "test": "./dist/dev-parser-vtt.js",
