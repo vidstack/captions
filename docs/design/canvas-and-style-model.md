@@ -57,8 +57,9 @@ renderer for the WebVTT tier. Positioning, stacking, and collision avoidance are
 
 **What became harder.** Line breaking, balancing, font fallback, bidi, and accessibility all come
 for free in the DOM and had to be written or given up. The canvas flow is greedy wrapping with a
-balance pass and character-level overflow; there is no vertical text, no ruby positioning, no
-selection, and no screen reader access (the announcer feature covers the last one).
+balance pass and character-level overflow; vertical text and ruby annotations had to be written by
+hand; there is no selection and no screen reader access (the announcer feature covers the last
+one).
 
 **The bridge that should not exist.** `src/canvas/css-values.ts` parses the CSS strings back into
 numbers: `calc()` lengths, transform lists, shadows, strokes, clip polygons, colours. It works
@@ -157,8 +158,8 @@ The typed model landed in one step, since the package ships with breaking change
 
 ## Known gaps in the canvas writer
 
-Ruby positioning (inline, smaller), `rotateX`/
-`rotateY`, karaoke sweep gradients (final colour), blur filters, `\move` easing beyond linear,
+Perspective (3D rotations project orthographically, as CSS does without `perspective`), karaoke
+sweep gradients (final colour), blur filters, `\move` easing beyond linear,
 STYLE blocks (no CSS engine), and the `text-wrap: balance` heuristic is an approximation of the
 browser's. Fonts are limited to what the canvas can resolve by name; `loadEmbeddedFonts` still
 works since it registers `FontFace`s document-wide.

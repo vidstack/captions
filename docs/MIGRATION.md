@@ -41,6 +41,11 @@ options are all still there. What follows is everything that can break.
   rather than `--cue-*` custom properties.
 - **Hostile input is bounded.** Regexes are linear, nesting depth is capped, and malformed lines
   never throw outside `strict`.
+- **`lenient: false`** is new: the spec grammar (what `strict` enforces) without the throw, so
+  invalid cues are dropped and reported the way a browser would. The default stays lenient.
+- **Mismatched end tags follow the spec.** `</b>` while `<i>` is the current node is ignored
+  instead of closing the `<b>` ancestor, so `<b><i>x</b> y` keeps ` y` bold italic (as browsers
+  render it). Unknown end tags are still ignored.
 
 ## Cue model
 

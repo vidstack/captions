@@ -179,6 +179,9 @@ All parsing functions exported from this package accept the following options:
   `%` on percentages). Outside strict mode the parser is deliberately tolerant of common real-world
   deviations (missing signature, comma millisecond separators, bare percentages, legacy
   `align:middle`) while still reporting them as errors when `errors` is enabled.
+- `lenient`: Whether those real-world deviations are accepted (default `true`). Set to `false` for
+  browser-exact WebVTT parsing that still recovers: invalid cues are dropped and reported rather
+  than thrown. This is the mode the web-platform-tests suite runs in. Ignored when `strict` is set.
 - `errors`: Whether errors should be collected and reported in the final
   [parser result](#parse-result). By default, this value will be true in dev mode or if `strict`
   mode is true. If set to true and `strict` mode is false, the `onError` callback will be invoked.
@@ -818,8 +821,10 @@ strokes, shadows, rotation and scale about the alignment anchor or `\org`, clip 
 polygons, `\p` drawings via `Path2D`, image cues), and `cue.animations` sampled at media time.
 
 Vertical writing modes flow into columns (`text-orientation: mixed`: CJK upright, other scripts
-sideways). Not yet: ruby positioning, 3D rotations, and WebVTT `STYLE` blocks. Line breaking is a
-greedy wrap with a balance pass, so long lines may break differently from the browser.
+sideways). Ruby annotations sit over their base (beside it in vertical text) at half size, and
+3D rotations project orthographically like CSS without `perspective`. Not yet: WebVTT `STYLE`
+blocks. Line breaking is a greedy wrap with a balance pass, so long lines may break differently
+from the browser.
 
 **Options** (`CanvasCaptionsOptions`): `fontFamily`, `fontSize` (fraction of the height, default
 `0.05`), `lineHeight` (`1.2`), `paddingX`/`paddingY` (em), `safeArea` (fraction of the width,
@@ -1649,13 +1654,13 @@ incrementally), and `element` (`<media-captions>`).
 CI (`.github/workflows/ci.yml`) runs formatting, linting, type-checking, the unit, WPT, IMSC,
 corpus, and fuzz suites with coverage, the layout suites in Chromium, Firefox, and WebKit, the build with package checks,
 the size budgets, and publishes the API docs as an artifact. `release.yml` publishes to npm with
-provenance when a `v*` tag is pushed. Screenshot baselines are per platform, so the visual suite
-is excluded in CI until Linux baselines exist; the manual `record-baselines.yml` workflow records
-them and opens a pull request.
+provenance when a `v*` tag is pushed. Screenshot baselines are per platform; the Linux Chromium
+baselines are committed so the visual suite runs in CI, and the manual `record-baselines.yml`
+workflow re-records them (download its artifact) after an intentional rendering change.
 
 Parsing is covered by the vendored web-platform-tests WebVTT suites under `tests/wpt` (118
-tests; the handful of intentional real-world tolerances are listed in
-`tests/wpt/KNOWN_DIVERGENCES.md` and tracked with `test.fails`), by the W3C IMSC test documents
+tests, all passing with `lenient: false`; `tests/wpt/KNOWN_DIVERGENCES.md` lists the lenient-mode
+tolerances and the bugs the suite found), by the W3C IMSC test documents
 under `tests/imsc`, by hand-written conformance suites under `tests/conformance` (WebVTT file
 structure, cue text, SSA/ASS incl. typesetting), and by per-format suites. Rendering is measured in Chromium, Firefox, and WebKit under
 `tests/browser` (stacking, line snapping, percentage lines, position/size/align, vertical text,
