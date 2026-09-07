@@ -144,6 +144,7 @@ like so:
   - [`updateTimedVTTCueNodes`](#updatetimedvttcuenodes)
   - [`CaptionsRenderer`](#captionsrenderer)
   - [Composable renderer (`createRenderer`)](#composable-renderer-createrenderer)
+  - [Canvas renderer (`media-captions/canvas`)](#canvas-renderer-media-captionscanvas)
   - [`CueTrack`](#cuetrack)
   - [`<media-captions>`](#media-captions)
   - [`syncCaptionsRenderer`](#synccaptionsrenderer)
@@ -784,6 +785,51 @@ export function cueTiming(): RendererFeature {
   };
 }
 ```
+
+## Canvas renderer (`media-captions/canvas`)
+
+> Experimental. Same cue model, track, and layout engine as the DOM renderer; a different writer.
+
+```ts
+import { parseResponse, syncCaptionsRenderer } from 'media-captions';
+import { CanvasCaptionsRenderer, paintCaptions } from 'media-captions/canvas';
+
+const renderer = new CanvasCaptionsRenderer(canvas, { edgeStyle: 'uniform', fontSize: 0.05 });
+renderer.changeTrack(await parseResponse(fetch('/subs.ass')));
+syncCaptionsRenderer(renderer, video);
+
+// Or stateless, for a WebCodecs / OffscreenCanvas pipeline or a thumbnail:
+paintCaptions(ctx, cues, time, { width: 1920, height: 1080 });
+```
+
+Painting into a canvas is what makes captions possible where the DOM overlay is not shown: iOS
+Safari fullscreen and picture-in-picture (paint, `captureStream()`, composite), burn-in and
+export through WebCodecs, server or Worker rendering with `OffscreenCanvas`, thumbnails, and
+DOM-less runtimes. Everything is a fraction of the frame size, so a device-pixel-ratio canvas
+simply renders sharper.
+
+What it renders: WebVTT positioning (line snapping, percentage lines, position/size/align, stacking
+and collision avoidance shared with the DOM renderer), inline tags and class colours, regions with
+roll-up, the SSA/TTML/CEA-708 layout and text style model (boxes, anchors, colours, fonts,
+strokes, shadows, rotation and scale about the alignment anchor or `\org`, clip rectangles and
+polygons, `\p` drawings via `Path2D`, image cues), and `cue.animations` sampled at media time.
+
+Not yet: vertical writing modes (drawn horizontally), ruby positioning, 3D rotations, karaoke
+sweep gradients (final colour), blur, and WebVTT `STYLE` blocks. Line breaking is a greedy wrap
+with a balance pass, so long lines may break differently from the browser.
+
+**Options** (`CanvasCaptionsOptions`): `fontFamily`, `fontSize` (fraction of the height, default
+`0.05`), `lineHeight` (`1.2`), `paddingX`/`paddingY` (em), `safeArea` (fraction of the width,
+`0.01`), `color`, `backgroundColor`, `edgeStyle` + `edgeColor`, `classColors`, `dir`, `stacking`,
+`lineStep`, `reducedMotion`. These mirror the stylesheet defaults so both writers agree on
+geometry; the browser suite checks the DOM and canvas boxes land within a couple of pixels.
+
+**Headless pieces** are exported for other writers and tests: `measureCue` (text flow to
+`CueLayoutInput` without a DOM), `layoutCaptions` (measure + layout, no painting), `flowCue`,
+`sampleAnimation`, and `TextMeasurer` with `canvasTextMeasurer` / `monospaceTextMeasurer`.
+
+See `docs/design/canvas-and-style-model.md` for what this exploration showed and the proposed
+typed style model.
 
 ## `CueTrack`
 

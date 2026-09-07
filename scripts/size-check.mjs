@@ -41,6 +41,10 @@ const PROBE_BUDGETS = {
     code: `export { parseResponse, CaptionsRenderer, syncCaptionsRenderer } from './dist/prod.js';`,
     limit: 13_000,
   },
+  'canvas renderer (CanvasCaptionsRenderer)': {
+    code: `export { CanvasCaptionsRenderer } from './dist/prod-canvas.js';`,
+    limit: 13_000,
+  },
   'everything in the main entry': {
     code: `export * from './dist/prod.js';`,
     limit: 15_000,

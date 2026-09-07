@@ -92,6 +92,12 @@
       "development": "./dist/dev-renderer.js",
       "default": "./dist/prod-renderer.js"
     },
+    "./canvas": {
+      "types": "./dist/prod-canvas.d.ts",
+      "test": "./dist/dev-canvas.js",
+      "development": "./dist/dev-canvas.js",
+      "default": "./dist/prod-canvas.js"
+    },
     "./parsers/vtt": {
       "types": "./dist/prod-parser-vtt.d.ts",
       "test": "./dist/dev-parser-vtt.js",

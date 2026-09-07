@@ -65,6 +65,7 @@ function pack({ dev }: { dev: boolean }): PackUserConfig {
       [`${alias}-entities`]: 'src/entities/index.ts',
       [`${alias}-mp4`]: 'src/mp4/index.ts',
       [`${alias}-renderer`]: 'src/renderer/index.ts',
+      [`${alias}-canvas`]: 'src/canvas/index.ts',
       // Explicit per-format entries for bundlers/runtimes that can not follow dynamic imports.
       ...Object.fromEntries(PARSERS.map(([name, path]) => [`${alias}-parser-${name}`, path])),
     },
@@ -102,6 +103,7 @@ export default defineConfig({
       'media-captions/entities': '/src/entities/index',
       'media-captions/mp4': '/src/mp4/index',
       'media-captions/renderer': '/src/renderer/index',
+      'media-captions/canvas': '/src/canvas/index',
       'media-captions': '/src/index',
     },
   },

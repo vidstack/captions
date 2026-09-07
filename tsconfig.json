@@ -24,7 +24,8 @@
       "media-captions/element": ["./src/element/index.ts"],
       "media-captions/entities": ["./src/entities/index.ts"],
       "media-captions/mp4": ["./src/mp4/index.ts"],
-      "media-captions/renderer": ["./src/renderer/index.ts"]
+      "media-captions/renderer": ["./src/renderer/index.ts"],
+      "media-captions/canvas": ["./src/canvas/index.ts"]
     },
     "types": ["vitest/globals"],
     "verbatimModuleSyntax": true

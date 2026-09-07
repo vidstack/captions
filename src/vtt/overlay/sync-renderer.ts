@@ -1,4 +1,7 @@
-import type { CaptionsRendererCore } from './renderer-core';
+/** Anything that renders for a media time: `CaptionsRenderer`, `createRenderer()`, or the canvas renderer. */
+export interface TimeDrivenRenderer {
+  currentTime: number;
+}
 
 export interface SyncCaptionsRendererOptions {
   /**
@@ -28,7 +31,7 @@ export interface SyncCaptionsRendererOptions {
  * Returns a function that stops syncing.
  */
 export function syncCaptionsRenderer(
-  renderer: CaptionsRendererCore,
+  renderer: TimeDrivenRenderer,
   media: HTMLMediaElement,
   options: SyncCaptionsRendererOptions = {},
 ): () => void {
