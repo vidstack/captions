@@ -18,6 +18,7 @@ export function applyCueLayout(el: HTMLElement, layout: CueLayout | undefined) {
   }
   if (layout.maxWidth !== undefined) setCSSVar(el, 'cue-max-width', layout.maxWidth + '%');
   if (layout.height !== undefined) setCSSVar(el, 'cue-height', layout.height + '%');
+  if (layout.clipPath) setCSSVar(el, 'cue-clip-path', layout.clipPath);
   if (layout.fixed) setDataAttr(el, 'fixed');
 }
 

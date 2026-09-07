@@ -1,4 +1,4 @@
-import type { VTTCue } from './vtt-cue';
+import type { CueSpanStyle, VTTCue } from './vtt-cue';
 import { parseVTTTimestamp } from './vtt-parser';
 
 const DIGIT_RE = /[0-9]/,
@@ -115,6 +115,7 @@ const DIGIT_RE = /[0-9]/,
     'black',
   ]),
   HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
+  SPAN_KEY_RE = /^s-(.+)$/,
   BLOCK_TYPES = /*#__PURE__*/ new Set(Object.keys(TAG_NAME));
 
 const enum Mode {
@@ -301,7 +302,12 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
       const color = buffer.replace('bg_', '');
       // Hex colours are a non-spec extension so other formats (SRT, SSA, TTML) can carry
       // arbitrary colours through cue text.
-      if (COLORS.has(color) || HEX_COLOR_RE.test(color)) {
+      const spanKey = buffer.match(SPAN_KEY_RE)?.[1];
+      if (spanKey !== undefined && cue.spans?.[spanKey]) {
+        // `<c.s-KEY>` references a per-cue span style instead of a CSS class.
+        node.span = cue.spans[spanKey];
+        node.spanKey = spanKey;
+      } else if (COLORS.has(color) || HEX_COLOR_RE.test(color)) {
         node[buffer.startsWith('bg_') ? 'bgColor' : 'color'] = color.toLowerCase();
       } else {
         node.class = !node.class ? buffer : node.class + ' ' + buffer;
@@ -394,6 +400,9 @@ export interface VTTBlock {
   class?: string;
   color?: string;
   bgColor?: string;
+  /** Per-run style referenced via `<c.s-KEY>` (see `VTTCue.spans`). */
+  span?: CueSpanStyle;
+  spanKey?: string;
   children: (VTTBlockNode | VTTLeafNode)[];
 }
 

@@ -184,8 +184,10 @@ test('cues round-trip through JSON', () => {
   const cue = new VTTCue(1, 2, '<b>x</b>');
   Object.assign(cue, { id: 'c1', line: 5, align: 'start', layer: 2 });
   cue.region = region;
-  cue.layout = { top: 10, fixed: true };
+  cue.layout = { top: 10, fixed: true, clipPath: 'inset(0 10% 0 0)' };
   cue.textStyle = { color: 'lime' };
+  cue.spans = { a: { fontSize: '2em' } };
+  cue.animations = [{ duration: 1, keyframes: [{ opacity: 0 }, { opacity: 1 }] }];
 
   const json = JSON.parse(JSON.stringify(cue));
   expect(json.region).toBe('r');

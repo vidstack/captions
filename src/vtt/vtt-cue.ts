@@ -94,6 +94,19 @@ export class VTTCue extends CueBase {
    */
   textStyle?: CueTextStyle;
   /**
+   * Styles for individual runs of text. Cue text references them with `<c.s-KEY>`; the token for
+   * that span carries the style and the renderer applies it to the span element. Lets formats
+   * with per-run typography (SSA `\\fs`, TTML span `tts:fontSize`, CEA-708 pen backgrounds) map
+   * onto WebVTT cue text.
+   */
+  spans?: Record<string, CueSpanStyle>;
+  /**
+   * Time-based animations synchronised to media time by the renderer (Web Animations API, driven
+   * by `currentTime` so they scrub, pause, and seek with the video). Used for SSA `\\move`,
+   * `\\fad`, `\\t`, karaoke sweeps, scroll/banner effects, and 708 display effects.
+   */
+  animations?: CueAnimation[];
+  /**
    * Raw CSS declarations (properties or `--cue-*` custom properties) applied to the cue display
    * element. Escape hatch for consumers; parsers use `layout` and `textStyle` instead.
    */
@@ -153,6 +166,56 @@ export interface CueLayout {
   translate?: { x?: number; y?: number };
   /** Never moved by collision avoidance, but other cues avoid it (e.g., SSA `\\pos`). */
   fixed?: boolean;
+  /** CSS `clip-path` applied to the cue box (e.g., SSA `\\clip`, scroll bands). */
+  clipPath?: string;
+}
+
+/** Styling for one run of text referenced from cue text via `<c.s-KEY>`. */
+export interface CueSpanStyle {
+  color?: string;
+  backgroundColor?: string;
+  fontFamily?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  textDecoration?: string;
+  letterSpacing?: string;
+  textStroke?: string;
+  textShadow?: string;
+  transform?: string;
+  opacity?: string;
+  filter?: string;
+  animation?: string;
+  className?: string;
+  /** Vector drawing rendered inline as SVG in place of text (SSA `\\p` drawings). */
+  drawing?: CueDrawing;
+}
+
+/** An inline vector drawing. Path data uses SVG syntax in `viewBox` units. */
+export interface CueDrawing {
+  path: string;
+  /** `[x, y, width, height]` in path units. */
+  viewBox: [number, number, number, number];
+  /** Rendered size as percentages of the overlay width and height. */
+  width: number;
+  height: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+}
+
+/**
+ * A media-synchronised animation. `keyframes` follow the Web Animations API (`offset` 0..1 plus
+ * CSS properties in camelCase). Times are seconds relative to the cue start.
+ */
+export interface CueAnimation {
+  /** `display` = the positioned cue box (default), `cue` = the text box, or a span key. */
+  target?: 'display' | 'cue' | { span: string };
+  delay?: number;
+  duration: number;
+  keyframes: Record<string, string | number>[];
+  easing?: string;
+  fill?: 'none' | 'forwards' | 'backwards' | 'both';
 }
 
 /** Presentational cue styling. Values are CSS values. */
@@ -204,6 +267,8 @@ export interface VTTCueInit {
   align?: VTTCue['align'];
   layout?: CueLayout;
   textStyle?: CueTextStyle;
+  spans?: Record<string, CueSpanStyle>;
+  animations?: CueAnimation[];
   style?: Record<string, string>;
   layer?: number;
 }
@@ -226,6 +291,8 @@ export function cueToJSON(cue: VTTCue): VTTCueInit {
   };
   if (cue.layout) init.layout = cue.layout;
   if (cue.textStyle) init.textStyle = cue.textStyle;
+  if (cue.spans) init.spans = cue.spans;
+  if (cue.animations) init.animations = cue.animations;
   if (cue.style) init.style = cue.style;
   if (cue.layer !== undefined) init.layer = cue.layer;
   return init;
@@ -248,6 +315,8 @@ export function cueFromJSON(
   if (init.align) cue.align = init.align;
   if (init.layout) cue.layout = init.layout;
   if (init.textStyle) cue.textStyle = init.textStyle;
+  if (init.spans) cue.spans = init.spans;
+  if (init.animations) cue.animations = init.animations;
   if (init.style) cue.style = init.style;
   if (init.layer !== undefined) cue.layer = init.layer;
   if (init.region && regions) {

@@ -1,7 +1,27 @@
 import { IS_SERVER } from '../utils/env';
 import { setDataAttr } from '../utils/style';
 import { tokenizeVTTCue, type VTTBlockNode, type VTTNode } from './tokenize-cue';
-import type { VTTCue } from './vtt-cue';
+import type { CueDrawing, CueSpanStyle, VTTCue } from './vtt-cue';
+
+const SPAN_STYLE_PROPS: Record<string, string> = {
+  color: 'color',
+  backgroundColor: 'background-color',
+  fontFamily: 'font-family',
+  fontSize: 'font-size',
+  fontWeight: 'font-weight',
+  fontStyle: 'font-style',
+  textDecoration: 'text-decoration',
+  letterSpacing: 'letter-spacing',
+  textStroke: '-webkit-text-stroke',
+  textShadow: 'text-shadow',
+  transform: 'transform',
+  opacity: 'opacity',
+  filter: 'filter',
+  animation: 'animation',
+};
+
+const SVG_NS = 'http://www.w3.org/2000/svg',
+  PATH_DATA_RE = /^[MmLlHhVvCcSsQqTtAaZz0-9,.\-+eE\s]*$/;
 
 const CLASS_TOKEN_RE = /[^\w-]+/g;
 
@@ -53,12 +73,65 @@ export function getVTTTokenAttributes(
     if (token.time < currentTime) attrs['data-past'] = '';
   }
 
-  const style = `${token.color ? `color: ${token.color};` : ''}${
+  let style = `${token.color ? `color: ${token.color};` : ''}${
     token.bgColor ? `background-color: ${token.bgColor};` : ''
   }`;
+
+  if (token.span) {
+    if (token.spanKey) attrs['data-span'] = token.spanKey;
+    if (token.span.className)
+      attrs.class = [attrs.class, token.span.className].filter(Boolean).join(' ');
+    style += spanStyleToCSS(token.span);
+  }
+
   if (style) attrs.style = style;
 
   return attrs;
+}
+
+/** Serialises a `CueSpanStyle` to inline CSS declarations. */
+export function spanStyleToCSS(span: CueSpanStyle): string {
+  let css = '';
+  for (const key of Object.keys(span)) {
+    const prop = SPAN_STYLE_PROPS[key],
+      value = span[key as keyof CueSpanStyle];
+    if (prop && typeof value === 'string') css += `${prop}: ${value};`;
+  }
+  return css;
+}
+
+function drawingToSVGString(drawing: CueDrawing): string {
+  if (!PATH_DATA_RE.test(drawing.path)) return '';
+  const [x, y, w, h] = drawing.viewBox;
+  return (
+    `<svg xmlns="${SVG_NS}" viewBox="${x} ${y} ${w} ${h}" preserveAspectRatio="none" ` +
+    `style="display:block;width:calc(var(--overlay-width) * ${drawing.width / 100});` +
+    `height:calc(var(--overlay-height) * ${drawing.height / 100})">` +
+    `<path d="${escapeAttribute(drawing.path)}" fill="${escapeAttribute(drawing.fill ?? 'currentColor')}"` +
+    (drawing.stroke ? ` stroke="${escapeAttribute(drawing.stroke)}"` : '') +
+    (drawing.strokeWidth ? ` stroke-width="${drawing.strokeWidth}"` : '') +
+    ' /></svg>'
+  );
+}
+
+function appendDrawing(parent: Element, drawing: CueDrawing, doc: Document) {
+  if (!PATH_DATA_RE.test(drawing.path)) return;
+  const [x, y, w, h] = drawing.viewBox,
+    svg = doc.createElementNS(SVG_NS, 'svg'),
+    path = doc.createElementNS(SVG_NS, 'path');
+  svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute(
+    'style',
+    `display:block;width:calc(var(--overlay-width) * ${drawing.width / 100});` +
+      `height:calc(var(--overlay-height) * ${drawing.height / 100})`,
+  );
+  path.setAttribute('d', drawing.path);
+  path.setAttribute('fill', drawing.fill ?? 'currentColor');
+  if (drawing.stroke) path.setAttribute('stroke', drawing.stroke);
+  if (drawing.strokeWidth) path.setAttribute('stroke-width', drawing.strokeWidth + '');
+  svg.appendChild(path);
+  parent.appendChild(svg);
 }
 
 /**
@@ -76,7 +149,8 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
         .map(([name, value]) => `${name}="${escapeAttribute(value)}"`)
         .join(' ');
 
-      result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${renderVTTTokensString(
+      const drawing = token.span?.drawing ? drawingToSVGString(token.span.drawing) : '';
+      result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${drawing}${renderVTTTokensString(
         token.children,
         currentTime,
       )}</${token.tagName}>`;
@@ -115,11 +189,19 @@ function appendVTTTokens(parent: Node, tokens: VTTNode[], currentTime: number, d
       if (name === 'style') {
         if (token.color) el.style.color = token.color;
         if (token.bgColor) el.style.backgroundColor = token.bgColor;
+        if (token.span) {
+          for (const key of Object.keys(token.span)) {
+            const prop = SPAN_STYLE_PROPS[key],
+              value = token.span[key as keyof CueSpanStyle];
+            if (prop && typeof value === 'string') el.style.setProperty(prop, value);
+          }
+        }
       } else {
         el.setAttribute(name, attrs[name]);
       }
     }
 
+    if (token.span?.drawing) appendDrawing(el, token.span.drawing, doc);
     appendVTTTokens(el, token.children, currentTime, doc);
     parent.appendChild(el);
   }

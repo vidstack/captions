@@ -56,3 +56,53 @@ test('DOM renderer never interprets markup in text', () => {
   expect(div.querySelector('img')).toBeNull();
   expect(div.textContent).toBe('<img src=x onerror=alert(1)>');
 });
+
+test('span styles referenced from cue text are applied to that run only', () => {
+  const cue = new VTTCue(0, 10, 'Normal <c.s-big>big <c.s-red>red</c></c> normal');
+  cue.spans = {
+    big: { fontSize: '1.5em', letterSpacing: '0.1em', className: 'shout' },
+    red: { color: '#ff0000', textStroke: '2px black' },
+  };
+  expect(renderVTTCueString(cue)).toBe(
+    'Normal <span data-span="big" class="shout" style="font-size: 1.5em;letter-spacing: 0.1em;">big ' +
+      '<span data-span="red" style="color: #ff0000;-webkit-text-stroke: 2px black;">red</span></span> normal',
+  );
+
+  const div = document.createElement('div');
+  div.append(renderVTTTokensDOM(tokenizeVTTCue(cue)));
+  const big = div.querySelector<HTMLElement>('[data-span="big"]')!;
+  expect(big.style.fontSize).toBe('1.5em');
+  expect(big.className).toBe('shout');
+  expect(div.querySelector<HTMLElement>('[data-span="red"]')!.style.color).toBe('rgb(255, 0, 0)');
+});
+
+test('unknown span keys fall back to plain classes', () => {
+  const cue = new VTTCue(0, 10, '<c.s-missing>x</c>');
+  expect(renderVTTCueString(cue)).toBe('<span class="s-missing">x</span>');
+});
+
+test('drawings render as inline SVG', () => {
+  const cue = new VTTCue(0, 10, '<c.s-shape></c>');
+  cue.spans = {
+    shape: {
+      drawing: {
+        path: 'M 0 0 L 10 0 L 10 10 Z',
+        viewBox: [0, 0, 10, 10],
+        width: 20,
+        height: 10,
+        fill: '#00ff00',
+      },
+    },
+  };
+  const html = renderVTTCueString(cue);
+  expect(html).toContain('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"');
+  expect(html).toContain('width:calc(var(--overlay-width) * 0.2)');
+  expect(html).toContain('<path d="M 0 0 L 10 0 L 10 10 Z" fill="#00ff00" />');
+
+  const div = document.createElement('div');
+  div.append(renderVTTTokensDOM(tokenizeVTTCue(cue)));
+  expect(div.querySelector('svg path')?.getAttribute('d')).toBe('M 0 0 L 10 0 L 10 10 Z');
+
+  cue.spans.shape.drawing!.path = 'M 0 0 <script>';
+  expect(renderVTTCueString(cue)).not.toContain('<svg');
+});
