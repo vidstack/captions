@@ -167,7 +167,8 @@
     "size": "node scripts/size-check.mjs",
     "docs": "typedoc",
     "coverage": "vp test --run --project unit --coverage",
-    "playground": "vp dev --open=/playground/index.html --port=3200"
+    "playground": "vp dev --open=/playground/index.html --port=3200",
+    "bench": "vp test bench --run --project unit"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",

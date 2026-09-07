@@ -104,6 +104,9 @@ export default defineConfig({
   test: {
     globals: true,
     testTimeout: 5000,
+    benchmark: {
+      include: ['tests/bench/**/*.bench.ts'],
+    },
     projects: [
       {
         extends: true,
@@ -119,6 +122,8 @@ export default defineConfig({
         test: {
           name: 'browser',
           include: ['tests/browser/**/*.test.ts'],
+          // Benchmarks are Node-only; `extends` merges arrays so exclude rather than empty include.
+          benchmark: { exclude: ['tests/bench/**'] },
           browser: {
             enabled: true,
             headless: true,
