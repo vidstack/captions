@@ -5,9 +5,12 @@
  * Chromium builds, hence the small mismatch allowance.
  */
 import { parseText, VTTRegion } from 'media-captions';
-import { page } from 'vitest/browser';
+import { page, server } from 'vitest/browser';
 
 import { createFixture, cue, nextFrame, sleep, type Fixture } from './helpers';
+
+// Baselines are recorded from Chromium only; Firefox and WebKit run the functional suites.
+const visual = test.skipIf(server.browser !== 'chromium');
 
 let fixture: Fixture;
 
@@ -29,7 +32,7 @@ async function snapshot(name: string) {
   });
 }
 
-test('default cue with formatting', async () => {
+visual('default cue with formatting', async () => {
   fixture.renderer.changeTrack({
     cues: [cue(0, 10, 'Default cue with <b>bold</b>, <i>italic</i>, and <c.yellow>colour</c>')],
   });
@@ -37,7 +40,7 @@ test('default cue with formatting', async () => {
   await snapshot('default-cue');
 });
 
-test('positioned and stacked cues', async () => {
+visual('positioned and stacked cues', async () => {
   fixture.renderer.changeTrack({
     cues: [
       cue(0, 10, 'line:0', { line: 0 }),
@@ -63,7 +66,7 @@ test('positioned and stacked cues', async () => {
   await snapshot('positioned-and-stacked');
 });
 
-test('roll-up region', async () => {
+visual('roll-up region', async () => {
   const region = new VTTRegion();
   Object.assign(region, {
     id: 'r',
@@ -86,7 +89,7 @@ test('roll-up region', async () => {
   await snapshot('roll-up-region');
 });
 
-test('SSA styles', async () => {
+visual('SSA styles', async () => {
   const result = await parseText(
     `[Script Info]
 PlayResX: 1280
@@ -110,7 +113,7 @@ Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\pos(640,400)\\an5}Positione
   await snapshot('ssa-styles');
 });
 
-test('edge styles', async () => {
+visual('edge styles', async () => {
   fixture.overlay.setAttribute('data-edge-style', 'uniform');
   fixture.overlay.style.setProperty('--cue-bg-color', 'transparent');
   fixture.renderer.changeTrack({

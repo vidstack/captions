@@ -1463,7 +1463,7 @@ pnpm check           # oxfmt + oxlint via Vite+ (`vp check`)
 pnpm typecheck       # tsc
 pnpm test            # unit suites (node + jsdom) and real-browser layout suites (Playwright)
 pnpm test:unit
-pnpm test:browser    # needs `pnpm exec playwright install chromium` once
+pnpm test:browser    # Chromium; BROWSERS=chromium,firefox,webkit widens it (playwright install <engine> once)
 pnpm build           # vp pack (tsdown + publint + attw) -> dist/prod.js and the cea, element, entities, parsers/* entries
 pnpm size            # gzipped size budgets per entry (scripts/size-check.mjs)
 pnpm coverage        # unit suites with V8 coverage
@@ -1492,7 +1492,7 @@ Sandbox scenarios (used for the README images): `cues`, `regions`, `region-scrol
 incrementally), and `element` (`<media-captions>`).
 
 CI (`.github/workflows/ci.yml`) runs formatting, linting, type-checking, the unit, WPT, IMSC,
-corpus, and fuzz suites with coverage, the Chromium layout suites, the build with package checks,
+corpus, and fuzz suites with coverage, the layout suites in Chromium, Firefox, and WebKit, the build with package checks,
 the size budgets, and publishes the API docs as an artifact. `release.yml` publishes to npm with
 provenance when a `v*` tag is pushed. Screenshot baselines are per platform, so the visual suite
 is excluded in CI until Linux baselines exist; the manual `record-baselines.yml` workflow records
@@ -1502,7 +1502,7 @@ Parsing is covered by the vendored web-platform-tests WebVTT suites under `tests
 tests; the handful of intentional real-world tolerances are listed in
 `tests/wpt/KNOWN_DIVERGENCES.md` and tracked with `test.fails`), by the W3C IMSC test documents
 under `tests/imsc`, by hand-written conformance suites under `tests/conformance` (WebVTT file
-structure, cue text, SSA/ASS incl. typesetting), and by per-format suites. Rendering is measured in Chromium under
+structure, cue text, SSA/ASS incl. typesetting), and by per-format suites. Rendering is measured in Chromium, Firefox, and WebKit under
 `tests/browser` (stacking, line snapping, percentage lines, position/size/align, vertical text,
 RTL, regions, resize, SSA layout, transforms). `tests/browser/visual.test.ts` adds screenshot
 comparisons with a small pixel tolerance; baselines live in `tests/browser/__screenshots__` per

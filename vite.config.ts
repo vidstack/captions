@@ -131,7 +131,11 @@ export default defineConfig({
             enabled: true,
             headless: true,
             provider: playwright(),
-            instances: [{ browser: 'chromium' }],
+            // Chromium is the default; `BROWSERS=chromium,firefox,webkit` widens the matrix (each
+            // engine needs `playwright install <name>` once).
+            instances: (process.env.BROWSERS ?? 'chromium')
+              .split(',')
+              .map((browser) => ({ browser: browser.trim() as 'chromium' | 'firefox' | 'webkit' })),
             screenshotFailures: false,
             viewport: { width: 1280, height: 800 },
           },
