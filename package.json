@@ -51,7 +51,6 @@
     "styles/"
   ],
   "type": "module",
-  "packageManager": "pnpm@10.5.2",
   "sideEffects": false,
   "main": "./dist/prod.js",
   "types": "./dist/prod.d.ts",
@@ -205,6 +204,7 @@
   "engines": {
     "node": ">=18"
   },
+  "packageManager": "pnpm@10.5.2",
   "pnpm": {
     "overrides": {
       "vite": "npm:@voidzero-dev/vite-plus-core@0.3.0",
