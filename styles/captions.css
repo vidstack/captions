@@ -166,6 +166,7 @@
     font-size: 1.25em;
   }
 
+  :where([data-part='captions'] [data-part='cue'].small-caps),
   :where([data-part='captions'] [data-part='cue'] .small-caps) {
     font-variant: small-caps;
   }
