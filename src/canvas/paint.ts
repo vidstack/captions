@@ -74,32 +74,35 @@ export function paintCue(ctx: PaintContext, cue: MeasuredCue, box: Box, options:
     left += display.translate.x * box.width;
   if (display.top === undefined && display.translate?.y !== undefined)
     top += display.translate.y * box.height;
-  const painted = { left, top, width: box.width, height: box.height };
+  const painted = { left, top, width: box.width, height: box.height },
+    alpha = cue.style.opacity * (display.opacity ?? 1) * (inner.opacity ?? 1);
 
-  ctx.save();
-  ctx.translate(container.left + left, container.top + top);
-  ctx.globalAlpha *= cue.style.opacity * (display.opacity ?? 1) * (inner.opacity ?? 1);
+  withGroupAlpha(ctx, alpha, (layer) => {
+    layer.save();
+    layer.translate(container.left + left, container.top + top);
 
-  // Clips: screen-fixed rectangles and polygons (SSA `\clip`, scroll bands) or box insets (wipes).
-  const clip = display.clip ?? cue.style.clip;
-  if (clip) {
-    const { points, evenOdd } = clipToPolygon(clip, container, painted);
-    ctx.beginPath();
-    points.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-    ctx.closePath();
-    ctx.clip(evenOdd ? 'evenodd' : 'nonzero');
-  }
+    // Clips: screen-fixed rectangles and polygons (SSA `\clip`, scroll bands) or box insets
+    // (wipes).
+    const clip = display.clip ?? cue.style.clip;
+    if (clip) {
+      const { points, evenOdd } = clipToPolygon(clip, container, painted);
+      layer.beginPath();
+      points.forEach(([x, y], i) => (i ? layer.lineTo(x, y) : layer.moveTo(x, y)));
+      layer.closePath();
+      layer.clip(evenOdd ? 'evenodd' : 'nonzero');
+    }
 
-  // Cue transforms (SSA rotation/scale, `\t`) pivot on the alignment anchor or `\org`.
-  const transform = combineTransforms(
-    transform2D(cue.style.transform),
-    transform2D(display.transform),
-    transform2D(inner.transform),
-  );
-  applyTransform(ctx, transform, transformOriginPx(cue.style.transform, container, painted));
+    // Cue transforms (SSA rotation/scale, `\t`) pivot on the alignment anchor or `\org`.
+    const transform = combineTransforms(
+      transform2D(cue.style.transform),
+      transform2D(display.transform),
+      transform2D(inner.transform),
+    );
+    applyTransform(layer, transform, transformOriginPx(cue.style.transform, container, painted));
 
-  paintCueContent(ctx, cue, options, inner);
-  ctx.restore();
+    paintCueContent(layer, cue, options, inner);
+    layer.restore();
+  });
 }
 
 /** Paints a region: clipped to its box, cues stacked from the bottom (`scroll: up`) or top. */
@@ -119,11 +122,13 @@ export function paintRegion(
   let y =
     region.region.scroll === 'up' ? box.height - region.rowHeights.reduce((s, h) => s + h, 0) : 0;
   region.visible.forEach((cue, i) => {
-    ctx.save();
-    ctx.translate(cue.box.left, y + 1);
-    ctx.globalAlpha *= cue.style.opacity;
-    paintCueContent(ctx, cue, options, {});
-    ctx.restore();
+    const top = y + 1;
+    withGroupAlpha(ctx, cue.style.opacity, (layer) => {
+      layer.save();
+      layer.translate(cue.box.left, top);
+      paintCueContent(layer, cue, options, {});
+      layer.restore();
+    });
     y += region.rowHeights[i];
   });
   ctx.restore();
@@ -260,12 +265,26 @@ function paintRun(
   theme: CanvasTheme,
   over: RunOverrides,
 ) {
+  withGroupAlpha(ctx, run.style.opacity * over.alpha, (layer) =>
+    paintRunContent(layer, run, x, y, lineHeight, cue, theme, over),
+  );
+}
+
+function paintRunContent(
+  ctx: PaintContext,
+  run: Run,
+  x: number,
+  y: number,
+  lineHeight: number,
+  cue: MeasuredCue,
+  theme: CanvasTheme,
+  over: RunOverrides,
+) {
   const { style } = run,
     { container } = theme,
     env: LengthEnv = { width: container.width, height: container.height, em: style.fontSize };
 
   ctx.save();
-  ctx.globalAlpha *= style.opacity * over.alpha;
 
   if (style.transform || over.frame.transform) {
     const runBox = { left: x, top: y, width: run.width, height: lineHeight };
@@ -424,30 +443,30 @@ function paintColumns(
           time: options.time,
         });
 
-      ctx.save();
-      ctx.globalAlpha *= run.style.opacity * (span.opacity ?? 1);
-      if (run.style.bgColor && !NO_COLOR.has(run.style.bgColor)) {
-        ctx.fillStyle = run.style.bgColor;
-        ctx.fillRect(x, y, flow.lineHeight, run.width);
-      }
+      const top = y;
+      withGroupAlpha(ctx, run.style.opacity * (span.opacity ?? 1), (layer) => {
+        if (run.style.bgColor && !NO_COLOR.has(run.style.bgColor)) {
+          layer.fillStyle = run.style.bgColor;
+          layer.fillRect(x, top, flow.lineHeight, run.width);
+        }
 
-      if (run.ruby) {
-        const { ruby } = run,
-          baseWidth = run.baseWidth ?? run.width;
-        paintVerticalText(ctx, cue, ruby, fill, rubyCx, y + (run.width - ruby.width) / 2);
-        paintVerticalText(
-          ctx,
-          cue,
-          { text: run.text, style: run.style, width: baseWidth, upright: run.upright },
-          fill,
-          cx,
-          y + (run.width - baseWidth) / 2,
-        );
-      } else {
-        paintVerticalText(ctx, cue, run, fill, cx, y);
-      }
+        if (run.ruby) {
+          const { ruby } = run,
+            baseWidth = run.baseWidth ?? run.width;
+          paintVerticalText(layer, cue, ruby, fill, rubyCx, top + (run.width - ruby.width) / 2);
+          paintVerticalText(
+            layer,
+            cue,
+            { text: run.text, style: run.style, width: baseWidth, upright: run.upright },
+            fill,
+            cx,
+            top + (run.width - baseWidth) / 2,
+          );
+        } else {
+          paintVerticalText(layer, cue, run, fill, cx, top);
+        }
+      });
       y += run.width;
-      ctx.restore();
     }
   });
 }
@@ -533,6 +552,72 @@ function sampleTarget(
     );
   }
   return frame;
+}
+
+/**
+ * Paints `draw` as one group at `alpha`, like CSS `opacity` on the cue box. Text is several draw
+ * calls (shadow, stroke, fill, background) and `globalAlpha` applies to each, so stacking them
+ * would composite to `1 - (1 - alpha)^n`: a fade would hold near opaque and then drop off. Below
+ * full opacity the group is painted at full alpha into a scratch layer the size of the canvas and
+ * composited once, under the caller's clip.
+ */
+function withGroupAlpha(ctx: PaintContext, alpha: number, draw: (ctx: PaintContext) => void) {
+  if (alpha >= 1) {
+    draw(ctx);
+    return;
+  }
+  if (alpha <= 0) return;
+
+  const layer = acquireLayer(ctx);
+  if (!layer) {
+    // No scratch canvas available (unusual runtime): fall back to per-call alpha.
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    draw(ctx);
+    ctx.restore();
+    return;
+  }
+
+  layer.save();
+  layer.setTransform(ctx.getTransform());
+  draw(layer);
+  layer.restore();
+
+  ctx.save();
+  ctx.resetTransform();
+  ctx.globalAlpha *= alpha;
+  ctx.drawImage(layer.canvas, 0, 0);
+  ctx.restore();
+  releaseLayer(ctx, layer);
+}
+
+/** Free scratch layers per target canvas; nested groups take one each. */
+const LAYERS = new WeakMap<object, PaintContext[]>();
+
+function acquireLayer(ctx: PaintContext): PaintContext | null {
+  const { width, height } = ctx.canvas,
+    pool = LAYERS.get(ctx.canvas) ?? [];
+  LAYERS.set(ctx.canvas, pool);
+  let layer = pool.pop() ?? null;
+  if (!layer) {
+    if (typeof OffscreenCanvas === 'function') {
+      layer = new OffscreenCanvas(width, height).getContext('2d');
+    } else if (typeof document !== 'undefined') {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      layer = canvas.getContext('2d');
+    }
+    if (!layer) return null;
+  }
+  if (layer.canvas.width !== width) layer.canvas.width = width;
+  if (layer.canvas.height !== height) layer.canvas.height = height;
+  return layer;
+}
+
+function releaseLayer(ctx: PaintContext, layer: PaintContext) {
+  layer.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+  LAYERS.get(ctx.canvas)?.push(layer);
 }
 
 function applyTransform(ctx: PaintContext, t: Transform2D, [ox, oy]: [number, number]) {

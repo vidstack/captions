@@ -330,3 +330,30 @@ test('3D rotations project orthographically: rotateY squashes the box horizontal
   expect(clear(left, cy - 2, box.width * 0.3, 4)).toBe(true);
   expect(clear(left + box.width * 0.7, cy - 2, box.width * 0.3, 4)).toBe(true);
 });
+
+test('cue opacity composites the cue as one group, like CSS opacity', () => {
+  const c = cue(0, 10, 'Half transparent');
+  c.textStyle = { opacity: 0.5 };
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+    edgeStyle: 'uniform',
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  paintCaptions(ctx, [c], 1, { edgeStyle: 'uniform' });
+
+  // Background, stroke, and fill overlap; painted separately at 0.5 they would stack to about
+  // 0.85 (217). As a group the most opaque pixel is the fill at 0.5 (128).
+  const { box } = target,
+    data = ctx.getImageData(
+      Math.round(theme.container.left + box.left),
+      Math.round(theme.container.top + box.top),
+      Math.round(box.width),
+      Math.round(box.height),
+    ).data;
+  let maxAlpha = 0;
+  for (let i = 3; i < data.length; i += 4) if (data[i] > maxAlpha) maxAlpha = data[i];
+  expect(maxAlpha).toBeGreaterThan(100);
+  expect(maxAlpha).toBeLessThan(140);
+});
