@@ -20,6 +20,14 @@ export interface CueTrackOptions {
    * @defaultValue Infinity
    */
   maxCues?: number;
+  /**
+   * Ignore `add()` of a cue that duplicates an existing one (same start, end, id, and text).
+   * HLS WebVTT segments repeat cues that straddle segment boundaries, and HLS/DASH players
+   * frequently re-request segments; enable this when feeding a track from segments.
+   *
+   * @defaultValue false
+   */
+  dedupe?: boolean;
 }
 
 /**
@@ -37,10 +45,12 @@ export class CueTrack {
   private _listeners = new Set<CueTrackListener>();
   private _retention: number;
   private _maxCues: number;
+  private _dedupe: boolean;
 
   constructor(cues?: Iterable<VTTCue>, options: CueTrackOptions = {}) {
     this._retention = options.retention ?? Infinity;
     this._maxCues = options.maxCues ?? Infinity;
+    this._dedupe = options.dedupe ?? false;
     if (cues) for (const cue of cues) this._insert(cue);
   }
 
@@ -59,6 +69,7 @@ export class CueTrack {
 
   add(cue: VTTCue) {
     if (this.has(cue)) return this.update(cue);
+    if (this._dedupe && this.findDuplicate(cue)) return;
     this._insert(cue);
     this._emit(cue, 'add');
     this._enforceLimit();
@@ -94,6 +105,33 @@ export class CueTrack {
     this._cues = [];
     this._maxEnd = [];
     this._emit(null, 'clear');
+  }
+
+  /**
+   * Finds an existing cue with the same start, end, id, and text, using the sorted index so the
+   * scan only touches cues sharing the start time.
+   */
+  findDuplicate(cue: VTTCue): VTTCue | null {
+    const cues = this._cues;
+    let lo = 0,
+      hi = cues.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (cues[mid].startTime < cue.startTime) lo = mid + 1;
+      else hi = mid;
+    }
+    for (let i = lo; i < cues.length && cues[i].startTime === cue.startTime; i++) {
+      const other = cues[i];
+      if (
+        other !== cue &&
+        other.endTime === cue.endTime &&
+        other.id === cue.id &&
+        other.text === cue.text
+      ) {
+        return other;
+      }
+    }
+    return null;
   }
 
   /** Cues active at `time`, in start-time order. */

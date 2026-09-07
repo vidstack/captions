@@ -80,3 +80,18 @@ test('adding an existing cue updates it instead of duplicating', () => {
   expect(track.size).toBe(1);
   expect(track.activeAt(4)).toEqual([a]);
 });
+
+test('dedupe ignores cues repeated across segments', () => {
+  const track = new CueTrack(undefined, { dedupe: true }),
+    added: string[] = [];
+  track.on((c, type) => type === 'add' && added.push(c!.text));
+  track.add(cue(10, 12, 'straddles'));
+  track.add(cue(10, 12, 'straddles')); // same cue from the next segment
+  const different = cue(10, 12, 'straddles');
+  different.id = 'other';
+  track.add(different);
+  expect(track.size).toBe(2);
+  expect(added).toEqual(['straddles', 'straddles']);
+  expect(track.findDuplicate(cue(10, 12, 'straddles'))).not.toBeNull();
+  expect(track.findDuplicate(cue(10, 13, 'straddles'))).toBeNull();
+});
