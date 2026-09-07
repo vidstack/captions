@@ -297,21 +297,27 @@ function tokenize(cue: VTTCue): VTTNode[] {
   }
 
   /**
-   * Closes the nearest open node matching the end tag name. Unknown or mismatched end tags are
-   * ignored so they can not corrupt nesting (e.g., `</font>` from SRT files).
+   * Closes the current node when the end tag matches it; `</ruby>` also closes an open `<rt>`.
+   * Any other end tag (unknown, mismatched, or matching an ancestor) is ignored, exactly as the
+   * WebVTT cue text parsing rules say, so it can not corrupt nesting (e.g., `</font>` from SRT).
    */
   function closeNode(name: string) {
     if (!node) return;
 
-    // Ancestors first, current node last.
+    // Ancestors first, current node last. Timestamp nodes are transparent (the spec's timestamps
+    // are leaves; ours wrap the text that follows them), so look through them.
     const chain = [...stack, node];
+    let i = chain.length - 1;
+    while (i > 0 && chain[i].type === 'timestamp') i--;
 
-    for (let i = chain.length - 1; i >= 0; i--) {
-      if (chain[i].type === name) {
-        node = i > 0 ? chain[i - 1] : undefined;
-        stack.length = Math.max(0, i - 1);
-        return;
-      }
+    const popTo = (k: number) => {
+      node = k >= 0 ? chain[k] : undefined;
+      stack.length = Math.max(0, k);
+    };
+
+    if (chain[i].type === name) popTo(i - 1);
+    else if (name === 'ruby' && chain[i].type === 'rt' && i > 0 && chain[i - 1].type === 'ruby') {
+      popTo(i - 2);
     }
   }
 

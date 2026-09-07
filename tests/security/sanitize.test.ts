@@ -44,9 +44,9 @@ describe('tokenizer nesting', () => {
     expect(renderVTTCueString(cue)).toBe('<i>a b c</i>');
   });
 
-  test('mismatched end tag closes the nearest matching ancestor', () => {
+  test('a mismatched end tag is ignored and never corrupts nesting (spec)', () => {
     const cue = new VTTCue(0, 10, '<b><i>x</b>y');
-    expect(renderVTTCueString(cue)).toBe('<b><i>x</i></b>y');
+    expect(renderVTTCueString(cue)).toBe('<b><i>xy</i></b>');
   });
 
   test('closing ruby closes ruby text', () => {

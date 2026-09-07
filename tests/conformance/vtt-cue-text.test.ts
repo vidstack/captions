@@ -51,6 +51,11 @@ describe('tags', () => {
     expect(render('a</b>b</i>c')).toBe('abc');
   });
 
+  test('an end tag that matches an ancestor, not the current node, is ignored (spec)', () => {
+    expect(render('<b><i>x</b> y')).toBe('<b><i>x y</i></b>');
+    expect(render('<ruby>a<rt><b>b</rt></ruby>c')).toBe('<ruby>a<rt><b>bc</b></rt></ruby>');
+  });
+
   test('ruby text is closed by </ruby>', () => {
     expect(render('<ruby>漢<rt>kan</ruby>字')).toBe('<ruby>漢<rt>kan</rt></ruby>字');
   });
