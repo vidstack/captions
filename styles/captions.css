@@ -101,6 +101,10 @@
     unicode-bidi: plaintext;
     min-width: min-content;
     min-height: min-content;
+    /* Image cues (IMSC) set `background-image` on the box: fit it, do not tile it. */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
   }
 
   :where([data-dir='rtl'] [data-part='cue-display']) {
