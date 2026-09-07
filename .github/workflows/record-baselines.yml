@@ -1,16 +1,20 @@
 name: Record visual baselines
 
-# Records screenshot baselines for chromium on Linux and opens a pull request with them, so the
-# visual regression suite can run in CI. Trigger manually after intentional rendering changes.
+# Records the Chromium screenshot baselines on Linux (the CI platform) and uploads them as an
+# artifact. Trigger manually after an intentional rendering change, then:
+#
+#   gh run download <run-id> -n visual-baselines -D tests/browser/__screenshots__
+#
+# and commit the result. Baselines are per browser and platform, so the macOS ones recorded locally
+# stay untouched.
 on:
   workflow_dispatch:
+  # Temporary: record on this pull request once, then remove.
+  pull_request:
 
 jobs:
   record:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,9 +25,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm vp test --run --project browser tests/browser/visual.test.ts --update
-      - uses: peter-evans/create-pull-request@v6
+      - uses: actions/upload-artifact@v4
         with:
-          commit-message: 'test(browser): record linux visual baselines'
-          title: 'test(browser): record linux visual baselines'
-          branch: ci/visual-baselines
-          add-paths: tests/browser/__screenshots__
+          name: visual-baselines
+          path: tests/browser/__screenshots__/visual.test.ts/*-linux.png
+          if-no-files-found: error
