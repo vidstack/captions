@@ -33,7 +33,8 @@ jobs:
           BROWSERS: chromium,firefox,webkit
       - run: pnpm build
       - run: pnpm size
-      - run: pnpm docs
+      # `pnpm docs` is forwarded to npm's built-in `docs` (opens a browser); run the script.
+      - run: pnpm run docs
       - uses: actions/upload-artifact@v4
         with:
           name: api-docs

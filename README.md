@@ -1622,7 +1622,7 @@ pnpm test:browser    # Chromium; BROWSERS=chromium,firefox,webkit widens it (pla
 pnpm build           # vp pack (tsdown + publint + attw) -> dist/prod.js and the cea, element, entities, parsers/* entries
 pnpm size            # gzipped size budgets: published entries + tree-shaken usage probes (scripts/size-check.mjs)
 pnpm coverage        # unit suites with V8 coverage
-pnpm docs            # TypeDoc API reference into docs/api
+pnpm run docs        # TypeDoc API reference into docs/api (`pnpm docs` is npm's browser opener)
 pnpm playground      # interactive playground at http://localhost:3200/playground/index.html
 pnpm sandbox         # interactive scenarios at http://localhost:3100/.sandbox/index.html
 pnpm screenshots     # regenerates the README images from the sandbox scenarios

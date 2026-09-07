@@ -4,7 +4,10 @@
     "src/index.ts",
     "src/cea/index.ts",
     "src/element/index.ts",
-    "src/entities/index.ts"
+    "src/entities/index.ts",
+    "src/mp4/index.ts",
+    "src/renderer/index.ts",
+    "src/canvas/index.ts"
   ],
   "out": "docs/api",
   "name": "media-captions",
