@@ -144,6 +144,8 @@ interface SSAStyle {
   alpha?: number;
   /** `\pos(x, y)` (or the start of `\move`) in script pixels. */
   pos?: { x: number; y: number };
+  /** `\\org(x, y)` rotation origin in script pixels. */
+  org?: { x: number; y: number };
   /** `\move` end point; the animation itself is emitted while transforming the text. */
   move?: { x: number; y: number };
   /** `\clip` rectangle or flattened drawing contours in script pixels. */
@@ -821,6 +823,12 @@ export class SSAParser implements CaptionsParser {
           if (x !== undefined && y !== undefined) style.pos = { x, y };
           break;
         }
+
+        case 'org': {
+          const [x, y] = parseNumbers(arg);
+          if (x !== undefined && y !== undefined) style.org = { x, y };
+          break;
+        }
         case 'move': {
           const nums = parseNumbers(arg);
           if (nums.length < 4) break;
@@ -1163,7 +1171,24 @@ export class SSAParser implements CaptionsParser {
       }
     }
 
+    // libass rotates and scales around `\\org`, or the alignment anchor by default; CSS defaults to
+    // the box centre, which grows a bottom-anchored `\\fscy` line downwards off screen. Inline
+    // `\\fr*`/`\\fsc*` runs are transformed as spans, so the pivot goes on those too.
+    let origin: string | undefined;
     if (transform.length) text.transform = transform.join(' ');
+    if (transform.length || this._animatesTransform(cue)) {
+      text.transformOrigin = origin = this._transformOrigin(style, layout, horizontal, vertical);
+    }
+    for (const span of Object.values(cue.spans ?? {})) {
+      if (span.transform) {
+        span.transformOrigin = origin ??= this._transformOrigin(
+          style,
+          layout,
+          horizontal,
+          vertical,
+        );
+      }
+    }
 
     // `\clip` on positioned cues is expressed in the box's own coordinate space (the origin is
     // known from `\pos`). Without `\pos` the box is placed by the layout engine, so rectangular
@@ -1191,6 +1216,36 @@ export class SSAParser implements CaptionsParser {
 
     cue.layout = layout;
     cue.textStyle = text;
+  }
+
+  /** Transform origin: `\\org` when the box origin is known (positioned cues), else the anchor. */
+  /** Whether a `\\t` animates the cue box's transform (span-targeted ones carry their own pivot). */
+  protected _animatesTransform(cue: VTTCue) {
+    return !!cue.animations?.some(
+      (anim) =>
+        typeof anim.target !== 'object' && anim.keyframes.some((frame) => 'transform' in frame),
+    );
+  }
+
+  protected _transformOrigin(
+    style: SSAStyle,
+    layout: CueLayout,
+    horizontal: number,
+    vertical: number,
+  ): string {
+    if (style.org && style.pos) {
+      const left = (layout.left ?? 0) / 100,
+        top = (layout.top ?? 0) / 100,
+        tx = -(layout.translate?.x ?? 0) * 100,
+        ty = -(layout.translate?.y ?? 0) * 100;
+      return (
+        `calc(var(--overlay-width) * ${round(style.org.x / this._playResX - left, 5)} + ${round(tx)}%) ` +
+        `calc(var(--overlay-height) * ${round(style.org.y / this._playResY - top, 5)} + ${round(ty)}%)`
+      );
+    }
+    const x = horizontal === 0 ? '0%' : horizontal === 2 ? '100%' : '50%',
+      y = vertical === 2 ? '0%' : vertical === 1 ? '50%' : '100%';
+    return `${x} ${y}`;
   }
 
   /**

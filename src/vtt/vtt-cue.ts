@@ -192,6 +192,8 @@ export interface CueSpanStyle {
   textStroke?: string;
   textShadow?: string;
   transform?: string;
+  /** Pivot for `transform` (e.g., the SSA alignment anchor or `\\org`). */
+  transformOrigin?: string;
   /** Needed for `transform` to take effect on a run (`inline-block`). */
   display?: string;
   opacity?: string;
@@ -257,6 +259,8 @@ export interface CueTextStyle {
   paddingY?: string;
   /** Extra transforms (scale/rotate) applied after the layout translation. */
   transform?: string;
+  /** CSS `transform-origin` for `transform` (e.g., the SSA alignment anchor or `\\org`). */
+  transformOrigin?: string;
   /** CSS `background-image` (e.g., IMSC image cues as data URLs). */
   backgroundImage?: string;
   /** CSS `animation` shorthand; `media-captions-fade-in` and `media-captions-wipe-in` keyframes ship in the stylesheet. */

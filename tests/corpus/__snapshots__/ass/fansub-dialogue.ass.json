@@ -782,7 +782,8 @@
       "spans": {
         "0": {
           "transform": "scaleX(1.2) scaleY(0.8) rotateY(-20deg)",
-          "display": "inline-block"
+          "display": "inline-block",
+          "transformOrigin": "50% 100%"
         }
       }
     },

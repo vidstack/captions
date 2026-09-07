@@ -41,6 +41,6 @@ Dialogue: 0,0:00:12.00,0:00:16.00,Default,,0,0,0,,{\an5\pos(640,360)\clip(340,30
 Dialogue: 0,0:00:16.00,0:00:20.00,Default,,0,0,0,Scroll up;600;100;40,Scroll up effect through a band
 Dialogue: 0,0:00:18.00,0:00:22.00,Default,,0,0,0,Banner;20;0;60,Banner text scrolls right to left across the screen like a ticker
 Dialogue: 0,0:00:20.00,0:00:24.00,Default,,0,0,0,,Per-span {\fs76}bigger{\fs52} and {\fnCourier New}monospace{\fnArial} and {\b1}bold{\b0} runs
-Dialogue: 0,0:00:22.00,0:00:26.00,Default,,0,0,0,,{\an8\frz15\fscx110}Rotated with \frz and stretched with \fscx
+Dialogue: 0,0:00:22.00,0:00:26.00,Default,,0,0,0,,{\an5\pos(640,300)\frz15\fscx110}Rotated with \frz and stretched with \fscx
 `,
 };

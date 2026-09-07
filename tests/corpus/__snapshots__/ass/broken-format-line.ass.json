@@ -341,7 +341,8 @@
       "spans": {
         "0": {
           "transform": "scaleX(0)",
-          "display": "inline-block"
+          "display": "inline-block",
+          "transformOrigin": "50% 100%"
         }
       }
     },

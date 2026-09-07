@@ -122,3 +122,42 @@ test('transformed text is not clipped by the cue box', async () => {
   // The span genuinely extends beyond the display box, so it would be clipped under paint containment.
   expect(rect(span).height).toBeGreaterThan(rect(display).height * 1.5);
 });
+
+test('inline scale and rotation pivot on the alignment anchor', async () => {
+  const ass = `[Script Info]
+PlayResX: 1280
+PlayResY: 720
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,40,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,8,40,40,20,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\fscy200}Tall
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an2\\frz15}Rotated
+`;
+  const result = await parseText(ass, { type: 'ass' });
+  fixture.renderer.changeTrack(result);
+  fixture.renderer.currentTime = 1;
+  await nextFrame();
+  const [tall, rotated] = cueDisplays(fixture.overlay).map(
+    (display) => [display, display.querySelector<HTMLElement>('[data-part="cue"] span')!] as const,
+  );
+
+  // Top-anchored: doubling the height grows downwards from the anchor, so the painted glyphs start
+  // where the untransformed line would (a centre pivot would push them half a line above it).
+  const tallBox = rect(tall[0]),
+    tallSpan = rect(tall[1]);
+  expect(getComputedStyle(tall[1]).transformOrigin).toMatch(/^\d+(\.\d+)?px 0px$/);
+  expect(tallSpan.height).toBeGreaterThan(tallBox.height * 1.5);
+  expect(Math.abs(tallSpan.top - tallBox.top)).toBeLessThan(tallBox.height * 0.25);
+
+  // Bottom-anchored rotation pivots on the bottom centre.
+  const rotatedSpan = tall[1] === rotated[1] ? null : rotated[1];
+  expect(rotatedSpan).not.toBeNull();
+  const origin = getComputedStyle(rotatedSpan!).transformOrigin.split(' ').map(parseFloat),
+    untransformed = rotatedSpan!.offsetWidth;
+  expect(origin[0]).toBeCloseTo(untransformed / 2, 0);
+  expect(origin[1]).toBeCloseTo(rotatedSpan!.offsetHeight, 0);
+});

@@ -15,6 +15,7 @@ const SPAN_STYLE_PROPS: Record<string, string> = {
   textStroke: '-webkit-text-stroke',
   textShadow: 'text-shadow',
   transform: 'transform',
+  transformOrigin: 'transform-origin',
   display: 'display',
   opacity: 'opacity',
   filter: 'filter',

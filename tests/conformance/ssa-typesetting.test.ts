@@ -3,7 +3,7 @@
  * `\p` drawings, `\clip`, `Effect` fields, and wrap styles. Verifies the structured output the
  * renderer consumes (`cue.spans`, `cue.animations`, `layout.clipPath`).
  */
-import { parseText, renderVTTCueString } from 'media-captions';
+import { parseText, renderVTTCueString, type VTTCue } from 'media-captions';
 
 const STYLE_FORMAT =
   'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding';
@@ -68,6 +68,7 @@ describe('per-span override tags', () => {
     expect(cue.spans!['0']).toEqual({
       fontFamily: '"Impact", sans-serif',
       transform: 'scaleX(1.2) rotate(-10deg)',
+      transformOrigin: '50% 100%',
       display: 'inline-block',
       textStroke: `${lenY(8)} rgba(255,0,0,1)`,
       textShadow: `${lenY(3)} ${lenY(3)} 0 rgba(0,255,0,1)`,
@@ -81,6 +82,7 @@ describe('per-span override tags', () => {
     const cue = await one('{\\frx30\\fry-45\\fscy50}x');
     expect(cue.spans!['0']).toEqual({
       transform: 'scaleY(0.5) rotateX(-30deg) rotateY(45deg)',
+      transformOrigin: '50% 100%',
       display: 'inline-block',
     });
   });
@@ -635,5 +637,51 @@ describe('tag emission', () => {
     expect(cues[0].layout?.clipRect).toEqual({ left: 0, top: 0, right: 50, bottom: 50 });
     expect(cues[0].layout?.clipPath).toBeUndefined();
     expect(cues[0].layout?.fixed).toBeUndefined();
+  });
+});
+
+describe('transform origin', () => {
+  const STYLE =
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1';
+  const doc = (text: string) =>
+    `[Script Info]\nPlayResX: 1280\nPlayResY: 720\n\n[V4+ Styles]\n${STYLE}\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:01.00,0:00:05.00,Default,,0,0,0,,${text}\n`;
+
+  const spans = (cue: VTTCue) => Object.values(cue.spans ?? {});
+
+  test('inline rotation pivots on the alignment anchor by default', async () => {
+    const top = (await parseText(doc('{\\an8\\frz15}x'), { type: 'ass' })).cues[0];
+    expect(spans(top)).toEqual([
+      expect.objectContaining({ transform: 'rotate(-15deg)', transformOrigin: '50% 0%' }),
+    ]);
+    expect(top.textStyle?.transformOrigin).toBeUndefined();
+    const bottomLeft = (await parseText(doc('{\\an1\\frz15}x'), { type: 'ass' })).cues[0];
+    expect(spans(bottomLeft)[0].transformOrigin).toBe('0% 100%');
+    const plain = (await parseText(doc('{\\an5}x'), { type: 'ass' })).cues[0];
+    expect(plain.textStyle?.transformOrigin).toBeUndefined();
+    expect(plain.spans).toBeUndefined();
+  });
+
+  test('a cue-level \\t scale pivots on the anchor', async () => {
+    const cue = (await parseText(doc('{\\an8\\t(\\fscx150\\fscy150)}x'), { type: 'ass' })).cues[0];
+    expect(cue.textStyle?.transform).toBeUndefined();
+    expect(cue.textStyle?.transformOrigin).toBe('50% 0%');
+    expect(cue.animations?.[0].target).toBe('cue');
+    const faded = (await parseText(doc('{\\an8\\fad(200,200)}x'), { type: 'ass' })).cues[0];
+    expect(faded.textStyle?.transformOrigin).toBeUndefined();
+  });
+
+  test('a style-level Angle rotates the cue box around its anchor', async () => {
+    const rotated = doc('{\\an8}x').replace(',100,100,0,0,1,2,0,2,', ',100,100,0,20,1,2,0,2,');
+    const cue = (await parseText(rotated, { type: 'ass' })).cues[0];
+    expect(cue.textStyle?.transform).toBe('rotate(-20deg)');
+    expect(cue.textStyle?.transformOrigin).toBe('50% 0%');
+  });
+
+  test('\\org on a positioned cue becomes an overlay-relative origin', async () => {
+    const cue = (await parseText(doc('{\\pos(640,360)\\org(0,0)\\frz90}x'), { type: 'ass' }))
+      .cues[0];
+    expect(spans(cue)[0].transformOrigin).toMatch(
+      /^calc\(var\(--overlay-width\) \* -0\.5 \+ 50%\) calc\(var\(--overlay-height\) \* -0\.5 \+ 100%\)$/,
+    );
   });
 });

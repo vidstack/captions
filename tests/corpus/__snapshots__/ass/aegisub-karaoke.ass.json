@@ -841,7 +841,8 @@
           "fontSize": "calc(var(--overlay-height) * 0.05)",
           "transform": "rotate(8deg)",
           "display": "inline-block",
-          "textStroke": "0"
+          "textStroke": "0",
+          "transformOrigin": "50% 50%"
         }
       },
       "animations": [
@@ -1076,7 +1077,8 @@
       "spans": {
         "0": {
           "transform": "rotate(-360deg)",
-          "display": "inline-block"
+          "display": "inline-block",
+          "transformOrigin": "50% 100%"
         }
       },
       "animations": [

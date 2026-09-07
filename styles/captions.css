@@ -94,6 +94,7 @@
     font-size: var(--cue-font-size);
     box-sizing: border-box;
     transform: var(--cue-transform);
+    transform-origin: var(--cue-transform-origin, 50% 50%);
     text-align: var(--cue-text-align);
     writing-mode: var(--cue-writing-mode, unset);
     white-space: pre-line;
@@ -120,6 +121,8 @@
     /* Uniform outlines: stroke is painted behind the fill so it never eats into glyphs. */
     paint-order: stroke fill;
     -webkit-text-stroke: var(--cue-text-stroke, 0);
+    /* Transform animations targeting the text box pivot where the box does (SSA anchors, \org). */
+    transform-origin: var(--cue-transform-origin, 50% 50%);
     /* The WebVTT spec asks for balanced line wrapping; browsers can finally do it natively. */
     text-wrap: balance;
   }

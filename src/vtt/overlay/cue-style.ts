@@ -41,6 +41,8 @@ const TEXT_STYLE_VARS: Partial<Record<keyof CueTextStyle, string>> = {
   textShadow: 'cue-text-shadow',
   outline: 'cue-outline',
   paddingY: 'cue-padding-y',
+  // A variable so the text box (the target of transform animations) shares the pivot.
+  transformOrigin: 'cue-transform-origin',
 };
 
 const TEXT_STYLE_PROPS: Partial<Record<keyof CueTextStyle, string>> = {
