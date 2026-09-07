@@ -10,6 +10,7 @@ const GENERATED = [
   'assets/**',
   'tests/wpt/vendor/**',
   'tests/wpt/fixtures/**',
+  'tests/imsc/vendor/**',
   'tests/browser/__screenshots__/**',
   'src/entities/html-entities.ts',
   'pnpm-lock.yaml',

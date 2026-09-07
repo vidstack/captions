@@ -673,6 +673,13 @@ video.addEventListener('timeupdate', () => {
 - `announce`: `true` / `'polite'` / `'assertive'` adds a visually hidden `aria-live` region after
   the overlay that receives the plain text of cues as they appear. The visual overlay itself stays
   `aria-live="off"` because sighted users read it and the audio already carries the words.
+- `stacking`: how simultaneous cues stack. `'reading-order'` (default) keeps the newest cue in the
+  default slot so lines read top-down in cue order; `'spec'` follows the WebVTT rule (and SSA
+  `Collisions: Normal`) where the earliest cue keeps its slot. A track's `Collisions` metadata
+  selects this automatically when the option is omitted.
+- `lineStep`: `'line-height'` (spec) or `'box'`, which snaps lines by the padded cue box height so
+  stacked lines never overlap.
+- `safeArea`: inset from the overlay edges in percent (broadcast title-safe is about 10).
 
 **Props**
 
@@ -910,6 +917,25 @@ cue.textStyle = {
 };
 
 cue.style = { '--cue-padding-x': '0' }; // raw CSS escape hatch, applied last
+
+// Per-run typography: cue text references `cue.spans` with <c.s-KEY>.
+cue.text = 'Normal <c.s-big>bigger</c> and a <c.s-shape></c>';
+cue.spans = {
+  big: { fontSize: '1.5em', textStroke: '2px black' },
+  shape: { drawing: { path: 'M0 0 L10 0 L10 10 Z', viewBox: [0, 0, 10, 10], width: 5, height: 8 } },
+};
+
+// Media-synchronised animations (Web Animations API driven from currentTime, so they scrub and
+// pause with the video). Times are seconds relative to the cue start.
+cue.animations = [
+  { duration: 0.5, keyframes: [{ opacity: 0 }, { opacity: 1 }] }, // fade in
+  {
+    target: { span: 'big' },
+    delay: 1,
+    duration: 2,
+    keyframes: [{ color: 'white' }, { color: 'red' }],
+  },
+];
 
 JSON.stringify(cue); // plain object, region referenced by id
 VTTCue.from(JSON.parse(json), regions); // rebuilds the cue

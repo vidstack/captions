@@ -166,6 +166,15 @@
     font-size: 1.25em;
   }
 
+  :where([data-part='captions'] [data-part='cue'] .small-caps) {
+    font-variant: small-caps;
+  }
+
+  /* Forced (burned-in style) subtitles, e.g. IMSC itts:forcedDisplay. Hosts can hide the rest. */
+  :where([data-part='captions'][data-forced-only] [data-part='cue']:not(.forced)) {
+    display: none;
+  }
+
   :where([data-part='captions'] [data-part='cue']) {
     background-image: var(--cue-bg-image, none);
     background-size: contain;
