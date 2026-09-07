@@ -366,18 +366,24 @@ export class CEA708Decoder {
   decodeCCData(triplets: CCDataTriplet[], time: number) {
     this._time = this._lastTime = time;
 
+    let completed = false;
+
     for (let i = 0; i < triplets.length; i++) {
       const { type, data1, data2 } = triplets[i];
       if (type === 3) {
-        this._finishPacket();
+        completed = this._finishPacket() || completed;
         this._startPacket(data1, data2);
+        // Zero-length packets finish inside `_startPacket`.
+        if (!this._packet) completed = true;
       } else if (type === 2 && this._packet) {
         this._packet.push(data1, data2);
-        if (this._packet.length >= this._packetSize) this._finishPacket();
+        if (this._packet.length >= this._packetSize) completed = this._finishPacket() || completed;
       }
     }
 
-    this._commit();
+    // Only re-render windows when a packet actually completed in this group. Players that deliver
+    // one triplet per call would otherwise pay for a full commit on every byte pair.
+    if (completed) this._commit();
   }
 
   /** Close any open cue. Defaults to the last decode time (or a minimum duration past start). */
@@ -446,9 +452,10 @@ export class CEA708Decoder {
   }
 
   /** Split the assembled packet into service blocks and decode the selected service. */
-  protected _finishPacket() {
+  /** Parses the buffered packet's service blocks. Returns false when there was no packet. */
+  protected _finishPacket(): boolean {
     const packet = this._packet;
-    if (!packet) return;
+    if (!packet) return false;
     this._packet = null;
 
     let i = 0;
@@ -471,6 +478,7 @@ export class CEA708Decoder {
 
       i += size;
     }
+    return true;
   }
 
   /** Decode as many complete commands as the pending service bytes contain. */

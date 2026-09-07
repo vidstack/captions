@@ -42,6 +42,7 @@ export interface CueTrackOptions {
 export class CueTrack {
   private _cues: VTTCue[] = [];
   private _maxEnd: number[] = [];
+  private _set = new Set<VTTCue>();
   private _listeners = new Set<CueTrackListener>();
   private _retention: number;
   private _maxCues: number;
@@ -64,7 +65,7 @@ export class CueTrack {
   }
 
   has(cue: VTTCue) {
-    return this._cues.includes(cue);
+    return this._set.has(cue);
   }
 
   add(cue: VTTCue) {
@@ -83,6 +84,7 @@ export class CueTrack {
     const index = this._cues.indexOf(cue);
     if (index === -1) return false;
     this._cues.splice(index, 1);
+    this._set.delete(cue);
     this._rebuildMaxEnd(index);
     this._emit(cue, 'remove');
     return true;
@@ -104,6 +106,7 @@ export class CueTrack {
   clear() {
     this._cues = [];
     this._maxEnd = [];
+    this._set.clear();
     this._emit(null, 'clear');
   }
 
@@ -172,6 +175,7 @@ export class CueTrack {
     for (let i = this._cues.length - 1; i >= 0; i--) {
       if (this._cues[i].endTime < cutoff) {
         const [cue] = this._cues.splice(i, 1);
+        this._set.delete(cue);
         this._emit(cue, 'remove');
         removed++;
       }
@@ -206,6 +210,7 @@ export class CueTrack {
     }
 
     cues.splice(lo, 0, cue);
+    this._set.add(cue);
     if (rebuild) this._rebuildMaxEnd(lo);
     return lo;
   }
@@ -230,6 +235,7 @@ export class CueTrack {
         if (this._cues[i].endTime < this._cues[victim].endTime) victim = i;
       }
       const [cue] = this._cues.splice(victim, 1);
+      this._set.delete(cue);
       this._emit(cue, 'remove');
     }
     this._rebuildMaxEnd(0);
