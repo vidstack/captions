@@ -37,7 +37,7 @@ Dialogue: 0,0:00:06.00,0:00:10.00,Default,,0,0,0,,{\fad(600,600)}Fade in and out
 Dialogue: 0,0:00:08.00,0:00:12.00,Default,,0,0,0,,{\an8\t(0,3000,\c&H0000FF&\fscx150\fscy150)}\t colour + scale
 Dialogue: 0,0:00:10.00,0:00:14.00,Karaoke,,0,0,0,,{\kf60}Ka{\kf60}ra{\kf60}o{\kf60}ke {\kf80}sweeps {\kf80}the {\kf100}fill
 Dialogue: 2,0:00:12.00,0:00:16.00,Default,,0,0,0,,{\an7\pos(80,80)\bord3\c&H66D1FF&\3c&H000000&\p1}m 0 0 l 200 0 200 120 100 170 0 120{\p0}
-Dialogue: 0,0:00:12.00,0:00:16.00,Default,,0,0,0,,{\an5\pos(640,360)\clip(340,300,940,420)}Clipped to a rectangle band: \clip
+Dialogue: 0,0:00:12.00,0:00:16.00,Default,,0,0,0,,{\an5\pos(640,360)\clip(240,338,1040,382)}Clipped to a rectangle band: \clip
 Dialogue: 0,0:00:16.00,0:00:20.00,Default,,0,0,0,Scroll up;600;100;40,Scroll up effect through a band
 Dialogue: 0,0:00:18.00,0:00:22.00,Default,,0,0,0,Banner;20;0;60,Banner text scrolls right to left across the screen like a ticker
 Dialogue: 0,0:00:20.00,0:00:24.00,Default,,0,0,0,,Per-span {\fs76}bigger{\fs52} and {\fnCourier New}monospace{\fnArial} and {\b1}bold{\b0} runs
