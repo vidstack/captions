@@ -11,7 +11,6 @@ const HEADER_MAGIC = 'WEBVTT',
   COMMA = ',',
   PERCENT_SIGN = '%',
   SETTING_SEP_RE = /[:=]/,
-  SETTING_LINE_RE = /^[ \t\f\r\n]*(region|vertical|line|position|size|align)[:=]/,
   NOTE_BLOCK_START = 'NOTE',
   STYLE_BLOCK_START = 'STYLE',
   REGION_BLOCK_START = 'REGION',
@@ -122,14 +121,9 @@ export class VTTParser implements CaptionsParser {
             return;
           }
 
-          if (this._cue) {
-            const hasText = this._cue!.text.length > 0;
-            if (!hasText && SETTING_LINE_RE.test(line)) {
-              this._parseCueSettings(line.split(SPACE_RE), lineCount);
-            } else {
-              this._cue!.text += (hasText ? '\n' : '') + line;
-            }
-          }
+          // Cue settings live on the timing line only; a text line that happens to start with
+          // `line:` or `position:` is caption text (the old tolerance silently ate such lines).
+          if (this._cue) this._cue.text += (this._cue.text.length ? '\n' : '') + line;
           break;
         case VTTBlock.Region:
           // A `-->` line inside a region block discards the region and is parsed as timings.

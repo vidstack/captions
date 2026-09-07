@@ -283,16 +283,18 @@ test('GOOD: single line settings', async () => {
   expect(cues[0].align).toBe('end');
 });
 
-test('GOOD: multiline settings', async () => {
-  const { cues, errors } = await parseText(
-    ['WEBVTT', '', '00:00 --> 00:02', 'line:50%', 'align:end', 'size:45%', 'Text A'].join('\n'),
+test('text lines that look like settings are kept as text (settings only live on the timing line)', async () => {
+  const { cues } = await parseText(
+    [
+      'WEBVTT',
+      '',
+      '00:00.000 --> 00:02.000 align:start',
+      'line:50% is not a setting here',
+      'position: everyone',
+    ].join('\n'),
   );
-
   expect(cues).toHaveLength(1);
-  expect(errors).toHaveLength(0);
-
-  expect(cues[0].line).toBe(50);
-  expect(cues[0].size).toBe(45);
-  expect(cues[0].align).toBe('end');
-  expect(cues[0].text).toBe('Text A');
+  expect(cues[0].align).toBe('start');
+  expect(cues[0].line).toBe('auto');
+  expect(cues[0].text).toBe('line:50% is not a setting here\nposition: everyone');
 });

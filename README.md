@@ -1473,9 +1473,20 @@ pnpm screenshots     # regenerates the README images from the sandbox scenarios
 The whole toolchain is [Vite+](https://viteplus.dev): Vite, Vitest, Oxlint, Oxfmt, and tsdown are
 configured together in `vite.config.ts` (`test`, `lint`, `fmt`, `pack`).
 
-Sandbox scenarios: `cues`, `regions`, `region-scroll`, `collisions`, `ssa`, `edge-styles`,
-`layout` (the cue layout/text style model), `live` (a `CueTrack` fed incrementally), and
-`element` (`<media-captions>`).
+### Playground
+
+`pnpm playground` opens an interactive playground at `http://localhost:3200/playground/index.html`
+with a mocked media clock (play, scrub, rate, frame stepping, loop, jump to cue), built-in samples
+for every parser plus a synthesised CEA-608/708 live stream, an editable source panel with file
+loading, live renderer options (stacking, line step, safe area, announcer, reduced motion, edge
+styles, presets, colours, shadow DOM), a debug overlay of layout boxes, an inspector (active cues,
+all cues, metadata, errors, events, timeline), a `<media-captions>` element view, and a gallery
+that renders every sample at once. Views are shareable via the URL. `playground/README.md` has the
+details and `pnpm playground:screenshots` regenerates `playground/screenshots/`.
+
+Sandbox scenarios (used for the README images): `cues`, `regions`, `region-scroll`, `collisions`,
+`ssa`, `edge-styles`, `layout` (the cue layout/text style model), `live` (a `CueTrack` fed
+incrementally), and `element` (`<media-captions>`).
 
 CI (`.github/workflows/ci.yml`) runs formatting, linting, type-checking, the unit, WPT, IMSC,
 corpus, and fuzz suites with coverage, the Chromium layout suites, the build with package checks,
