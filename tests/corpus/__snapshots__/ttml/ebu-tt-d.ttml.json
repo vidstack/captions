@@ -17,8 +17,14 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1.6)",
-        "lineHeight": "1.25"
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
       }
     },
     {
@@ -36,8 +42,14 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1.6)",
-        "lineHeight": "1.25"
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
       }
     },
     {
@@ -55,8 +67,14 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1.6)",
-        "lineHeight": "1.25"
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
       }
     },
     {
@@ -74,8 +92,14 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1.6)",
-        "lineHeight": "1.25"
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
       }
     },
     {
@@ -93,8 +117,14 @@
       "size": 80,
       "align": "start",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1.6)",
-        "lineHeight": "1.25"
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
       }
     },
     {
@@ -112,8 +142,14 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1.6)",
-        "lineHeight": "1.25"
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
       }
     },
     {
@@ -131,8 +167,14 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1.6)",
-        "lineHeight": "1.25"
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
       }
     }
   ]

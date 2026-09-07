@@ -33,13 +33,15 @@ const PROBE_BUDGETS = {
     code: `export { createRenderer, regions } from './dist/prod-renderer.js';`,
     limit: 10_000,
   },
+  // The DOM writer serialises the typed style model itself (parsers no longer format CSS), so it
+  // carries ~1 KB the format parsers used to.
   'renderer full (CaptionsRenderer)': {
     code: `export { CaptionsRenderer } from './dist/prod.js';`,
-    limit: 12_000,
+    limit: 12_500,
   },
   'typical player (parse + render + sync)': {
     code: `export { parseResponse, CaptionsRenderer, syncCaptionsRenderer } from './dist/prod.js';`,
-    limit: 13_000,
+    limit: 14_000,
   },
   'canvas renderer (CanvasCaptionsRenderer)': {
     code: `export { CanvasCaptionsRenderer } from './dist/prod-canvas.js';`,

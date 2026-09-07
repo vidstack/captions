@@ -27,16 +27,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -64,16 +85,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -101,16 +143,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -138,16 +201,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -175,16 +259,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       },
       "layer": 1
     },
@@ -213,16 +318,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -250,17 +376,38 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,232,200,1)",
-        "fontWeight": "bold",
-        "fontStyle": "italic",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "italic": true,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       },
       "animations": [
         {
@@ -313,16 +460,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -350,20 +518,44 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       },
       "spans": {
         "0": {
-          "fontSize": "calc(var(--overlay-height) * 0.05)"
+          "fontSize": {
+            "unit": "vh",
+            "value": 5
+          }
         }
       }
     },
@@ -392,16 +584,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -429,16 +642,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -466,16 +700,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -503,19 +758,27 @@
       },
       "textStyle": {
         "fontFamily": "\"Arial\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.07222)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 7.2222
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0"
+        "padding": {
+          "y": 0
+        }
       },
       "spans": {
         "0": {
-          "fontSize": "calc(var(--overlay-height) * 0.05556)",
-          "textStroke": "0"
+          "fontSize": {
+            "unit": "vh",
+            "value": 5.5556
+          },
+          "stroke": null
         }
       }
     },
@@ -544,17 +807,38 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "fontStyle": "italic",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "italic": true,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -582,9 +866,12 @@
       },
       "textStyle": {
         "fontFamily": "\"Arial\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.05556)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.5556
+        },
         "color": "rgba(255,255,255,1)",
-        "whiteSpace": "pre-wrap",
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "rgba(0,0,0,0.373)"
@@ -615,20 +902,41 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       },
       "spans": {
         "0": {
-          "textDecoration": "line-through"
+          "strike": true
         }
       }
     },
@@ -657,16 +965,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -694,16 +1023,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -731,16 +1081,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "right",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       }
     },
     {
@@ -768,22 +1139,49 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       },
       "spans": {
         "0": {
-          "transform": "scaleX(1.2) scaleY(0.8) rotateY(-20deg)",
-          "display": "inline-block",
-          "transformOrigin": "50% 100%"
+          "transform": {
+            "scaleX": 1.2,
+            "scaleY": 0.8,
+            "rotateY": -20,
+            "origin": [
+              50,
+              100
+            ]
+          }
         }
       }
     },
@@ -812,20 +1210,41 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       },
       "spans": {
         "0": {
-          "opacity": "0.498"
+          "opacity": 0.498
         }
       }
     },
@@ -851,16 +1270,37 @@
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre",
+        "fontWeight": 700,
+        "wrap": "nowrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       },
       "animations": [
         {
@@ -869,12 +1309,16 @@
           "fill": "both",
           "keyframes": [
             {
-              "left": "100%",
-              "translate": "0 0"
+              "left": 100,
+              "translate": {
+                "x": 0
+              }
             },
             {
-              "left": "0%",
-              "translate": "-100% 0"
+              "left": 0,
+              "translate": {
+                "x": -1
+              }
             }
           ]
         }
@@ -903,20 +1347,48 @@
         },
         "top": 69.444,
         "fixed": true,
-        "clipPath": "polygon(-100% calc(var(--overlay-height) * -0.55556 + 0%), 200% calc(var(--overlay-height) * -0.55556 + 0%), 200% calc(var(--overlay-height) * 0 + 0%), -100% calc(var(--overlay-height) * 0 + 0%))"
+        "clip": {
+          "rect": [
+            -100,
+            13.889,
+            200,
+            69.444
+          ]
+        }
       },
       "textStyle": {
         "fontFamily": "\"Gandhi Sans\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06389)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
         "color": "rgba(255,255,255,1)",
-        "fontWeight": "bold",
-        "whiteSpace": "pre-wrap",
+        "fontWeight": 700,
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00611) rgba(0,0,0,1)",
-        "textShadow": "calc(var(--overlay-height) * 0.00139) calc(var(--overlay-height) * 0.00139) 0 rgba(0,0,0,0.412)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
       },
       "animations": [
         {
@@ -925,14 +1397,32 @@
           "fill": "both",
           "keyframes": [
             {
-              "top": "69.444%",
-              "translate": "0 0",
-              "clipPath": "polygon(-100% calc(var(--overlay-height) * -0.55556 + 0%), 200% calc(var(--overlay-height) * -0.55556 + 0%), 200% calc(var(--overlay-height) * 0 + 0%), -100% calc(var(--overlay-height) * 0 + 0%))"
+              "top": 69.444,
+              "translate": {
+                "y": 0
+              },
+              "clip": {
+                "rect": [
+                  -100,
+                  13.889,
+                  200,
+                  69.444
+                ]
+              }
             },
             {
-              "top": "13.889%",
-              "translate": "0 -100%",
-              "clipPath": "polygon(-100% calc(var(--overlay-height) * 0 + 100%), 200% calc(var(--overlay-height) * 0 + 100%), 200% calc(var(--overlay-height) * 0.55556 + 100%), -100% calc(var(--overlay-height) * 0.55556 + 100%))"
+              "top": 13.889,
+              "translate": {
+                "y": -1
+              },
+              "clip": {
+                "rect": [
+                  -100,
+                  13.889,
+                  200,
+                  69.444
+                ]
+              }
             }
           ]
         }

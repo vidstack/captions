@@ -217,7 +217,7 @@ export class Inspector {
           'td',
           { class: 'text' },
           preview(cue.text, 90) ||
-            h('i', { class: 'dim' }, cue.textStyle?.backgroundImage ? '(image)' : '(empty)'),
+            h('i', { class: 'dim' }, cue.textStyle?.image ? '(image)' : '(empty)'),
         ),
       );
       this._cueRows.set(cue, row);

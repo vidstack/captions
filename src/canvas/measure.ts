@@ -6,19 +6,20 @@ import {
   computeCuePositionAlignment,
 } from '../vtt/overlay/position-cue';
 import { tokenizeVTTCue } from '../vtt/tokenize-cue';
-import type { VTTCue } from '../vtt/vtt-cue';
+import type { CueClip, CueTransform, VTTCue } from '../vtt/vtt-cue';
 import type { VTTRegion } from '../vtt/vtt-region';
 import {
-  parseImageURL,
-  parseShadow,
-  parseStroke,
-  resolveLength,
-  type LengthEnv,
-  type Shadow,
-} from './css-values';
-import { flowCue, type CueFlow, type RunStyle } from './flow';
+  flowCue,
+  shadowPx,
+  strokePx,
+  type CueFlow,
+  type PxShadow,
+  type PxStroke,
+  type RunStyle,
+} from './flow';
 import type { TextMeasurer } from './text-measurer';
 import type { CanvasTheme } from './theme';
+import { lengthToPx, type LengthEnv } from './values';
 
 /** Cue-level presentation resolved to pixels and plain values. */
 export interface ResolvedCueStyle {
@@ -29,14 +30,14 @@ export interface ResolvedCueStyle {
   color: string;
   backgroundColor: string;
   textAlign: 'left' | 'center' | 'right';
-  stroke: { width: number; color: string } | null;
-  shadow: Shadow | null;
-  outline: { width: number; color: string } | null;
+  stroke: PxStroke | null;
+  shadow: PxShadow | null;
+  outline: PxStroke | null;
   opacity: number;
-  transform?: string;
-  transformOrigin?: string;
+  transform?: CueTransform;
   imageURL: string | null;
-  clipPath?: string;
+  imageFit: 'contain' | 'cover' | 'fill';
+  clip?: CueClip;
 }
 
 /** A cue measured headlessly: its text flow, boxes, and layout input. */
@@ -52,8 +53,6 @@ export interface MeasuredCue {
   /** The region this cue renders in, when it applies. */
   region: VTTRegion | null;
 }
-
-const POSITION_KEYS = ['left', 'top', 'right', 'bottom', 'transform', 'translate'];
 
 /** Whether a region applies to a cue (the WebVTT rule the DOM regions feature uses). */
 export function regionOf(cue: VTTCue): VTTRegion | null {
@@ -78,17 +77,16 @@ export function measureCue(
     layout = cue.layout,
     env: LengthEnv = { width: container.width, height: container.height, em: theme.fontSize };
 
-  const fontSize = resolveLength(text?.fontSize, env) || theme.fontSize,
+  const fontSize = lengthToPx(text?.fontSize, env) || theme.fontSize,
     fontEnv = { ...env, em: fontSize },
     lineHeight =
-      text?.lineHeight && text.lineHeight !== 'normal'
-        ? (resolveLength(text.lineHeight, fontEnv) ?? fontSize * 1.2)
-        : text?.lineHeight === 'normal'
+      text?.lineHeight === undefined
+        ? theme.lineHeight
+        : text.lineHeight === 'normal'
           ? fontSize * 1.2
-          : theme.lineHeight,
-    paddingX = resolveLength(cue.style?.['--cue-padding-x'], env) ?? theme.paddingX,
-    paddingY =
-      resolveLength(text?.paddingY ?? cue.style?.['--cue-padding-y'], env) ?? theme.paddingY;
+          : (lengthToPx(text.lineHeight, fontEnv) ?? fontSize * 1.2),
+    paddingX = lengthToPx(text?.padding?.x, fontEnv) ?? theme.paddingX,
+    paddingY = (lengthToPx(text?.padding?.y, fontEnv) ?? theme.paddingY) / (region ? 2 : 1);
 
   const style: ResolvedCueStyle = {
     fontSize,
@@ -98,14 +96,20 @@ export function measureCue(
     color: text?.color ?? theme.color,
     backgroundColor: text?.backgroundColor ?? theme.backgroundColor,
     textAlign: resolveAlign(text?.textAlign ?? cue.align, theme.dir),
-    stroke: text?.textStroke ? parseStroke(text.textStroke, fontEnv) : themeStroke(theme, fontSize),
-    shadow: text?.textShadow ? parseShadow(text.textShadow, fontEnv) : themeShadow(theme, fontSize),
-    outline: parseStroke(text?.outline, fontEnv),
-    opacity: text?.opacity !== undefined ? parseFloat(text.opacity) : 1,
+    stroke:
+      text?.stroke !== undefined
+        ? (strokePx(text.stroke, fontEnv) ?? null)
+        : themeStroke(theme, fontSize),
+    shadow:
+      text?.shadow !== undefined
+        ? (shadowPx(text.shadow, fontEnv) ?? null)
+        : themeShadow(theme, fontSize),
+    outline: strokePx(text?.outline, fontEnv) ?? null,
+    opacity: text?.opacity ?? 1,
     transform: text?.transform,
-    transformOrigin: text?.transformOrigin,
-    imageURL: parseImageURL(text?.backgroundImage),
-    clipPath: layout?.clipPath,
+    imageURL: text?.image?.url ?? null,
+    imageFit: text?.image?.fit ?? 'contain',
+    clip: layout?.clip,
   };
 
   // --- Width and horizontal position -------------------------------------------------------
@@ -122,17 +126,16 @@ export function measureCue(
     regionOffset =
       ((position - (alignment === 'line-right' ? 100 : alignment === 'center' ? 50 : 0)) / 100) *
       width;
-  } else if (layout?.width !== undefined || cue.style?.['--cue-width']) {
-    const raw = cue.style?.['--cue-width'];
-    if (typeof layout?.width === 'number') width = pct(layout.width, container.width)!;
-    else if (layout?.width === 'auto') {
+  } else if (layout?.width !== undefined) {
+    if (typeof layout.width === 'number') width = pct(layout.width, container.width)!;
+    else if (layout.width === 'auto') {
       width =
         layout.left !== undefined && layout.right !== undefined
           ? container.width -
             pct(layout.left, container.width)! -
             pct(layout.right, container.width)!
           : container.width;
-    } else if (raw) width = resolveLength(raw, { ...env, percent: container.width });
+    }
     // 'max-content' keeps `width` null: the box hugs the text.
   } else {
     // https://www.w3.org/TR/webvtt1/#processing-cue-settings
@@ -151,7 +154,7 @@ export function measureCue(
   }
 
   const maxWidth = pct(layout?.maxWidth, container.width),
-    noWrap = text?.whiteSpace === 'pre' || text?.whiteSpace === 'nowrap',
+    noWrap = text?.wrap === 'nowrap',
     wrapWidth = noWrap
       ? null
       : width !== null
@@ -162,25 +165,19 @@ export function measureCue(
 
   // --- Text flow ---------------------------------------------------------------------------
   const base: RunStyle = {
-    bold: false,
-    italic: false,
-    underline: false,
-    strike: false,
+    bold: (text?.fontWeight ?? 400) >= 600,
+    italic: text?.italic ?? false,
+    underline: text?.underline ?? false,
+    strike: text?.strike ?? false,
     color: style.color,
     bgColor: null,
     fontFamily: text?.fontFamily ?? theme.fontFamily,
     fontSize,
-    letterSpacing: resolveLength(text?.letterSpacing, fontEnv) ?? 0,
+    letterSpacing: lengthToPx(text?.letterSpacing, fontEnv) ?? 0,
     opacity: 1,
     stroke: undefined,
     shadow: undefined,
   };
-  if (text?.fontWeight) base.bold = text.fontWeight === 'bold' || parseInt(text.fontWeight) >= 600;
-  if (text?.fontStyle) base.italic = text.fontStyle === 'italic' || text.fontStyle === 'oblique';
-  if (text?.textDecoration) {
-    base.underline = text.textDecoration.includes('underline');
-    base.strike = text.textDecoration.includes('line-through');
-  }
 
   const flow = flowCue(tokenizeVTTCue(cue), base, {
     maxWidth: wrapWidth,
@@ -246,7 +243,13 @@ export function measureCue(
     !!cue.animations?.some(
       (anim) =>
         (anim.target ?? 'display') === 'display' &&
-        anim.keyframes.some((frame) => POSITION_KEYS.some((key) => key in frame)),
+        anim.keyframes.some(
+          (frame) =>
+            frame.left !== undefined ||
+            frame.top !== undefined ||
+            frame.translate !== undefined ||
+            frame.transform !== undefined,
+        ),
     );
 
   return {
@@ -308,11 +311,11 @@ function resolveAlign(
   return align;
 }
 
-function themeStroke(theme: CanvasTheme, fontSize: number) {
+function themeStroke(theme: CanvasTheme, fontSize: number): PxStroke | null {
   return theme.edgeStyle === 'uniform' ? { width: 0.08 * fontSize, color: theme.edgeColor } : null;
 }
 
-function themeShadow(theme: CanvasTheme, fontSize: number): Shadow | null {
+function themeShadow(theme: CanvasTheme, fontSize: number): PxShadow | null {
   const em = fontSize,
     color = theme.edgeColor;
   switch (theme.edgeStyle) {

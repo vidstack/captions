@@ -428,7 +428,7 @@ export class CaptionsRendererCore {
     const el = document.createElement('div');
     setPartAttr(el, 'cue');
     if (cue.id) setDataAttr(el, 'id', cue.id);
-    el.append(renderVTTTokensDOM(tokenizeVTTCue(cue), this._currentTime));
+    el.append(renderVTTTokensDOM(tokenizeVTTCue(cue), this._currentTime, document, cue.layout));
     display.append(el);
 
     if (__DEV__) {

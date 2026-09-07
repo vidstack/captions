@@ -11,13 +11,7 @@ import {
   type RunStyle,
 } from 'media-captions/canvas';
 
-import {
-  parseClipPath,
-  parseColor,
-  parseSweepGradient,
-  parseTransform,
-  resolveLength,
-} from '../../src/canvas/css-values';
+import { clipToPolygon, lengthToPx, parseColor, transformOriginPx } from '../../src/canvas/values';
 import { tokenizeVTTCue } from '../../src/vtt/tokenize-cue';
 
 // A 1000x500 frame with a 1% safe area: container 980x480, font 24px, line 28.8px.
@@ -43,60 +37,60 @@ const base: RunStyle = {
 
 const env = { width: theme.container.width, height: theme.container.height, em: 24 };
 
-describe('css value bridge', () => {
-  test('resolves the length dialect the parsers emit', () => {
-    expect(resolveLength('calc(var(--overlay-height) * 0.05)', env)).toBeCloseTo(24);
-    expect(resolveLength('calc(var(--overlay-width) * 0.5 + 10%)', { ...env, percent: 200 })).toBe(
-      510,
-    );
-    expect(resolveLength('2em', env)).toBe(48);
-    expect(resolveLength('10%', { ...env, percent: 50 })).toBe(5);
-    expect(resolveLength('5cqh', env)).toBeCloseTo(24);
-    expect(resolveLength('0', env)).toBe(0);
-    expect(resolveLength('auto', env)).toBeNull();
-    // Chained factors and nested expressions (TTML relative font sizes).
-    expect(resolveLength('calc(var(--overlay-height) * 0.05 * 0.8)', env)).toBeCloseTo(19.2);
-    expect(resolveLength('calc((var(--cue-font-size) + 6px) / 2)', env)).toBe(15);
-    expect(resolveLength('calc(var(--unknown) * 2)', env)).toBeNull();
+describe('typed value resolution', () => {
+  test('resolves lengths to pixels', () => {
+    expect(lengthToPx({ unit: 'vh', value: 5 }, env)).toBeCloseTo(24);
+    expect(lengthToPx({ unit: 'vw', value: 50 }, env)).toBe(490);
+    expect(lengthToPx({ unit: 'em', value: 2 }, env)).toBe(48);
+    expect(lengthToPx({ unit: '%', value: 10 }, { ...env, percent: 50 })).toBe(5);
+    expect(lengthToPx(12, env)).toBe(12);
+    expect(lengthToPx(undefined, env)).toBeNull();
   });
 
-  test('parses transforms and colours', () => {
-    const t = parseTransform('translateX(-50%) scaleX(1.2) rotate(-15deg)', {
-      ...env,
-      percentX: 200,
-      percentY: 40,
-    });
-    expect(t).toEqual({ translateX: -100, translateY: 0, scaleX: 1.2, scaleY: 1, rotate: -15 });
+  test('places transform origins in the box', () => {
+    const container = { width: 980, height: 480 },
+      box = { left: 100, top: 50, width: 200, height: 40 };
+    expect(transformOriginPx(undefined, container, box)).toEqual([100, 20]);
+    expect(transformOriginPx({ origin: [0, 100] }, container, box)).toEqual([0, 40]);
+    // An overlay point (SSA \\org) is relative to the box position.
+    expect(transformOriginPx({ originAt: [50, 50] }, container, box)).toEqual([390, 190]);
+  });
+
+  test('parses colours', () => {
     expect(parseColor('#ff000080')).toEqual([255, 0, 0, expect.closeTo(0.5, 2)]);
     expect(parseColor('rgba(0, 255, 0, 0.8)')).toEqual([0, 255, 0, 0.8]);
     expect(parseColor('yellow')).toBeNull();
   });
 
-  test('reads the two colours of a karaoke sweep gradient', () => {
-    expect(
-      parseSweepGradient('linear-gradient(90deg, rgba(255,255,255,1) 50%, rgba(0,165,255,1) 50%)'),
-    ).toEqual({ from: 'rgba(255,255,255,1)', to: 'rgba(0,165,255,1)' });
-    expect(parseSweepGradient('url(x.png)')).toBeNull();
-  });
-
-  test('turns our clip-path output into box-relative polygons', () => {
-    const box = { width: 200, height: 100 };
-    expect(parseClipPath('inset(10px 20% 0 0)', env, box)).toEqual([
+  test('turns clips into box-relative polygons', () => {
+    const container = { width: 980, height: 480 },
+      box = { left: 100, top: 50, width: 200, height: 100 };
+    expect(clipToPolygon({ inset: [10, 20, 0, 0] }, container, box).points).toEqual([
       [0, 10],
       [160, 10],
       [160, 100],
       [0, 100],
     ]);
-    const polygon = parseClipPath(
-      'polygon(calc(var(--overlay-width) * 0.1 + 50%) 0%, 100% 0%, 100% 100%)',
-      env,
+    expect(clipToPolygon({ rect: [0, 0, 50, 50] }, container, box).points).toEqual([
+      [-100, -50],
+      [390, -50],
+      [390, 190],
+      [-100, 190],
+    ]);
+    const polygon = clipToPolygon(
+      {
+        polygon: [
+          [0, 0],
+          [100, 0],
+          [100, 100],
+        ],
+        evenOdd: true,
+      },
+      container,
       box,
     );
-    expect(polygon).toEqual([
-      [198, 0],
-      [200, 0],
-      [200, 100],
-    ]);
+    expect(polygon.evenOdd).toBe(true);
+    expect(polygon.points[2]).toEqual([880, 430]);
   });
 });
 
@@ -152,7 +146,7 @@ describe('text flow', () => {
 
   test('applies inline tags, class colours, and span styles as run styles', () => {
     const cue = new VTTCue(0, 1, '<b>bold</b> <c.yellow>sun</c> <c.s-0>big</c>');
-    cue.spans = { '0': { fontSize: '2em', color: 'red', textDecoration: 'underline' } };
+    cue.spans = { '0': { fontSize: { unit: 'em', value: 2 }, color: 'red', underline: true } };
     const flow = flowCue(tokenizeVTTCue(cue), base, {
       maxWidth: null,
       lineHeight: 28.8,
@@ -213,9 +207,9 @@ describe('headless cue measurement', () => {
       fixed: true,
     };
     cue.textStyle = {
-      fontSize: 'calc(var(--overlay-height) * 0.1)',
+      fontSize: { unit: 'vh', value: 10 },
       lineHeight: 'normal',
-      paddingY: '0',
+      padding: { y: 0 },
     };
     const m = measureCue(cue, theme, measurer);
     const fontSize = 0.1 * theme.container.height;
@@ -238,17 +232,27 @@ describe('headless cue measurement', () => {
 });
 
 describe('animation sampling', () => {
-  test('interpolates numbers, lengths, colours, and transform lists', () => {
+  test('interpolates numbers, colours, lengths, transforms, and clips', () => {
     expect(interpolate(0, 1, 0.25)).toBe(0.25);
-    expect(interpolate('10%', '20%', 0.5)).toBe('15%');
     expect(interpolate('rgb(0,0,0)', 'rgb(255,255,255)', 0.5)).toBe('rgba(128,128,128,1)');
-    expect(interpolate('scaleX(1) rotate(0deg)', 'scaleX(2) rotate(90deg)', 0.5)).toBe(
-      'scaleX(1.5) rotate(45deg)',
-    );
-    // Mismatched shapes step at the midpoint.
-    expect(interpolate('scaleX(1)', 'rotate(90deg)', 0.4)).toBe('scaleX(1)');
-    // Length lists (karaoke sweep `background-position`), unitless zero included.
-    expect(interpolate('100% 0', '0 0', 0.25)).toBe('75% 0');
+    expect(interpolate({ unit: 'vh', value: 10 }, { unit: 'vh', value: 20 }, 0.5)).toEqual({
+      unit: 'vh',
+      value: 15,
+    });
+    expect(interpolate({ scaleX: 1, rotate: 0 }, { scaleX: 2, rotate: 90 }, 0.5)).toEqual({
+      scaleX: 1.5,
+      rotate: 45,
+    });
+    // A field missing on one side interpolates from its neutral value.
+    expect(interpolate({ scaleX: 2 }, { rotate: 90 }, 0.5)).toEqual({ scaleX: 1.5, rotate: 45 });
+    expect(interpolate({ rect: [0, 0, 100, 100] }, { rect: [0, 0, 50, 100] }, 0.5)).toEqual({
+      rect: [0, 0, 75, 100],
+    });
+    // Mismatched kinds step at the midpoint.
+    expect(interpolate({ unit: 'vh', value: 1 }, { unit: 'em', value: 1 }, 0.4)).toEqual({
+      unit: 'vh',
+      value: 1,
+    });
   });
 
   test('samples \\fad-style keyframes at media time with fill both', () => {
@@ -270,14 +274,10 @@ describe('animation sampling', () => {
   });
 
   test('fills in missing offsets evenly and honours delay', () => {
-    const spec = {
-      delay: 1,
-      duration: 2,
-      keyframes: [{ left: '0%' }, { left: '50%' }, { left: '100%' }],
-    };
-    expect(sampleAnimation(spec, 0, 0).left).toBe('0%');
-    expect(sampleAnimation(spec, 1.5, 0).left).toBe('25%');
-    expect(sampleAnimation(spec, 2, 0).left).toBe('50%');
+    const spec = { delay: 1, duration: 2, keyframes: [{ left: 0 }, { left: 50 }, { left: 100 }] };
+    expect(sampleAnimation(spec, 0, 0).left).toBe(0);
+    expect(sampleAnimation(spec, 1.5, 0).left).toBe(25);
+    expect(sampleAnimation(spec, 2, 0).left).toBe(50);
   });
 });
 

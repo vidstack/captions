@@ -51,7 +51,11 @@ async function one(text: string, effect = '', info: string[] = []) {
   return cues[0];
 }
 
-const lenY = (px: number) => `calc(var(--overlay-height) * ${Math.round((px / 720) * 1e5) / 1e5})`;
+/** Script pixels as the typed overlay-height length the parser emits. */
+const lenY = (px: number) => ({
+  unit: 'vh' as const,
+  value: Math.round((px / 720) * 100 * 1e4) / 1e4,
+});
 
 describe('per-span override tags', () => {
   test('\\fs opens a span scaled like the style and closes when the size returns', async () => {
@@ -67,13 +71,11 @@ describe('per-span override tags', () => {
     expect(cue.text).toBe('<c.s-0>x</c>');
     expect(cue.spans!['0']).toEqual({
       fontFamily: '"Impact", sans-serif',
-      transform: 'scaleX(1.2) rotate(-10deg)',
-      transformOrigin: '50% 100%',
-      display: 'inline-block',
-      textStroke: `${lenY(8)} rgba(255,0,0,1)`,
-      textShadow: `${lenY(3)} ${lenY(3)} 0 rgba(0,255,0,1)`,
-      filter: `blur(${lenY(1)})`,
-      opacity: '0.498',
+      transform: { scaleX: 1.2, rotate: -10, origin: [50, 100] },
+      stroke: { width: lenY(8), color: 'rgba(255,0,0,1)' },
+      shadow: { x: lenY(3), y: lenY(3), color: 'rgba(0,255,0,1)' },
+      blur: lenY(1),
+      opacity: 0.498,
       letterSpacing: lenY(2),
     });
   });
@@ -81,9 +83,7 @@ describe('per-span override tags', () => {
   test('3D rotations and scale are relative to the style values', async () => {
     const cue = await one('{\\frx30\\fry-45\\fscy50}x');
     expect(cue.spans!['0']).toEqual({
-      transform: 'scaleY(0.5) rotateX(-30deg) rotateY(45deg)',
-      transformOrigin: '50% 100%',
-      display: 'inline-block',
+      transform: { scaleY: 0.5, rotateX: -30, rotateY: 45, origin: [50, 100] },
     });
   });
 
@@ -96,8 +96,8 @@ describe('per-span override tags', () => {
   test('\\bord0 removes the style stroke on the run only', async () => {
     const cue = await one('a{\\bord0}b');
     expect(cue.text).toBe('a<c.s-0>b</c>');
-    expect(cue.spans!['0']).toEqual({ textStroke: '0' });
-    expect(cue.textStyle?.textStroke).toBe(`${lenY(4)} rgba(0,0,0,1)`);
+    expect(cue.spans!['0']).toEqual({ stroke: null });
+    expect(cue.textStyle?.stroke).toEqual({ width: lenY(4), color: 'rgba(0,0,0,1)' });
   });
 
   test('font names with spaces are read whole', async () => {
@@ -122,13 +122,13 @@ describe('per-span override tags', () => {
 
   test('\\s strikes through a run', async () => {
     const cue = await one('a{\\s1}b');
-    expect(cue.spans!['0']).toEqual({ textDecoration: 'line-through' });
+    expect(cue.spans!['0']).toEqual({ strike: true });
   });
 
   test('span-only overrides do not force a layout on unstyled dialogues', async () => {
     const { cues } = await parse(['Dialogue: 0,0:00:01.00,0:00:05.00,Missing,,0,0,0,,{\\fs30}x']);
     expect(cues[0].layout).toBeUndefined();
-    expect(cues[0].spans!['0'].fontSize).toBe(lenY(30));
+    expect(cues[0].spans!['0'].fontSize).toEqual(lenY(30));
   });
 });
 
@@ -203,8 +203,8 @@ describe('\\move', () => {
         duration: 1,
         fill: 'both',
         keyframes: [
-          { left: '7.813%', top: '13.889%' },
-          { left: '39.063%', top: '41.667%' },
+          { left: 7.813, top: 13.889 },
+          { left: 39.063, top: 41.667 },
         ],
       },
     ]);
@@ -214,7 +214,7 @@ describe('\\move', () => {
     const cue = await one('{\\an7\\move(0,0,1280,720)}x');
     expect(cue.layout?.translate).toEqual({});
     expect(cue.animations![0]).toMatchObject({ delay: 0, duration: 4 });
-    expect(cue.animations![0].keyframes[1]).toEqual({ left: '100%', top: '100%' });
+    expect(cue.animations![0].keyframes[1]).toEqual({ left: 100, top: 100 });
   });
 });
 
@@ -246,20 +246,20 @@ describe('\\t transitions', () => {
     expect(anim.keyframes).toEqual([
       {
         offset: 0,
-        webkitTextStrokeColor: 'rgba(0,0,0,1)',
+        strokeColor: 'rgba(0,0,0,1)',
         opacity: 1,
-        transform: 'scaleX(1) scaleY(1) rotate(0deg)',
-        webkitTextStrokeWidth: lenY(4),
-        filter: `blur(${lenY(0)})`,
+        transform: { scaleX: 1, scaleY: 1, rotate: 0 },
+        strokeWidth: lenY(4),
+        blur: lenY(0),
         fontSize: lenY(48),
       },
       {
         offset: 1,
-        webkitTextStrokeColor: 'rgba(0,255,0,1)',
+        strokeColor: 'rgba(0,255,0,1)',
         opacity: 0.498,
-        transform: 'scaleX(2) scaleY(1) rotate(-90deg)',
-        webkitTextStrokeWidth: lenY(0),
-        filter: `blur(${lenY(2)})`,
+        transform: { scaleX: 2, scaleY: 1, rotate: -90 },
+        strokeWidth: lenY(0),
+        blur: lenY(2),
         fontSize: lenY(24),
       },
     ]);
@@ -311,8 +311,8 @@ describe('\\t transitions', () => {
 
   test('chained transitions start from the previous end state', async () => {
     const cue = await one('{\\t(0,1000,\\fs30)\\t(1000,2000,\\fs60)}x');
-    expect(cue.animations![1].keyframes[0].fontSize).toBe(lenY(30));
-    expect(cue.animations![1].keyframes[1].fontSize).toBe(lenY(60));
+    expect(cue.animations![1].keyframes[0].fontSize).toEqual(lenY(30));
+    expect(cue.animations![1].keyframes[1].fontSize).toEqual(lenY(60));
   });
 
   test('unsupported tags inside \\t apply immediately as their end state', async () => {
@@ -320,7 +320,11 @@ describe('\\t transitions', () => {
     expect(cue.text).toBe('<i><c.s-0>x</c></i>');
     expect(cue.spans!['0']).toEqual({ fontFamily: '"Impact", sans-serif' });
     expect(cue.animations![0].target).toBe('cue');
-    expect(cue.animations![0].keyframes[1].transform).toBe('scaleX(1) scaleY(1) rotate(-90deg)');
+    expect(cue.animations![0].keyframes[1].transform).toEqual({
+      scaleX: 1,
+      scaleY: 1,
+      rotate: -90,
+    });
   });
 
   test('a \\t without animatable changes emits nothing', async () => {
@@ -334,11 +338,7 @@ describe('karaoke', () => {
     const cue = await one('{\\kf100}Ka{\\K50}ra');
     expect(cue.text).toBe('<00:00:01.000><c.s-0>Ka</c><00:00:02.000><c.s-1>ra</c>');
     expect(cue.spans!['0']).toEqual({
-      backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,1) 50%, rgba(255,0,0,1) 50%)',
-      backgroundSize: '200% 100%',
-      backgroundPosition: '100% 0',
-      backgroundClip: 'text',
-      color: 'transparent',
+      sweep: { sung: 'rgba(255,255,255,1)', unsung: 'rgba(255,0,0,1)' },
     });
     expect(cue.animations).toEqual([
       {
@@ -346,14 +346,14 @@ describe('karaoke', () => {
         delay: 0,
         duration: 1,
         fill: 'both',
-        keyframes: [{ backgroundPosition: '100% 0' }, { backgroundPosition: '0 0' }],
+        keyframes: [{ sweep: 0 }, { sweep: 1 }],
       },
       {
         target: { span: '1' },
         delay: 1,
         duration: 0.5,
         fill: 'both',
-        keyframes: [{ backgroundPosition: '100% 0' }, { backgroundPosition: '0 0' }],
+        keyframes: [{ sweep: 0 }, { sweep: 1 }],
       },
     ]);
     expect(renderVTTCueString(cue)).toContain('-webkit-background-clip: text;');
@@ -369,17 +369,14 @@ describe('karaoke', () => {
         delay: 0.5,
         duration: 1,
         fill: 'both',
-        keyframes: [
-          { webkitTextStrokeColor: 'rgba(255,0,0,1)' },
-          { webkitTextStrokeColor: 'rgba(255,255,255,1)' },
-        ],
+        keyframes: [{ strokeColor: 'rgba(255,0,0,1)' }, { strokeColor: 'rgba(255,255,255,1)' }],
       },
     ]);
   });
 
   test('\\2c changes the sweep start colour', async () => {
     const cue = await one('{\\2c&H00FF00&\\kf100}x');
-    expect(cue.spans!['0'].backgroundImage).toContain('rgba(0,255,0,1) 50%)');
+    expect(cue.spans!['0'].sweep?.unsung).toBe('rgba(0,255,0,1)');
   });
 });
 
@@ -388,7 +385,7 @@ describe('drawings', () => {
     const cue = await one('{\\an7\\pos(100,100)\\bord0\\p1}m 0 0 l 200 0 200 100 0 100{\\p0}');
     expect(cue.text).toBe('<c.s-0></c>');
     expect(cue.spans!['0']).toEqual({
-      textStroke: '0',
+      stroke: null,
       drawing: {
         path: 'M0 0L200 0L200 100L0 100Z',
         viewBox: [0, 0, 200, 100],
@@ -404,7 +401,7 @@ describe('drawings', () => {
       translate: {},
       fixed: true,
     });
-    expect(cue.style).toEqual({ '--cue-padding-x': '0' });
+    expect(cue.textStyle?.padding).toEqual({ y: 0, x: 0 });
     expect(renderVTTCueString(cue)).toContain('viewBox="0 0 200 100"');
   });
 
@@ -458,49 +455,43 @@ describe('drawings', () => {
     // Per-run state set alongside a drawing (`\\bord0`) stays in effect for the text after it.
     const bord = await one('before {\\bord0\\p1}m 0 0 l 10 0 10 10{\\p0} after');
     expect(bord.text).toBe('before <c.s-0></c><c.s-1> after</c>');
-    expect(bord.spans!['1']).toEqual({ textStroke: '0' });
+    expect(bord.spans!['1']).toEqual({ stroke: null });
   });
 });
 
 describe('\\clip', () => {
-  test('rectangular clips on fixed cues map to a polygon in the box coordinate space', async () => {
+  test('rectangular clips are screen-fixed rectangles in overlay percentages', async () => {
     const cue = await one('{\\an7\\pos(640,360)\\clip(600,300,700,400)}x');
-    const x1 = 'calc(var(--overlay-width) * -0.03125 + 0%)',
-      x2 = 'calc(var(--overlay-width) * 0.04688 + 0%)',
-      y1 = 'calc(var(--overlay-height) * -0.08333 + 0%)',
-      y2 = 'calc(var(--overlay-height) * 0.05556 + 0%)';
-    expect(cue.layout?.clipPath).toBe(
-      `polygon(${x1} ${y1}, ${x2} ${y1}, ${x2} ${y2}, ${x1} ${y2})`,
-    );
+    expect(cue.layout?.clip).toEqual({ rect: [46.875, 41.667, 54.688, 55.556] });
   });
 
-  test('anchor translations are folded into the clip as box percentages', async () => {
+  test('clips are independent of the anchor translation', async () => {
     const cue = await one('{\\an5\\pos(640,360)\\clip(0,0,1280,720)}x');
-    expect(cue.layout?.clipPath).toBe(
-      'polygon(calc(var(--overlay-width) * -0.5 + 50%) calc(var(--overlay-height) * -0.5 + 50%), ' +
-        'calc(var(--overlay-width) * 0.5 + 50%) calc(var(--overlay-height) * -0.5 + 50%), ' +
-        'calc(var(--overlay-width) * 0.5 + 50%) calc(var(--overlay-height) * 0.5 + 50%), ' +
-        'calc(var(--overlay-width) * -0.5 + 50%) calc(var(--overlay-height) * 0.5 + 50%))',
-    );
+    expect(cue.layout?.clip).toEqual({ rect: [0, 0, 100, 100] });
+    expect(cue.layout?.translate).toEqual({ x: -0.5, y: -0.5 });
   });
 
-  test('vector clips become evenodd polygons', async () => {
+  test('vector clips become even-odd polygons', async () => {
     const cue = await one('{\\an7\\pos(0,0)\\clip(m 0 0 l 100 0 100 100 0 100)}x');
-    expect(cue.layout?.clipPath).toBe(
-      'polygon(evenodd, calc(var(--overlay-width) * 0 + 0%) calc(var(--overlay-height) * 0 + 0%), ' +
-        'calc(var(--overlay-width) * 0.07813 + 0%) calc(var(--overlay-height) * 0 + 0%), ' +
-        'calc(var(--overlay-width) * 0.07813 + 0%) calc(var(--overlay-height) * 0.13889 + 0%), ' +
-        'calc(var(--overlay-width) * 0 + 0%) calc(var(--overlay-height) * 0.13889 + 0%))',
-    );
+    expect(cue.layout?.clip).toEqual({
+      polygon: [
+        [0, 0],
+        [7.813, 0],
+        [7.813, 13.889],
+        [0, 13.889],
+      ],
+      evenOdd: true,
+    });
   });
 
-  test('clips on non-fixed cues and \\iclip are ignored', async () => {
+  test('clips on layout-positioned cues are kept; \\iclip is ignored', async () => {
     const { cues } = await parse([
       dialogue('{\\clip(0,0,10,10)}x'),
       dialogue('{\\pos(0,0)\\iclip(0,0,10,10)}y'),
     ]);
-    expect(cues[0].layout?.clipPath).toBeUndefined();
-    expect(cues[1].layout?.clipPath).toBeUndefined();
+    expect(cues[0].layout?.clip).toEqual({ rect: [0, 0, 0.781, 1.389] });
+    expect(cues[0].layout?.fixed).toBeUndefined();
+    expect(cues[1].layout?.clip).toBeUndefined();
     expect(cues[1].text).toBe('y');
   });
 });
@@ -510,10 +501,9 @@ describe('Effect field', () => {
     const cue = await one('x', 'Scroll up;100;300;50');
     expect(cue.layout).toMatchObject({ top: 41.667, left: 50, fixed: true });
     expect(cue.layout?.bottom).toBeUndefined();
-    const band0 =
-      'polygon(-100% calc(var(--overlay-height) * -0.27778 + 0%), 200% calc(var(--overlay-height) * -0.27778 + 0%), ' +
-      '200% calc(var(--overlay-height) * 0 + 0%), -100% calc(var(--overlay-height) * 0 + 0%))';
-    expect(cue.layout?.clipPath).toBe(band0);
+    // The band is fixed on screen: y 100..300 of 720, wider than any box.
+    const band = { rect: [-100, 13.889, 200, 41.667] };
+    expect(cue.layout?.clip).toEqual(band);
     // 1000 / 50 = 20 px/s over 200px = 10s, clamped to the 4s cue.
     expect(cue.animations).toEqual([
       {
@@ -521,14 +511,8 @@ describe('Effect field', () => {
         duration: 4,
         fill: 'both',
         keyframes: [
-          { top: '41.667%', translate: '0 0', clipPath: band0 },
-          {
-            top: '13.889%',
-            translate: '0 -100%',
-            clipPath:
-              'polygon(-100% calc(var(--overlay-height) * 0 + 100%), 200% calc(var(--overlay-height) * 0 + 100%), ' +
-              '200% calc(var(--overlay-height) * 0.27778 + 100%), -100% calc(var(--overlay-height) * 0.27778 + 100%))',
-          },
+          { top: 41.667, translate: { y: 0 }, clip: band },
+          { top: 13.889, translate: { y: -1 }, clip: band },
         ],
       },
     ]);
@@ -540,23 +524,23 @@ describe('Effect field', () => {
     const [anim] = cue.animations!;
     // 1000 / 10 = 100 px/s over 200px = 2s.
     expect(anim.duration).toBe(2);
-    expect(anim.keyframes[0]).toMatchObject({ top: '13.889%', translate: '0 -100%' });
-    expect(anim.keyframes[1]).toMatchObject({ top: '41.667%', translate: '0 0' });
+    expect(anim.keyframes[0]).toMatchObject({ top: 13.889, translate: { y: -1 } });
+    expect(anim.keyframes[1]).toMatchObject({ top: 41.667, translate: { y: 0 } });
   });
 
   test('Banner scrolls right-to-left across the overlay on one line', async () => {
     const cue = await one('x', 'Banner;20');
     expect(cue.layout).toMatchObject({ left: 100, bottom: 1.389, fixed: true });
     expect(cue.layout?.maxWidth).toBeUndefined();
-    expect(cue.textStyle?.whiteSpace).toBe('pre');
+    expect(cue.textStyle?.wrap).toBe('nowrap');
     expect(cue.animations).toEqual([
       {
         target: 'display',
         duration: 4,
         fill: 'both',
         keyframes: [
-          { left: '100%', translate: '0 0' },
-          { left: '0%', translate: '-100% 0' },
+          { left: 100, translate: { x: 0 } },
+          { left: 0, translate: { x: -1 } },
         ],
       },
     ]);
@@ -567,7 +551,7 @@ describe('Effect field', () => {
     expect(cue.layout?.left).toBe(0);
     // 1000 px/s over 1280px = 1.28s.
     expect(cue.animations![0].duration).toBe(1.28);
-    expect(cue.animations![0].keyframes[0]).toEqual({ left: '0%', translate: '-100% 0' });
+    expect(cue.animations![0].keyframes[0]).toEqual({ left: 0, translate: { x: -1 } });
   });
 
   test('unknown effects are ignored', async () => {
@@ -579,18 +563,18 @@ describe('Effect field', () => {
 
 describe('script info', () => {
   test.each([
-    [0, 'pre-wrap'],
-    [1, 'pre-wrap'],
-    [2, 'pre'],
-    [3, 'pre-wrap'],
-  ])('WrapStyle %i -> white-space %s', async (wrapStyle, whiteSpace) => {
+    [0, 'wrap'],
+    [1, 'wrap'],
+    [2, 'nowrap'],
+    [3, 'wrap'],
+  ])('WrapStyle %i -> wrap %s', async (wrapStyle, wrap) => {
     const cue = await one('x', '', [`WrapStyle: ${wrapStyle}`]);
-    expect(cue.textStyle?.whiteSpace).toBe(whiteSpace);
+    expect(cue.textStyle?.wrap).toBe(wrap);
   });
 
   test('\\q overrides the wrap style per dialogue', async () => {
     const cue = await one('{\\q2}a\\nb');
-    expect(cue.textStyle?.whiteSpace).toBe('pre');
+    expect(cue.textStyle?.wrap).toBe('nowrap');
     expect(cue.text).toBe('a\nb');
   });
 
@@ -634,8 +618,7 @@ describe('tag emission', () => {
 
   test('rectangular \\clip without \\pos becomes a screen-fixed clip rectangle', async () => {
     const { cues } = await parseText(doc('{\\clip(0,0,640,360)}clipped'), { type: 'ass' });
-    expect(cues[0].layout?.clipRect).toEqual({ left: 0, top: 0, right: 50, bottom: 50 });
-    expect(cues[0].layout?.clipPath).toBeUndefined();
+    expect(cues[0].layout?.clip).toEqual({ rect: [0, 0, 50, 50] });
     expect(cues[0].layout?.fixed).toBeUndefined();
   });
 });
@@ -650,38 +633,36 @@ describe('transform origin', () => {
 
   test('inline rotation pivots on the alignment anchor by default', async () => {
     const top = (await parseText(doc('{\\an8\\frz15}x'), { type: 'ass' })).cues[0];
-    expect(spans(top)).toEqual([
-      expect.objectContaining({ transform: 'rotate(-15deg)', transformOrigin: '50% 0%' }),
-    ]);
-    expect(top.textStyle?.transformOrigin).toBeUndefined();
+    expect(spans(top)).toEqual([{ transform: { rotate: -15, origin: [50, 0] } }]);
+    expect(top.textStyle?.transform).toBeUndefined();
     const bottomLeft = (await parseText(doc('{\\an1\\frz15}x'), { type: 'ass' })).cues[0];
-    expect(spans(bottomLeft)[0].transformOrigin).toBe('0% 100%');
+    expect(spans(bottomLeft)[0].transform?.origin).toEqual([0, 100]);
     const plain = (await parseText(doc('{\\an5}x'), { type: 'ass' })).cues[0];
-    expect(plain.textStyle?.transformOrigin).toBeUndefined();
+    expect(plain.textStyle?.transform).toBeUndefined();
     expect(plain.spans).toBeUndefined();
   });
 
   test('a cue-level \\t scale pivots on the anchor', async () => {
     const cue = (await parseText(doc('{\\an8\\t(\\fscx150\\fscy150)}x'), { type: 'ass' })).cues[0];
-    expect(cue.textStyle?.transform).toBeUndefined();
-    expect(cue.textStyle?.transformOrigin).toBe('50% 0%');
+    expect(cue.textStyle?.transform).toEqual({ origin: [50, 0] });
     expect(cue.animations?.[0].target).toBe('cue');
     const faded = (await parseText(doc('{\\an8\\fad(200,200)}x'), { type: 'ass' })).cues[0];
-    expect(faded.textStyle?.transformOrigin).toBeUndefined();
+    expect(faded.textStyle?.transform).toBeUndefined();
   });
 
   test('a style-level Angle rotates the cue box around its anchor', async () => {
     const rotated = doc('{\\an8}x').replace(',100,100,0,0,1,2,0,2,', ',100,100,0,20,1,2,0,2,');
     const cue = (await parseText(rotated, { type: 'ass' })).cues[0];
-    expect(cue.textStyle?.transform).toBe('rotate(-20deg)');
-    expect(cue.textStyle?.transformOrigin).toBe('50% 0%');
+    expect(cue.textStyle?.transform).toEqual({ rotate: -20, origin: [50, 0] });
   });
 
   test('\\org on a positioned cue becomes an overlay-relative origin', async () => {
     const cue = (await parseText(doc('{\\pos(640,360)\\org(0,0)\\frz90}x'), { type: 'ass' }))
       .cues[0];
-    expect(spans(cue)[0].transformOrigin).toMatch(
-      /^calc\(var\(--overlay-width\) \* -0\.5 \+ 50%\) calc\(var\(--overlay-height\) \* -0\.5 \+ 100%\)$/,
+    expect(spans(cue)[0].transform).toEqual({ rotate: -90, originAt: [0, 0] });
+    // The DOM writer places the pivot relative to the box through the overlay size variables.
+    expect(renderVTTCueString(cue)).toContain(
+      'transform-origin: calc(var(--overlay-width) * -0.5 + 50%) calc(var(--overlay-height) * -0.5 + 100%);',
     );
   });
 });

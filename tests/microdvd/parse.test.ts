@@ -83,9 +83,9 @@ test('GOOD: font and size become per-cue spans', async () => {
 
   expect(cues[0].text).toBe('<c.s-1>Big Arial</c>\n<c.s-2>Small</c>\n<c.s-3>Struck</c>\nPlain');
   expect(cues[0].spans).toEqual({
-    '1': { fontFamily: 'Arial', fontSize: '1.5em' },
-    '2': { fontSize: '0.5em' },
-    '3': { textDecoration: 'line-through' },
+    '1': { fontFamily: 'Arial', fontSize: { unit: 'em', value: 1.5 } },
+    '2': { fontSize: { unit: 'em', value: 0.5 } },
+    '3': { strike: true },
   });
 });
 

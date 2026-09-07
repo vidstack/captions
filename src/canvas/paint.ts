@@ -1,22 +1,23 @@
 import type { Box } from '../vtt/overlay/box';
-import type { CueAnimation } from '../vtt/vtt-cue';
-import { sampleAnimation, type SampledFrame } from './animate';
-import {
-  parseClipPath,
-  parseTransform,
-  parseTransformOrigin,
-  resolveLength,
-  type LengthEnv,
-  type Transform2D,
-} from './css-values';
-import { fontString, type Run } from './flow';
+import type { CueAnimation, CueKeyframe } from '../vtt/vtt-cue';
+import { sampleAnimation } from './animate';
+import { fontString, shadowPx, type Run } from './flow';
 import type { MeasuredCue, MeasuredRegion } from './measure';
 import type { CanvasTheme } from './theme';
+import {
+  clipToPolygon,
+  combineTransforms,
+  lengthToPx,
+  transform2D,
+  transformOriginPx,
+  type LengthEnv,
+  type Transform2D,
+} from './values';
 
 /** The subset of `CanvasRenderingContext2D` the painter uses (also satisfied by offscreen contexts). */
 export type PaintContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
-/** Loads and caches `background-image` URLs; `onLoad` asks for a repaint. */
+/** Loads and caches image cue URLs; `onLoad` asks for a repaint. */
 export class ImageCache {
   private _images = new Map<string, HTMLImageElement | null>();
 
@@ -56,57 +57,45 @@ const NO_COLOR = new Set(['transparent', 'none', 'rgba(0,0,0,0)', 'rgba(0, 0, 0,
 export function paintCue(ctx: PaintContext, cue: MeasuredCue, box: Box, options: PaintOptions) {
   const { theme } = options,
     { container } = theme,
-    env: LengthEnv = { width: container.width, height: container.height, em: cue.style.fontSize };
-
-  const display = sampleTarget(cue, 'display', options),
+    display = sampleTarget(cue, 'display', options),
     inner = sampleTarget(cue, 'cue', options);
 
+  // Animated position (SSA `\move`, scroll and banner effects, CEA-708 marquees).
   let left = box.left,
     top = box.top;
-  const animatedLeft = resolveLength(display.left as string, { ...env, percent: container.width }),
-    animatedTop = resolveLength(display.top as string, { ...env, percent: container.height });
-  if (animatedLeft !== null) left = animatedLeft + (cue.cue.layout?.translate?.x ?? 0) * box.width;
-  if (animatedTop !== null) top = animatedTop + (cue.cue.layout?.translate?.y ?? 0) * box.height;
+  const translateX = display.translate?.x ?? cue.cue.layout?.translate?.x ?? 0,
+    translateY = display.translate?.y ?? cue.cue.layout?.translate?.y ?? 0;
+  if (display.left !== undefined)
+    left = (display.left / 100) * container.width + translateX * box.width;
+  if (display.top !== undefined)
+    top = (display.top / 100) * container.height + translateY * box.height;
+  if (display.left === undefined && display.translate?.x !== undefined)
+    left += display.translate.x * box.width;
+  if (display.top === undefined && display.translate?.y !== undefined)
+    top += display.translate.y * box.height;
+  const painted = { left, top, width: box.width, height: box.height };
 
   ctx.save();
   ctx.translate(container.left + left, container.top + top);
-  ctx.globalAlpha *= cue.style.opacity * alphaOf(display) * alphaOf(inner);
+  ctx.globalAlpha *= cue.style.opacity * (display.opacity ?? 1) * (inner.opacity ?? 1);
 
-  // Screen-fixed clip rectangles and box-relative clip paths (SSA `\clip`).
-  const clipRect = cue.cue.layout?.clipRect;
-  if (clipRect) {
+  // Clips: screen-fixed rectangles and polygons (SSA `\clip`, scroll bands) or box insets (wipes).
+  const clip = display.clip ?? cue.style.clip;
+  if (clip) {
+    const { points, evenOdd } = clipToPolygon(clip, container, painted);
     ctx.beginPath();
-    ctx.rect(
-      (clipRect.left / 100) * container.width - left,
-      (clipRect.top / 100) * container.height - top,
-      ((clipRect.right - clipRect.left) / 100) * container.width,
-      ((clipRect.bottom - clipRect.top) / 100) * container.height,
-    );
-    ctx.clip();
-  }
-  const polygon = parseClipPath(cue.style.clipPath, env, box);
-  if (polygon) {
-    ctx.beginPath();
-    polygon.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    points.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
     ctx.closePath();
-    ctx.clip();
+    ctx.clip(evenOdd ? 'evenodd' : 'nonzero');
   }
 
   // Cue transforms (SSA rotation/scale, `\t`) pivot on the alignment anchor or `\org`.
-  const transform = combine(
-    parseTransform(cue.style.transform, { ...env, percentX: box.width, percentY: box.height }),
-    parseTransform(display.transform as string, {
-      ...env,
-      percentX: box.width,
-      percentY: box.height,
-    }),
-    parseTransform(inner.transform as string, {
-      ...env,
-      percentX: box.width,
-      percentY: box.height,
-    }),
+  const transform = combineTransforms(
+    transform2D(cue.style.transform),
+    transform2D(display.transform),
+    transform2D(inner.transform),
   );
-  applyTransform(ctx, transform, parseTransformOrigin(cue.style.transformOrigin, env, box));
+  applyTransform(ctx, transform, transformOriginPx(cue.style.transform, container, painted));
 
   paintCueContent(ctx, cue, options, inner);
   ctx.restore();
@@ -144,7 +133,7 @@ function paintCueContent(
   ctx: PaintContext,
   cue: MeasuredCue,
   options: PaintOptions,
-  inner: SampledFrame,
+  inner: CueKeyframe,
 ) {
   const { style, textBox, flow } = cue,
     { theme } = options;
@@ -157,10 +146,16 @@ function paintCueContent(
   if (style.imageURL) {
     const image = options.images.get(style.imageURL);
     if (image) {
-      // `background-size: contain`, centred.
-      const scale = Math.min(textBox.width / image.width, textBox.height / image.height),
-        w = image.width * scale,
-        h = image.height * scale;
+      const scale =
+          style.imageFit === 'cover'
+            ? Math.max(textBox.width / image.width, textBox.height / image.height)
+            : Math.min(textBox.width / image.width, textBox.height / image.height),
+        w = style.imageFit === 'fill' ? textBox.width : image.width * scale,
+        h = style.imageFit === 'fill' ? textBox.height : image.height * scale;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(textBox.left, textBox.top, textBox.width, textBox.height);
+      ctx.clip();
       ctx.drawImage(
         image,
         textBox.left + (textBox.width - w) / 2,
@@ -168,6 +163,7 @@ function paintCueContent(
         w,
         h,
       );
+      ctx.restore();
     }
   }
 
@@ -182,10 +178,7 @@ function paintCueContent(
     );
   }
 
-  const innerColor = typeof inner.color === 'string' ? inner.color : null,
-    innerStrokeColor =
-      typeof inner.webkitTextStrokeColor === 'string' ? inner.webkitTextStrokeColor : null,
-    contentWidth = textBox.width - 2 * style.paddingX;
+  const contentWidth = textBox.width - 2 * style.paddingX;
 
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
@@ -202,11 +195,10 @@ function paintCueContent(
     for (const run of line.runs) {
       const span = run.style.spanKey ? sampleTarget(cue, { span: run.style.spanKey }, options) : {};
       paintRun(ctx, run, x, y, flow.lineHeight, cue, theme, {
-        color: (span.color as string) ?? (run.style.color === style.color ? innerColor : null),
-        strokeColor: innerStrokeColor,
-        alpha: alphaOf(span),
-        transform: span.transform as string | undefined,
-        backgroundPosition: span.backgroundPosition as string | undefined,
+        color: span.color ?? (run.style.color === style.color ? inner.color : undefined),
+        strokeColor: inner.strokeColor ?? span.strokeColor,
+        alpha: span.opacity ?? 1,
+        frame: span,
         time: options.time,
       });
       x += run.width;
@@ -215,11 +207,11 @@ function paintCueContent(
 }
 
 interface RunOverrides {
-  color: string | null;
-  strokeColor: string | null;
+  color?: string;
+  strokeColor?: string;
   alpha: number;
-  transform?: string;
-  backgroundPosition?: string;
+  /** The sampled span animation, for transforms, sizes, and sweeps. */
+  frame: CueKeyframe;
   /** Media time, for timed text. */
   time: number;
 }
@@ -241,14 +233,13 @@ function paintRun(
   ctx.save();
   ctx.globalAlpha *= style.opacity * over.alpha;
 
-  const transformValue = [style.transform, over.transform].filter(Boolean).join(' ');
-  if (transformValue) {
-    const runBox = { width: run.width, height: lineHeight };
+  if (style.transform || over.frame.transform) {
+    const runBox = { left: x, top: y, width: run.width, height: lineHeight };
     ctx.translate(x, y);
     applyTransform(
       ctx,
-      parseTransform(transformValue, { ...env, percentX: runBox.width, percentY: runBox.height }),
-      parseTransformOrigin(style.transformOrigin, env, runBox),
+      combineTransforms(transform2D(style.transform), transform2D(over.frame.transform)),
+      transformOriginPx(style.transform, container, runBox),
     );
     ctx.translate(-x, -y);
   }
@@ -279,11 +270,31 @@ function paintRun(
     return;
   }
 
-  ctx.font = fontString(style);
-  if ('letterSpacing' in ctx) ctx.letterSpacing = `${style.letterSpacing}px`;
+  const fontSize = lengthToPx(over.frame.fontSize, env) ?? style.fontSize,
+    font = fontSize === style.fontSize ? fontString(style) : fontString({ ...style, fontSize });
+  ctx.font = font;
+  if ('letterSpacing' in ctx) {
+    ctx.letterSpacing = `${lengthToPx(over.frame.letterSpacing, env) ?? style.letterSpacing}px`;
+  }
   const middle = y + lineHeight / 2,
-    stroke = style.stroke === undefined ? cue.style.stroke : style.stroke,
-    shadow = style.shadow === undefined ? cue.style.shadow : style.shadow;
+    stroke =
+      over.frame.strokeWidth !== undefined
+        ? {
+            width: lengthToPx(over.frame.strokeWidth, env) ?? 0,
+            color: over.strokeColor ?? style.color,
+          }
+        : style.stroke === undefined
+          ? cue.style.stroke
+          : style.stroke,
+    shadow =
+      over.frame.shadow !== undefined
+        ? shadowPx(over.frame.shadow, env)
+        : style.shadow === undefined
+          ? cue.style.shadow
+          : style.shadow,
+    blur = lengthToPx(over.frame.blur, env);
+
+  if (blur && 'filter' in ctx) ctx.filter = `blur(${blur}px)`;
 
   if (shadow) {
     ctx.shadowOffsetX = shadow.x;
@@ -297,32 +308,32 @@ function paintRun(
     const timed = theme.timedColors[over.time >= style.timestamp ? 'past' : 'future'];
     if (timed) fill = timed;
   }
-  if (stroke) {
+  if (stroke && stroke.width > 0) {
     ctx.lineWidth = stroke.width;
     ctx.strokeStyle = over.strokeColor ?? (stroke.color === 'currentColor' ? fill : stroke.color);
     ctx.strokeText(run.text, x, middle);
     // The shadow is painted once, with the stroke.
     ctx.shadowColor = 'transparent';
   }
+
   if (style.sweep) {
     // Karaoke: the sung part in the primary colour, the rest in the secondary, split at the
-    // animated `background-position` (100% = nothing sung, 0% = all sung).
-    const position = String(over.backgroundPosition ?? '100% 0').split(' ')[0],
-      progress = Math.min(Math.max(1 - (parseFloat(position) || 0) / 100, 0), 1),
+    // animated progress (0 = nothing sung, 1 = all sung).
+    const progress = Math.min(Math.max(over.frame.sweep ?? 0, 0), 1),
       split = x + run.width * progress,
       pad = stroke ? stroke.width : 0;
     ctx.save();
     ctx.beginPath();
     ctx.rect(x - pad, y - lineHeight, split - x + pad, lineHeight * 3);
     ctx.clip();
-    ctx.fillStyle = style.sweep.from;
+    ctx.fillStyle = style.sweep.sung;
     ctx.fillText(run.text, x, middle);
     ctx.restore();
     ctx.save();
     ctx.beginPath();
     ctx.rect(split, y - lineHeight, x + run.width + pad - split, lineHeight * 3);
     ctx.clip();
-    ctx.fillStyle = style.sweep.to;
+    ctx.fillStyle = style.sweep.unsung;
     ctx.fillText(run.text, x, middle);
     ctx.restore();
   } else {
@@ -346,8 +357,8 @@ function sampleTarget(
   cue: MeasuredCue,
   target: NonNullable<CueAnimation['target']>,
   options: PaintOptions,
-): SampledFrame {
-  const frame: SampledFrame = {};
+): CueKeyframe {
+  const frame: CueKeyframe = {};
   for (const spec of cue.cue.animations ?? []) {
     const specTarget = spec.target ?? 'display';
     const matches =
@@ -363,26 +374,9 @@ function sampleTarget(
   return frame;
 }
 
-function alphaOf(frame: SampledFrame): number {
-  const opacity = frame.opacity;
-  if (opacity === undefined) return 1;
-  const n = typeof opacity === 'number' ? opacity : parseFloat(opacity);
-  return Number.isFinite(n) ? Math.min(Math.max(n, 0), 1) : 1;
-}
-
-function combine(...transforms: Transform2D[]): Transform2D {
-  return transforms.reduce((a, b) => ({
-    translateX: a.translateX + b.translateX,
-    translateY: a.translateY + b.translateY,
-    scaleX: a.scaleX * b.scaleX,
-    scaleY: a.scaleY * b.scaleY,
-    rotate: a.rotate + b.rotate,
-  }));
-}
-
 function applyTransform(ctx: PaintContext, t: Transform2D, [ox, oy]: [number, number]) {
-  if (!t.translateX && !t.translateY && t.scaleX === 1 && t.scaleY === 1 && !t.rotate) return;
-  ctx.translate(ox + t.translateX, oy + t.translateY);
+  if (t.scaleX === 1 && t.scaleY === 1 && !t.rotate) return;
+  ctx.translate(ox, oy);
   if (t.rotate) ctx.rotate((t.rotate * Math.PI) / 180);
   if (t.scaleX !== 1 || t.scaleY !== 1) ctx.scale(t.scaleX, t.scaleY);
   ctx.translate(-ox, -oy);

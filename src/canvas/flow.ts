@@ -1,14 +1,27 @@
 import type { VTTNode } from '../vtt/tokenize-cue';
-import type { CueDrawing, CueSpanStyle } from '../vtt/vtt-cue';
-import {
-  parseShadow,
-  parseStroke,
-  parseSweepGradient,
-  resolveLength,
-  type LengthEnv,
-  type Shadow,
-} from './css-values';
+import type {
+  CueDrawing,
+  CueShadow,
+  CueSpanStyle,
+  CueStroke,
+  CueSweep,
+  CueTransform,
+} from '../vtt/vtt-cue';
 import type { TextMeasurer } from './text-measurer';
+import { lengthToPx, type LengthEnv } from './values';
+
+/** A stroke or shadow resolved to pixels. */
+export interface PxStroke {
+  width: number;
+  color: string;
+}
+
+export interface PxShadow {
+  x: number;
+  y: number;
+  blur: number;
+  color: string;
+}
 
 /** Resolved style of one run of text. */
 export interface RunStyle {
@@ -22,17 +35,17 @@ export interface RunStyle {
   fontSize: number;
   letterSpacing: number;
   opacity: number;
-  stroke: { width: number; color: string } | null | undefined;
-  shadow: Shadow | null | undefined;
-  transform?: string;
-  transformOrigin?: string;
+  /** `undefined` inherits the cue's; `null` is none. */
+  stroke: PxStroke | null | undefined;
+  shadow: PxShadow | null | undefined;
+  transform?: CueTransform;
   drawing?: CueDrawing;
   /** `<c.s-KEY>` span key, the target of span animations. */
   spanKey?: string;
   /** The run follows a `<hh:mm:ss.ttt>` timestamp tag: past or future relative to media time. */
   timestamp?: number;
-  /** Karaoke sweep: glyphs fill from `to` (unsung) to `from` (sung) as the span animation runs. */
-  sweep?: { from: string; to: string };
+  /** Karaoke sweep: glyphs fill from `unsung` to `sung` as the span animation runs. */
+  sweep?: CueSweep;
 }
 
 export interface Run {
@@ -78,6 +91,30 @@ interface Segment {
 
 export function fontString(style: RunStyle): string {
   return `${style.italic ? 'italic ' : ''}${style.bold ? 'bold ' : ''}${style.fontSize}px ${style.fontFamily}`;
+}
+
+export function strokePx(
+  stroke: CueStroke | null | undefined,
+  env: LengthEnv,
+): PxStroke | null | undefined {
+  if (stroke === undefined) return undefined;
+  if (stroke === null) return null;
+  const width = lengthToPx(stroke.width, env) ?? 0;
+  return width > 0 ? { width, color: stroke.color } : null;
+}
+
+export function shadowPx(
+  shadow: CueShadow | null | undefined,
+  env: LengthEnv,
+): PxShadow | null | undefined {
+  if (shadow === undefined) return undefined;
+  if (shadow === null) return null;
+  return {
+    x: lengthToPx(shadow.x, env) ?? 0,
+    y: lengthToPx(shadow.y, env) ?? 0,
+    blur: lengthToPx(shadow.blur, env) ?? 0,
+    color: shadow.color,
+  };
 }
 
 /**
@@ -178,23 +215,19 @@ function applySpan(style: RunStyle, span: CueSpanStyle, env: LengthEnv, spanKey?
   if (span.color) style.color = span.color;
   if (span.backgroundColor) style.bgColor = span.backgroundColor;
   if (span.fontFamily) style.fontFamily = span.fontFamily;
-  const size = resolveLength(span.fontSize, local);
+  const size = lengthToPx(span.fontSize, local);
   if (size) style.fontSize = size;
-  if (span.fontWeight) style.bold = span.fontWeight === 'bold' || parseInt(span.fontWeight) >= 600;
-  if (span.fontStyle) style.italic = span.fontStyle === 'italic' || span.fontStyle === 'oblique';
-  if (span.textDecoration) {
-    style.underline = span.textDecoration.includes('underline');
-    style.strike = span.textDecoration.includes('line-through');
-  }
-  const spacing = resolveLength(span.letterSpacing, { ...local, em: style.fontSize });
+  const runEnv = { ...local, em: style.fontSize };
+  if (span.fontWeight !== undefined) style.bold = span.fontWeight >= 600;
+  if (span.italic !== undefined) style.italic = span.italic;
+  if (span.underline !== undefined) style.underline = span.underline;
+  if (span.strike !== undefined) style.strike = span.strike;
+  const spacing = lengthToPx(span.letterSpacing, runEnv);
   if (spacing !== null) style.letterSpacing = spacing;
-  if (span.textStroke !== undefined)
-    style.stroke = parseStroke(span.textStroke, { ...local, em: style.fontSize });
-  if (span.textShadow !== undefined)
-    style.shadow = parseShadow(span.textShadow, { ...local, em: style.fontSize });
-  if (span.opacity !== undefined) style.opacity *= parseFloat(span.opacity) || 0;
+  if (span.stroke !== undefined) style.stroke = strokePx(span.stroke, runEnv);
+  if (span.shadow !== undefined) style.shadow = shadowPx(span.shadow, runEnv);
+  if (span.opacity !== undefined) style.opacity *= span.opacity;
   if (span.transform) style.transform = span.transform;
-  if (span.transformOrigin) style.transformOrigin = span.transformOrigin;
   if (span.className) {
     for (const name of span.className.split(' ')) {
       if (name === 'pen-small') style.fontSize *= 0.8;
@@ -203,13 +236,9 @@ function applySpan(style: RunStyle, span: CueSpanStyle, env: LengthEnv, spanKey?
   }
   if (span.drawing) style.drawing = span.drawing;
   if (spanKey) style.spanKey = spanKey;
-  if (span.backgroundClip === 'text') {
-    const sweep = parseSweepGradient(span.backgroundImage);
-    if (sweep) {
-      style.sweep = sweep;
-      // The gradient is the fill; the transparent `color` only exists to let it show through.
-      style.color = sweep.from;
-    }
+  if (span.sweep) {
+    style.sweep = span.sweep;
+    style.color = span.sweep.sung;
   }
 }
 

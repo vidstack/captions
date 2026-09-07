@@ -54,13 +54,34 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
         "backgroundColor": "transparent",
         "color": "rgba(255,255,255,1)",
         "fontFamily": ""Arial", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.125)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 12.5,
+        },
         "lineHeight": "normal",
-        "paddingY": "0",
+        "padding": {
+          "y": 0,
+        },
+        "shadow": {
+          "color": "rgba(0,0,0,1)",
+          "x": {
+            "unit": "vh",
+            "value": 0.6944,
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.6944,
+          },
+        },
+        "stroke": {
+          "color": "rgba(0,0,0,1)",
+          "width": {
+            "unit": "vh",
+            "value": 1.3889,
+          },
+        },
         "textAlign": "center",
-        "textShadow": "calc(var(--overlay-height) * 0.00694) calc(var(--overlay-height) * 0.00694) 0 rgba(0,0,0,1)",
-        "textStroke": "calc(var(--overlay-height) * 0.01389) rgba(0,0,0,1)",
-        "whiteSpace": "pre-wrap",
+        "wrap": "wrap",
       },
     }
   `);
@@ -83,16 +104,38 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
         "backgroundColor": "transparent",
         "color": "rgba(255,255,255,1)",
         "fontFamily": ""Arial", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.08333)",
-        "fontStyle": "italic",
-        "fontWeight": "bold",
+        "fontSize": {
+          "unit": "vh",
+          "value": 8.3333,
+        },
+        "fontWeight": 700,
+        "italic": true,
         "lineHeight": "normal",
-        "paddingY": "0",
+        "padding": {
+          "y": 0,
+        },
+        "shadow": {
+          "color": "rgba(0,0,0,1)",
+          "x": {
+            "unit": "vh",
+            "value": 0.6944,
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.6944,
+          },
+        },
+        "strike": true,
+        "stroke": {
+          "color": "rgba(0,0,0,1)",
+          "width": {
+            "unit": "vh",
+            "value": 1.3889,
+          },
+        },
         "textAlign": "center",
-        "textDecoration": "underline line-through",
-        "textShadow": "calc(var(--overlay-height) * 0.00694) calc(var(--overlay-height) * 0.00694) 0 rgba(0,0,0,1)",
-        "textStroke": "calc(var(--overlay-height) * 0.01389) rgba(0,0,0,1)",
-        "whiteSpace": "pre-wrap",
+        "underline": true,
+        "wrap": "wrap",
       },
     }
   `);

@@ -1,5 +1,5 @@
 import { VTTCue } from '../vtt/vtt-cue';
-import type { CueAnimation, CueSpanStyle, CueTextStyle } from '../vtt/vtt-cue';
+import type { CueAnimation, CueClip, CueLength, CueSpanStyle, CueTextStyle } from '../vtt/vtt-cue';
 import type { CCDataTriplet } from './cc-data';
 
 /**
@@ -180,15 +180,19 @@ const FONT_FAMILIES = [
  * Wipe effect direction -> `clip-path` hiding the whole box on the side the wipe reveals last.
  * Inset order is top, right, bottom, left.
  */
-const WIPE_HIDDEN = [
-  'inset(0 100% 0 0)', // left-to-right: revealed from the left, so the right is hidden
-  'inset(0 0 0 100%)', // right-to-left
-  'inset(0 0 100% 0)', // top-to-bottom
-  'inset(100% 0 0 0)', // bottom-to-top
+const WIPE_HIDDEN: CueClip[] = [
+  { inset: [0, 100, 0, 0] }, // left-to-right: revealed from the left, so the right is hidden
+  { inset: [0, 0, 0, 100] }, // right-to-left
+  { inset: [0, 0, 100, 0] }, // top-to-bottom
+  { inset: [100, 0, 0, 0] }, // bottom-to-top
 ];
+const WIPE_SHOWN: CueClip = { inset: [0, 0, 0, 0] };
 
 /** Cue-box layout for ticker windows: one full-width row along the bottom edge. */
 const TICKER_LAYOUT = { left: 0, bottom: 0, width: 100 };
+
+const em = (value: number): CueLength => ({ unit: 'em', value }),
+  EM_008 = em(0.08);
 
 /** G2 character set (after EXT1, 0x20-0x7f). Unlisted codes are undefined and dropped. */
 const G2_CHARS: Record<number, string> = {
@@ -1143,7 +1147,7 @@ function addMarquee(cue: VTTCue) {
   const animation: CueAnimation = {
     target: 'display',
     duration,
-    keyframes: [{ left: '100%' }, { left: '-100%' }],
+    keyframes: [{ left: 100 }, { left: -100 }],
   };
   cue.animations = cue.animations ? [...cue.animations, animation] : [animation];
 }
@@ -1163,7 +1167,7 @@ function windowTextStyle(window: CaptionWindow, font: number): CueTextStyle | un
   }
 
   if (window.borderType !== 0) {
-    style.outline = '0.08em solid ' + hexColor(window.borderColor);
+    style.outline = { width: EM_008, color: hexColor(window.borderColor) };
     any = true;
   }
 
@@ -1172,19 +1176,19 @@ function windowTextStyle(window: CaptionWindow, font: number): CueTextStyle | un
     const color = hexColor((edge & EDGE_COLOR_MASK) >> EDGE_COLOR_SHIFT);
     switch ((edge & EDGE_MASK) >> EDGE_SHIFT) {
       case EdgeType.Uniform:
-        style.textStroke = '0.08em ' + color;
+        style.stroke = { width: EM_008, color };
         break;
       case EdgeType.Raised:
-        style.textShadow = '-0.04em -0.04em 0 ' + color;
+        style.shadow = { x: em(-0.04), y: em(-0.04), color };
         break;
       case EdgeType.Depressed:
-        style.textShadow = '0.04em 0.04em 0 ' + color;
+        style.shadow = { x: em(0.04), y: em(0.04), color };
         break;
       case EdgeType.LeftDropShadow:
-        style.textShadow = '-0.06em 0.06em 0.06em ' + color;
+        style.shadow = { x: em(-0.06), y: em(0.06), blur: em(0.06), color };
         break;
       case EdgeType.RightDropShadow:
-        style.textShadow = '0.06em 0.06em 0.06em ' + color;
+        style.shadow = { x: em(0.06), y: em(0.06), blur: em(0.06), color };
         break;
     }
     any = true;
@@ -1249,7 +1253,7 @@ function displayAnimation(window: CaptionWindow): CueAnimation | undefined {
     keyframes:
       effect === DisplayEffect.Fade
         ? [{ opacity: 0 }, { opacity: 1 }]
-        : [{ clipPath: WIPE_HIDDEN[window.effectDirection] }, { clipPath: 'inset(0)' }],
+        : [{ clip: WIPE_HIDDEN[window.effectDirection] }, { clip: WIPE_SHOWN }],
   };
 }
 

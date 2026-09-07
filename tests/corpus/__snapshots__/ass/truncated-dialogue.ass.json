@@ -33,14 +33,25 @@
       },
       "textStyle": {
         "fontFamily": "\"Arial\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06667)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
         "color": "rgba(255,255,255,1)",
-        "whiteSpace": "pre-wrap",
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00556) rgba(0,0,0,1)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,0,0,1)"
+        }
       }
     },
     {
@@ -68,14 +79,25 @@
       },
       "textStyle": {
         "fontFamily": "\"Arial\", sans-serif",
-        "fontSize": "calc(var(--overlay-height) * 0.06667)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
         "color": "rgba(255,255,255,1)",
-        "whiteSpace": "pre-wrap",
+        "wrap": "wrap",
         "lineHeight": "normal",
         "textAlign": "center",
         "backgroundColor": "transparent",
-        "paddingY": "0",
-        "textStroke": "calc(var(--overlay-height) * 0.00556) rgba(0,0,0,1)"
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,0,0,1)"
+        }
       }
     }
   ]

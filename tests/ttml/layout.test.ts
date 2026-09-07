@@ -32,7 +32,7 @@ test('GOOD: cell units resolve against ttp:cellResolution', async () => {
   expect(cues[0].line).toBeCloseTo(87.5 - 100 / 24);
   expect(cues[0].lineAlign).toBe('end');
   expect(cues[0].vertical).toBe('');
-  expect(cues[0].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.04167)' });
+  expect(cues[0].textStyle).toEqual({ fontSize: { unit: 'vh', value: 4.1667 } });
 });
 
 test('GOOD: font sizes in %, c, px and em', async () => {
@@ -62,14 +62,14 @@ test('GOOD: font sizes in %, c, px and em', async () => {
   expect(errors).toHaveLength(0);
   expect(cues).toHaveLength(7);
 
-  expect(cues[0].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.05 * 0.8)' });
+  expect(cues[0].textStyle).toEqual({ fontSize: { unit: 'vh', value: 4 } });
   // Default cell resolution is 32x15.
-  expect(cues[1].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.06667)' });
+  expect(cues[1].textStyle).toEqual({ fontSize: { unit: 'vh', value: 6.6667 } });
   // 36 / 720
-  expect(cues[2].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.05)' });
-  expect(cues[3].textStyle).toEqual({ fontSize: '1.5em' });
+  expect(cues[2].textStyle).toEqual({ fontSize: { unit: 'vh', value: 5 } });
+  expect(cues[3].textStyle).toEqual({ fontSize: { unit: 'em', value: 1.5 } });
   // Second (vertical) value wins: 2 / 15.
-  expect(cues[4].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.13333)' });
+  expect(cues[4].textStyle).toEqual({ fontSize: { unit: 'vh', value: 13.3333 } });
   expect(cues[5].textStyle).toBeUndefined();
   expect(cues[6].textStyle).toBeUndefined();
 });
@@ -87,7 +87,7 @@ test('GOOD: px font size falls back to the default 1080px root height', async ()
   );
 
   expect(errors).toHaveLength(0);
-  expect(cues[0].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.05)' });
+  expect(cues[0].textStyle).toEqual({ fontSize: { unit: 'vh', value: 5 } });
 });
 
 test('GOOD: font size is inherited from region and container', async () => {
@@ -112,9 +112,9 @@ test('GOOD: font size is inherited from region and container', async () => {
   );
 
   expect(errors).toHaveLength(0);
-  expect(cues[0].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.05 * 0.5)' });
-  expect(cues[1].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.05 * 2)' });
-  expect(cues[2].textStyle).toEqual({ fontSize: '1em' });
+  expect(cues[0].textStyle).toEqual({ fontSize: { unit: 'vh', value: 2.5 } });
+  expect(cues[1].textStyle).toEqual({ fontSize: { unit: 'vh', value: 10 } });
+  expect(cues[2].textStyle).toEqual({ fontSize: { unit: 'em', value: 1 } });
 });
 
 test('GOOD: tbrl writing mode maps to vertical rl with swapped axes', async () => {

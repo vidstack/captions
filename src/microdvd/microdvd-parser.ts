@@ -29,7 +29,8 @@ interface Format {
   strike?: boolean;
   color?: string;
   fontFamily?: string;
-  fontSize?: string;
+  /** Multiple of the default font size. */
+  fontSize?: number;
   position?: [x: number, y: number];
 }
 
@@ -158,8 +159,8 @@ export class MicroDVDParser implements CaptionsParser {
 
     const span: CueSpanStyle = {};
     if (format.fontFamily) span.fontFamily = format.fontFamily;
-    if (format.fontSize) span.fontSize = format.fontSize;
-    if (format.strike) span.textDecoration = 'line-through';
+    if (format.fontSize) span.fontSize = { unit: 'em', value: format.fontSize };
+    if (format.strike) span.strike = true;
     if (Object.keys(span).length) wrap(`<c.s-${this._addSpan(cue, span)}>`, '</c>');
 
     if (format.bold) wrap('<b>', '</b>');
@@ -212,7 +213,7 @@ function applyControlCode(format: Format, code: string, value: string) {
     }
     case 's': {
       const size = parseFloat(value);
-      if (size > 0) format.fontSize = `${round(size / DEFAULT_FONT_SIZE, 1000)}em`;
+      if (size > 0) format.fontSize = round(size / DEFAULT_FONT_SIZE, 1000);
       break;
     }
     case 'p': {

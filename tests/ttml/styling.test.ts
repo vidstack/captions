@@ -35,14 +35,19 @@ test('GOOD: span typography that differs from the paragraph maps to cue.spans', 
   expect(cues[0].textStyle).toBeUndefined();
   expect(cues[0].spans).toEqual({
     // `%` is relative to the paragraph font size, generic families map to CSS.
-    '1': { fontSize: '1.6em', fontFamily: 'monospace' },
+    '1': { fontSize: { unit: 'em', value: 1.6 }, fontFamily: 'monospace' },
     // 24 / 480; a translucent palette colour is not `<c.red>`.
-    '2': { fontSize: 'calc(var(--overlay-height) * 0.05)', color: '#ff000088' },
+    '2': { fontSize: { unit: 'vh', value: 5 }, color: '#ff000088' },
     '3': {
-      textStroke: 'calc(var(--overlay-height) * 0.00417) black',
+      stroke: { width: { unit: 'vh', value: 0.4167 }, color: 'black' },
       backgroundColor: '#808080',
-      opacity: '0.5',
-      textShadow: '0.1em -0.2em 0.05em lime',
+      opacity: 0.5,
+      shadow: {
+        x: { unit: 'em', value: 0.1 },
+        y: { unit: 'em', value: -0.2 },
+        blur: { unit: 'em', value: 0.05 },
+        color: 'lime',
+      },
     },
     // TTML `rgba()` alpha is 0-255.
     '4': { fontFamily: '"Times New Roman", serif', color: 'rgba(0, 0, 255, 0.502)' },
@@ -65,11 +70,11 @@ test('GOOD: palette colours and inherited styles do not create span styles', asy
   expect(errors).toHaveLength(0);
   expect(cues[0].text).toBe('same <c.yellow>pal</c> inherit clear');
   expect(cues[0].spans).toBeUndefined();
-  expect(cues[0].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.05 * 0.8)' });
+  expect(cues[0].textStyle).toEqual({ fontSize: { unit: 'vh', value: 4 } });
 
   // Identical span styles share a key.
   expect(cues[1].text).toBe('<c.s-1>a</c> <c.s-1>b</c> <c.s-1><i>c</i></c>');
-  expect(cues[1].spans).toEqual({ '1': { fontSize: '2em' } });
+  expect(cues[1].spans).toEqual({ '1': { fontSize: { unit: 'em', value: 2 } } });
 });
 
 test('GOOD: line height, text outline and text shadow on paragraphs', async () => {
@@ -89,14 +94,17 @@ test('GOOD: line height, text outline and text shadow on paragraphs', async () =
 
   expect(errors).toHaveLength(0);
   expect(cues[0].textStyle).toEqual({ lineHeight: 'normal' });
-  // A percentage is relative to the font size: a unitless multiple.
-  expect(cues[1].textStyle).toEqual({ lineHeight: '1.25' });
+  // A percentage is relative to the font size: an `em` multiple.
+  expect(cues[1].textStyle).toEqual({ lineHeight: { unit: 'em', value: 1.25 } });
+  // Only the first shadow of a list is kept.
   expect(cues[2].textStyle).toEqual({
-    lineHeight: 'calc(var(--overlay-height) * 0.06667)',
-    textStroke: 'calc(var(--overlay-height) * 0.00667) red',
-    textShadow:
-      'calc(var(--overlay-height) * 0.00093) calc(var(--overlay-height) * 0.00093) black, ' +
-      'calc(var(--overlay-height) * 0.03333) calc(var(--overlay-height) * 0)',
+    lineHeight: { unit: 'vh', value: 6.6667 },
+    stroke: { width: { unit: 'vh', value: 0.6667 }, color: 'red' },
+    shadow: {
+      x: { unit: 'vh', value: 0.0926 },
+      y: { unit: 'vh', value: 0.0926 },
+      color: 'black',
+    },
   });
   expect(cues[3].textStyle).toEqual({ lineHeight: 'normal' });
 });
@@ -212,7 +220,7 @@ test('GOOD: IMSC 1.1 image element inside a div', async () => {
   for (const cue of cues) {
     expect(cue.text).toBe('');
     expect(cue.layout).toEqual({ left: 10, top: 70, width: 80, height: 20 });
-    expect(cue.textStyle?.backgroundImage).toBe(`url(data:image/png;base64,${PNG_BASE64})`);
+    expect(cue.textStyle?.image?.url).toBe(`data:image/png;base64,${PNG_BASE64}`);
   }
   expect(cues[0].startTime).toBe(0);
   expect(cues[1].startTime).toBe(1);

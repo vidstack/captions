@@ -60,8 +60,12 @@ test('DOM renderer never interprets markup in text', () => {
 test('span styles referenced from cue text are applied to that run only', () => {
   const cue = new VTTCue(0, 10, 'Normal <c.s-big>big <c.s-red>red</c></c> normal');
   cue.spans = {
-    big: { fontSize: '1.5em', letterSpacing: '0.1em', className: 'shout' },
-    red: { color: '#ff0000', textStroke: '2px black' },
+    big: {
+      fontSize: { unit: 'em', value: 1.5 },
+      letterSpacing: { unit: 'em', value: 0.1 },
+      className: 'shout',
+    },
+    red: { color: '#ff0000', stroke: { width: 2, color: 'black' } },
   };
   expect(renderVTTCueString(cue)).toBe(
     'Normal <span data-span="big" class="shout" style="font-size: 1.5em;letter-spacing: 0.1em;">big ' +

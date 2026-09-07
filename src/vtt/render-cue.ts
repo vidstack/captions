@@ -1,30 +1,8 @@
 import { IS_SERVER } from '../utils/env';
 import { setDataAttr } from '../utils/style';
+import { spanStyleToDeclarations } from './style-css';
 import { tokenizeVTTCue, type VTTBlockNode, type VTTNode } from './tokenize-cue';
-import type { CueDrawing, CueSpanStyle, VTTCue } from './vtt-cue';
-
-const SPAN_STYLE_PROPS: Record<string, string> = {
-  color: 'color',
-  backgroundColor: 'background-color',
-  fontFamily: 'font-family',
-  fontSize: 'font-size',
-  fontWeight: 'font-weight',
-  fontStyle: 'font-style',
-  textDecoration: 'text-decoration',
-  letterSpacing: 'letter-spacing',
-  textStroke: '-webkit-text-stroke',
-  textShadow: 'text-shadow',
-  transform: 'transform',
-  transformOrigin: 'transform-origin',
-  display: 'display',
-  opacity: 'opacity',
-  filter: 'filter',
-  animation: 'animation',
-  backgroundImage: 'background-image',
-  backgroundSize: 'background-size',
-  backgroundPosition: 'background-position',
-  backgroundClip: '-webkit-background-clip',
-};
+import type { CueDrawing, CueLayout, CueSpanStyle, VTTCue } from './vtt-cue';
 
 const SVG_NS = 'http://www.w3.org/2000/svg',
   PATH_DATA_RE = /^[MmLlHhVvCcSsQqTtAaZz0-9,.\-+eE\s]*$/;
@@ -49,7 +27,7 @@ export interface VTTCueTemplate {
 }
 
 export function renderVTTCueString(cue: VTTCue, currentTime = 0): string {
-  return renderVTTTokensString(tokenizeVTTCue(cue), currentTime);
+  return renderVTTTokensString(tokenizeVTTCue(cue), currentTime, cue.layout);
 }
 
 /**
@@ -59,6 +37,7 @@ export function renderVTTCueString(cue: VTTCue, currentTime = 0): string {
 export function getVTTTokenAttributes(
   token: VTTBlockNode,
   currentTime = 0,
+  layout?: CueLayout,
 ): Record<string, string> {
   const attrs: Record<string, string> = {};
 
@@ -87,7 +66,7 @@ export function getVTTTokenAttributes(
     if (token.spanKey) attrs['data-span'] = token.spanKey;
     if (token.span.className)
       attrs.class = [attrs.class, token.span.className].filter(Boolean).join(' ');
-    style += spanStyleToCSS(token.span);
+    style += spanStyleToCSS(token.span, layout);
   }
 
   if (style) attrs.style = style;
@@ -96,14 +75,10 @@ export function getVTTTokenAttributes(
 }
 
 /** Serialises a `CueSpanStyle` to inline CSS declarations. */
-export function spanStyleToCSS(span: CueSpanStyle): string {
-  let css = '';
-  for (const key of Object.keys(span)) {
-    const prop = SPAN_STYLE_PROPS[key],
-      value = span[key as keyof CueSpanStyle];
-    if (prop && typeof value === 'string') css += `${prop}: ${value};`;
-  }
-  return css;
+export function spanStyleToCSS(span: CueSpanStyle, layout?: CueLayout): string {
+  return spanStyleToDeclarations(span, layout)
+    .map(([prop, value]) => `${prop}: ${value};`)
+    .join('');
 }
 
 function drawingToSVGString(drawing: CueDrawing): string {
@@ -144,14 +119,18 @@ function appendDrawing(parent: Element, drawing: CueDrawing, doc: Document) {
  * Renders VTT tokens to a HTML string. All text and attribute values are escaped, so the output
  * is safe to assign to `innerHTML` even when the cue text comes from an untrusted captions file.
  */
-export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): string {
+export function renderVTTTokensString(
+  tokens: VTTNode[],
+  currentTime = 0,
+  layout?: CueLayout,
+): string {
   let result = '';
 
   for (const token of tokens) {
     if (token.type === 'text') {
       result += escapeHTML(token.data);
     } else {
-      const attributes = Object.entries(getVTTTokenAttributes(token, currentTime))
+      const attributes = Object.entries(getVTTTokenAttributes(token, currentTime, layout))
         .map(([name, value]) => `${name}="${escapeAttribute(value)}"`)
         .join(' ');
 
@@ -159,6 +138,7 @@ export function renderVTTTokensString(tokens: VTTNode[], currentTime = 0): strin
       result += `<${token.tagName}${attributes ? ' ' + attributes : ''}>${drawing}${renderVTTTokensString(
         token.children,
         currentTime,
+        layout,
       )}</${token.tagName}>`;
     }
   }
@@ -175,13 +155,20 @@ export function renderVTTTokensDOM(
   tokens: VTTNode[],
   currentTime = 0,
   doc: Document = document,
+  layout?: CueLayout,
 ): DocumentFragment {
   const fragment = doc.createDocumentFragment();
-  appendVTTTokens(fragment, tokens, currentTime, doc);
+  appendVTTTokens(fragment, tokens, currentTime, doc, layout);
   return fragment;
 }
 
-function appendVTTTokens(parent: Node, tokens: VTTNode[], currentTime: number, doc: Document) {
+function appendVTTTokens(
+  parent: Node,
+  tokens: VTTNode[],
+  currentTime: number,
+  doc: Document,
+  layout?: CueLayout,
+) {
   for (const token of tokens) {
     if (token.type === 'text') {
       parent.appendChild(doc.createTextNode(token.data));
@@ -189,17 +176,15 @@ function appendVTTTokens(parent: Node, tokens: VTTNode[], currentTime: number, d
     }
 
     const el = doc.createElement(token.tagName),
-      attrs = getVTTTokenAttributes(token, currentTime);
+      attrs = getVTTTokenAttributes(token, currentTime, layout);
 
     for (const name of Object.keys(attrs)) {
       if (name === 'style') {
         if (token.color) el.style.color = token.color;
         if (token.bgColor) el.style.backgroundColor = token.bgColor;
         if (token.span) {
-          for (const key of Object.keys(token.span)) {
-            const prop = SPAN_STYLE_PROPS[key],
-              value = token.span[key as keyof CueSpanStyle];
-            if (prop && typeof value === 'string') el.style.setProperty(prop, value);
+          for (const [prop, value] of spanStyleToDeclarations(token.span, layout)) {
+            el.style.setProperty(prop, value);
           }
         }
       } else {
@@ -208,7 +193,7 @@ function appendVTTTokens(parent: Node, tokens: VTTNode[], currentTime: number, d
     }
 
     if (token.span?.drawing) appendDrawing(el, token.span.drawing, doc);
-    appendVTTTokens(el, token.children, currentTime, doc);
+    appendVTTTokens(el, token.children, currentTime, doc, layout);
     parent.appendChild(el);
   }
 }

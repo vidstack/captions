@@ -17,7 +17,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -36,7 +39,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -55,7 +61,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -74,7 +83,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -93,7 +105,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -112,7 +127,10 @@
       "size": 40,
       "align": "start",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -131,7 +149,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal",
         "className": "forced"
       }
@@ -151,7 +172,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -170,7 +194,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -189,7 +216,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -208,7 +238,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     },
@@ -227,7 +260,10 @@
       "size": 80,
       "align": "center",
       "textStyle": {
-        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
         "lineHeight": "normal"
       }
     }

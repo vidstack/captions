@@ -4,10 +4,14 @@ import type { CaptionsParser, CaptionsParserInit, EmbeddedFont } from '../parse/
 import {
   VTTCue,
   type CueAnimation,
+  type CueClip,
   type CueDrawing,
+  type CueKeyframe,
   type CueLayout,
+  type CueLength,
   type CueSpanStyle,
   type CueTextStyle,
+  type CueTransform,
 } from '../vtt/vtt-cue';
 import { parseVTTTimestamp } from '../vtt/vtt-parser';
 import { decodeUUEncodedFont } from './fonts';
@@ -521,9 +525,9 @@ export class SSAParser implements CaptionsParser {
     return round((px / this._playResY) * 100);
   }
 
-  /** Script pixels to a CSS length relative to the overlay height so it scales like the video. */
-  protected _lenY(px: number) {
-    return `calc(var(--overlay-height) * ${round(px / this._playResY, 5)})`;
+  /** Script pixels as a length relative to the overlay height so it scales like the video. */
+  protected _lenY(px: number): CueLength {
+    return { unit: 'vh', value: round((px / this._playResY) * 100, 4) };
   }
 
   /** The per-run state implied by a style; spans only emit values that differ from it. */
@@ -556,78 +560,66 @@ export class SSAParser implements CaptionsParser {
    * runs without overrides produce no span at all.
    */
   protected _spanStyle(s: SpanState, d: SpanState): CueSpanStyle | null {
-    const css: CueSpanStyle = {};
+    const span: CueSpanStyle = {};
 
-    if (s.fontSize !== d.fontSize) css.fontSize = this._lenY(s.fontSize);
-    if (s.fontName !== d.fontName) css.fontFamily = toFontFamily(s.fontName);
+    if (s.fontSize !== d.fontSize) span.fontSize = this._lenY(s.fontSize);
+    if (s.fontName !== d.fontName) span.fontFamily = toFontFamily(s.fontName);
 
     // Transforms are relative to the style's, which already sit on the cue box.
-    const transform: string[] = [];
-    if (s.scaleX !== d.scaleX) transform.push(`scaleX(${round(s.scaleX / d.scaleX)})`);
-    if (s.scaleY !== d.scaleY) transform.push(`scaleY(${round(s.scaleY / d.scaleY)})`);
-    // ASS rotates counter-clockwise, CSS rotates clockwise.
-    if (s.frz !== d.frz) transform.push(`rotate(${round(-(s.frz - d.frz))}deg)`);
-    if (s.frx !== d.frx) transform.push(`rotateX(${round(-(s.frx - d.frx))}deg)`);
-    if (s.fry !== d.fry) transform.push(`rotateY(${round(-(s.fry - d.fry))}deg)`);
-    if (transform.length) {
-      css.transform = transform.join(' ');
-      // Transforms do not apply to inline boxes.
-      css.display = 'inline-block';
-    }
+    const transform = spanTransform(s, d);
+    if (transform) span.transform = transform;
 
     if (s.bord !== d.bord || !sameColor(s.outlineColor, d.outlineColor)) {
       // Stroke is centered on the glyph edge so it needs to be twice the outline width.
-      css.textStroke = s.bord ? `${this._lenY(s.bord * 2)} ${toRGBA(s.outlineColor)}` : '0';
+      span.stroke = s.bord
+        ? { width: this._lenY(s.bord * 2), color: toRGBA(s.outlineColor) }
+        : null;
     }
     if (s.shad !== d.shad || !sameColor(s.shadowColor, d.shadowColor)) {
-      css.textShadow = s.shad
-        ? `${this._lenY(s.shad)} ${this._lenY(s.shad)} 0 ${toRGBA(s.shadowColor)}`
-        : 'none';
+      span.shadow = s.shad
+        ? { x: this._lenY(s.shad), y: this._lenY(s.shad), color: toRGBA(s.shadowColor) }
+        : null;
     }
-    if (s.blur !== d.blur) css.filter = s.blur ? `blur(${this._lenY(s.blur)})` : 'none';
-    if (s.alpha !== d.alpha) css.opacity = round(s.alpha) + '';
-    if (s.spacing !== d.spacing) css.letterSpacing = this._lenY(s.spacing);
-    if (s.strike !== d.strike) css.textDecoration = s.strike ? 'line-through' : 'none';
+    if (s.blur !== d.blur) span.blur = s.blur ? this._lenY(s.blur) : 0;
+    if (s.alpha !== d.alpha) span.opacity = round(s.alpha);
+    if (s.spacing !== d.spacing) span.letterSpacing = this._lenY(s.spacing);
+    if (s.strike !== d.strike) span.strike = s.strike;
 
+    // Karaoke sweep: the glyphs fill from the secondary to the primary colour (see
+    // `_sweepAnimation`).
     if (s.sweep?.kind === 'fill') {
-      // Karaoke sweep: a two-tone gradient clipped to the glyphs slides from the secondary colour
-      // to the primary colour (see `_sweepAnimation`).
-      css.backgroundImage = `linear-gradient(90deg, ${toRGBA(s.color)} 50%, ${toRGBA(
-        s.secondaryColor,
-      )} 50%)`;
-      css.backgroundSize = '200% 100%';
-      css.backgroundPosition = '100% 0';
-      css.backgroundClip = 'text';
-      css.color = 'transparent';
+      span.sweep = { sung: toRGBA(s.color), unsung: toRGBA(s.secondaryColor) };
     }
 
-    return Object.keys(css).length ? css : null;
+    return Object.keys(span).length ? span : null;
   }
 
   /** A keyframe holding the given animatable properties for a state. */
-  protected _keyframe(s: SpanState, d: SpanState, props: AnimatableProp[]) {
-    const frame: Record<string, string | number> = {};
+  protected _keyframe(s: SpanState, d: SpanState, props: AnimatableProp[]): CueKeyframe {
+    const frame: CueKeyframe = {};
     for (const prop of props) {
       switch (prop) {
         case 'color':
           frame.color = toRGBA(s.color);
           break;
         case 'webkitTextStrokeColor':
-          frame.webkitTextStrokeColor = toRGBA(s.outlineColor);
+          frame.strokeColor = toRGBA(s.outlineColor);
           break;
         case 'opacity':
           frame.opacity = round(s.alpha);
           break;
         case 'transform':
-          frame.transform =
-            `scaleX(${round(s.scaleX / d.scaleX)}) scaleY(${round(s.scaleY / d.scaleY)}) ` +
-            `rotate(${round(-(s.frz - d.frz))}deg)`;
+          frame.transform = {
+            scaleX: round(s.scaleX / d.scaleX),
+            scaleY: round(s.scaleY / d.scaleY),
+            rotate: round(-(s.frz - d.frz)) || 0,
+          };
           break;
         case 'webkitTextStrokeWidth':
-          frame.webkitTextStrokeWidth = this._lenY(s.bord * 2);
+          frame.strokeWidth = this._lenY(s.bord * 2);
           break;
         case 'filter':
-          frame.filter = `blur(${this._lenY(s.blur)})`;
+          frame.blur = this._lenY(s.blur);
           break;
         case 'fontSize':
           frame.fontSize = this._lenY(s.fontSize);
@@ -636,9 +628,11 @@ export class SSAParser implements CaptionsParser {
           frame.letterSpacing = this._lenY(s.spacing);
           break;
         case 'textShadow':
-          frame.textShadow = `${this._lenY(s.shad)} ${this._lenY(s.shad)} 0 ${toRGBA(
-            s.shadowColor,
-          )}`;
+          frame.shadow = {
+            x: this._lenY(s.shad),
+            y: this._lenY(s.shad),
+            color: toRGBA(s.shadowColor),
+          };
           break;
       }
     }
@@ -658,7 +652,7 @@ export class SSAParser implements CaptionsParser {
         { offset: 1, ...this._keyframe(to, d, props) },
       ];
     }
-    const frames: Record<string, string | number>[] = [];
+    const frames: CueKeyframe[] = [];
     for (let i = 0; i <= ACCEL_SAMPLES; i++) {
       const offset = i / ACCEL_SAMPLES,
         progress = offset ** accel;
@@ -676,11 +670,8 @@ export class SSAParser implements CaptionsParser {
       fill: 'both',
       keyframes:
         sweep.kind === 'fill'
-          ? [{ backgroundPosition: '100% 0' }, { backgroundPosition: '0 0' }]
-          : [
-              { webkitTextStrokeColor: toRGBA(s.secondaryColor) },
-              { webkitTextStrokeColor: toRGBA(s.color) },
-            ],
+          ? [{ sweep: 0 }, { sweep: 1 }]
+          : [{ strokeColor: toRGBA(s.secondaryColor) }, { strokeColor: toRGBA(s.color) }],
     };
   }
 
@@ -845,8 +836,8 @@ export class SSAParser implements CaptionsParser {
             duration: round((t2 - t1) / 1000),
             fill: 'both',
             keyframes: [
-              { left: `${this._pctX(x1)}%`, top: `${this._pctY(y1)}%` },
-              { left: `${this._pctX(x2)}%`, top: `${this._pctY(y2)}%` },
+              { left: this._pctX(x1), top: this._pctY(y1) },
+              { left: this._pctX(x2), top: this._pctY(y2) },
             ],
           });
           break;
@@ -1070,33 +1061,29 @@ export class SSAParser implements CaptionsParser {
   protected _applyStyle(cue: VTTCue, style: SSAStyle) {
     const layout: CueLayout = {},
       text: CueTextStyle = {},
-      transform: string[] = [],
+      transform: CueTransform = {},
       effect = style.effect,
       lenY = (px: number) => this._lenY(px);
 
     if (style.fontName) text.fontFamily = toFontFamily(style.fontName);
     if (style.fontSize) text.fontSize = lenY(style.fontSize);
     if (style.primaryColor) text.color = toRGBA(style.primaryColor);
-    if (style.bold) text.fontWeight = 'bold';
-    if (style.italic) text.fontStyle = 'italic';
-
-    const decorations = [style.underline && 'underline', style.strikeOut && 'line-through'].filter(
-      Boolean,
-    );
-    if (decorations.length) text.textDecoration = decorations.join(' ');
+    if (style.bold) text.fontWeight = 700;
+    if (style.italic) text.italic = true;
+    if (style.underline) text.underline = true;
+    if (style.strikeOut) text.strike = true;
 
     if (style.spacing) text.letterSpacing = lenY(style.spacing);
-    if (style.alpha !== undefined) text.opacity = style.alpha + '';
-    if (style.scaleX && style.scaleX !== 100) transform.push(`scaleX(${style.scaleX / 100})`);
-    if (style.scaleY && style.scaleY !== 100) transform.push(`scaleY(${style.scaleY / 100})`);
+    if (style.alpha !== undefined) text.opacity = style.alpha;
+    if (style.scaleX && style.scaleX !== 100) transform.scaleX = style.scaleX / 100;
+    if (style.scaleY && style.scaleY !== 100) transform.scaleY = style.scaleY / 100;
     // ASS rotates counter-clockwise, CSS rotates clockwise.
-    if (style.angle) transform.push(`rotate(${-style.angle}deg)`);
+    if (style.angle) transform.rotate = -style.angle;
 
-    // WrapStyle 0/3 (smart) and 1 (end-of-line) wrap; 2 never wraps. Balanced wrapping is what the
-    // stylesheet already does, greedy is what browsers do, so both map to `pre-wrap`. Banners are
-    // single lines by definition.
+    // WrapStyle 0/3 (smart) and 1 (end-of-line) wrap; 2 never wraps. Banners are single lines by
+    // definition.
     const wrapStyle = style.wrapStyle ?? this._wrapStyle;
-    text.whiteSpace = wrapStyle === 2 || effect?.type === 'banner' ? 'pre' : 'pre-wrap';
+    text.wrap = wrapStyle === 2 || effect?.type === 'banner' ? 'nowrap' : 'wrap';
     text.lineHeight = 'normal';
     // Boxes hug the text like libass so unrelated cues do not collide across the whole width.
     layout.width = 'max-content';
@@ -1155,132 +1142,93 @@ export class SSAParser implements CaptionsParser {
       // Opaque box.
       if (style.backColor) text.backgroundColor = toRGBA(style.backColor);
       if (style.outline && style.outlineColor) {
-        text.outline = `${lenY(style.outline)} solid ${toRGBA(style.outlineColor)}`;
+        text.outline = { width: lenY(style.outline), color: toRGBA(style.outlineColor) };
       }
     } else {
       // Outline + drop shadow.
       text.backgroundColor = 'transparent';
-      text.paddingY = '0';
+      text.padding = { y: 0 };
       if (style.outline && style.outlineColor) {
         // Stroke is centered on the glyph edge so it needs to be twice the outline width.
-        text.textStroke = `${lenY(style.outline * 2)} ${toRGBA(style.outlineColor)}`;
+        text.stroke = { width: lenY(style.outline * 2), color: toRGBA(style.outlineColor) };
       }
       if (style.shadow) {
         const shadowColor = style.backColor ? toRGBA(style.backColor) : toRGBA(DEFAULT_SHADOW);
-        text.textShadow = `${lenY(style.shadow)} ${lenY(style.shadow)} 0 ${shadowColor}`;
+        text.shadow = { x: lenY(style.shadow), y: lenY(style.shadow), color: shadowColor };
       }
     }
 
-    // libass rotates and scales around `\\org`, or the alignment anchor by default; CSS defaults to
-    // the box centre, which grows a bottom-anchored `\\fscy` line downwards off screen. Inline
+    // libass rotates and scales around `\\org`, or the alignment anchor by default (CSS would use
+    // the box centre, which grows a bottom-anchored `\\fscy` line downwards off screen). Inline
     // `\\fr*`/`\\fsc*` runs are transformed as spans, so the pivot goes on those too.
-    let origin: string | undefined;
-    if (transform.length) text.transform = transform.join(' ');
-    if (transform.length || this._animatesTransform(cue)) {
-      text.transformOrigin = origin = this._transformOrigin(style, layout, horizontal, vertical);
+    const hasTransform = Object.keys(transform).length > 0;
+    if (hasTransform || this._animatesTransform(cue)) {
+      this._setOrigin(transform, style, horizontal, vertical);
+      text.transform = transform;
     }
     for (const span of Object.values(cue.spans ?? {})) {
-      if (span.transform) {
-        span.transformOrigin = origin ??= this._transformOrigin(
-          style,
-          layout,
-          horizontal,
-          vertical,
-        );
-      }
+      if (span.transform) this._setOrigin(span.transform, style, horizontal, vertical);
     }
 
-    // `\clip` on positioned cues is expressed in the box's own coordinate space (the origin is
-    // known from `\pos`). Without `\pos` the box is placed by the layout engine, so rectangular
-    // clips are handed over as overlay percentages and resolved against the final box at write
-    // time; vector clips need a known origin and are only applied to positioned cues. `\move` cues
-    // keep the clip attached to the moving box (approximation).
-    if (style.clip && !effect) {
-      if (style.pos) {
-        layout.clipPath = this._clipPath(style.clip, layout);
-      } else if ('rect' in style.clip) {
-        const [x1, y1, x2, y2] = style.clip.rect;
-        layout.clipRect = {
-          left: this._pctX(Math.min(x1, x2)),
-          top: this._pctY(Math.min(y1, y2)),
-          right: this._pctX(Math.max(x1, x2)),
-          bottom: this._pctY(Math.max(y1, y2)),
-        };
-      }
-    }
+    // `\clip` is a screen-fixed region in script pixels: overlay percentages here, resolved against
+    // the box by the writer. `\move` cues keep the clip attached to the moving box (approximation).
+    if (style.clip && !effect) layout.clip = this._clip(style.clip);
 
     if (effect) this._applyEffect(cue, effect, layout);
 
     // Drawings sit exactly at their anchor; the text box's horizontal padding would offset them.
-    if (style.drawing) cue.style = { ...cue.style, '--cue-padding-x': '0' };
+    if (style.drawing) text.padding = { ...text.padding, x: 0 };
 
     cue.layout = layout;
     cue.textStyle = text;
   }
 
-  /** Transform origin: `\\org` when the box origin is known (positioned cues), else the anchor. */
   /** Whether a `\\t` animates the cue box's transform (span-targeted ones carry their own pivot). */
   protected _animatesTransform(cue: VTTCue) {
     return !!cue.animations?.some(
       (anim) =>
-        typeof anim.target !== 'object' && anim.keyframes.some((frame) => 'transform' in frame),
+        typeof anim.target !== 'object' &&
+        anim.keyframes.some((frame) => frame.transform !== undefined),
     );
   }
 
-  protected _transformOrigin(
+  /** Transform pivot: `\\org` as a point on the overlay, else the alignment anchor of the box. */
+  protected _setOrigin(
+    transform: CueTransform,
     style: SSAStyle,
-    layout: CueLayout,
     horizontal: number,
     vertical: number,
-  ): string {
+  ) {
     if (style.org && style.pos) {
-      const left = (layout.left ?? 0) / 100,
-        top = (layout.top ?? 0) / 100,
-        tx = -(layout.translate?.x ?? 0) * 100,
-        ty = -(layout.translate?.y ?? 0) * 100;
-      return (
-        `calc(var(--overlay-width) * ${round(style.org.x / this._playResX - left, 5)} + ${round(tx)}%) ` +
-        `calc(var(--overlay-height) * ${round(style.org.y / this._playResY - top, 5)} + ${round(ty)}%)`
-      );
+      transform.originAt = [this._pctX(style.org.x), this._pctY(style.org.y)];
+    } else {
+      transform.origin = [
+        horizontal === 0 ? 0 : horizontal === 2 ? 100 : 50,
+        vertical === 2 ? 0 : vertical === 1 ? 50 : 100,
+      ];
     }
-    const x = horizontal === 0 ? '0%' : horizontal === 2 ? '100%' : '50%',
-      y = vertical === 2 ? '0%' : vertical === 1 ? '50%' : '100%';
-    return `${x} ${y}`;
   }
 
-  /**
-   * A `\clip` as a `polygon()` in the display box's coordinate space. The box origin is known from
-   * `layout.left/top` (overlay percentages) and its anchor translation (a fraction of its own size),
-   * so each script pixel maps to `calc(var(--overlay-width) * k + t%)`.
-   */
-  protected _clipPath(clip: SSAClip, layout: CueLayout): string {
-    const left = (layout.left ?? 0) / 100,
-      top = (layout.top ?? 0) / 100,
-      tx = -(layout.translate?.x ?? 0) * 100,
-      ty = -(layout.translate?.y ?? 0) * 100,
-      x = (px: number) =>
-        `calc(var(--overlay-width) * ${round(px / this._playResX - left, 5)} + ${round(tx)}%)`,
-      y = (px: number) =>
-        `calc(var(--overlay-height) * ${round(px / this._playResY - top, 5)} + ${round(ty)}%)`;
-
-    const points: string[] = [];
+  /** A `\\clip` in overlay percentages. Vector clips with several contours use even-odd filling. */
+  protected _clip(clip: SSAClip): CueClip {
     if ('rect' in clip) {
       const [x1, y1, x2, y2] = clip.rect;
-      points.push(
-        `${x(x1)} ${y(y1)}`,
-        `${x(x2)} ${y(y1)}`,
-        `${x(x2)} ${y(y2)}`,
-        `${x(x1)} ${y(y2)}`,
-      );
-    } else {
-      for (const contour of clip.contours) {
-        for (let i = 0; i + 1 < contour.length; i += 2) {
-          points.push(`${x(contour[i])} ${y(contour[i + 1])}`);
-        }
+      return {
+        rect: [
+          this._pctX(Math.min(x1, x2)),
+          this._pctY(Math.min(y1, y2)),
+          this._pctX(Math.max(x1, x2)),
+          this._pctY(Math.max(y1, y2)),
+        ],
+      };
+    }
+    const polygon: [number, number][] = [];
+    for (const contour of clip.contours) {
+      for (let i = 0; i + 1 < contour.length; i += 2) {
+        polygon.push([this._pctX(contour[i]), this._pctY(contour[i + 1])]);
       }
     }
-
-    return `polygon(${'rect' in clip ? '' : 'evenodd, '}${points.join(', ')})`;
+    return { polygon, evenOdd: true };
   }
 
   /**
@@ -1296,21 +1244,22 @@ export class SSAParser implements CaptionsParser {
     if (effect.type === 'scroll') {
       const { y1, y2, up } = effect,
         travel = speed ? Math.min(duration, (y2 - y1) / speed) : duration,
-        band = (progress: number) => this._scrollBand(effect, progress);
+        // The visible band is fixed on screen; the box scrolls through it.
+        band: CueClip = { rect: [-100, this._pctY(y1), 200, this._pctY(y2)] };
 
-      layout.clipPath = band(0);
+      layout.clip = band;
       this._addAnimation(cue, {
         target: 'display',
         duration: round(travel),
         fill: 'both',
         keyframes: up
           ? [
-              { top: `${this._pctY(y2)}%`, translate: '0 0', clipPath: band(0) },
-              { top: `${this._pctY(y1)}%`, translate: '0 -100%', clipPath: band(1) },
+              { top: this._pctY(y2), translate: { y: 0 }, clip: band },
+              { top: this._pctY(y1), translate: { y: -1 }, clip: band },
             ]
           : [
-              { top: `${this._pctY(y1)}%`, translate: '0 -100%', clipPath: band(0) },
-              { top: `${this._pctY(y2)}%`, translate: '0 0', clipPath: band(1) },
+              { top: this._pctY(y1), translate: { y: -1 }, clip: band },
+              { top: this._pctY(y2), translate: { y: 0 }, clip: band },
             ],
       });
     } else {
@@ -1321,29 +1270,15 @@ export class SSAParser implements CaptionsParser {
         fill: 'both',
         keyframes: effect.ltr
           ? [
-              { left: '0%', translate: '-100% 0' },
-              { left: '100%', translate: '0 0' },
+              { left: 0, translate: { x: -1 } },
+              { left: 100, translate: { x: 0 } },
             ]
           : [
-              { left: '100%', translate: '0 0' },
-              { left: '0%', translate: '-100% 0' },
+              { left: 100, translate: { x: 0 } },
+              { left: 0, translate: { x: -1 } },
             ],
       });
     }
-  }
-
-  /**
-   * The visible scroll band `[y1, y2]` in the moving box's coordinate space at the given progress.
-   * Both the box offset (overlay percentage) and the box-size translation are linear in progress,
-   * so the two end polygons interpolate exactly.
-   */
-  protected _scrollBand(effect: Extract<SSAEffect, { type: 'scroll' }>, progress: number) {
-    const height = (effect.y2 - effect.y1) / this._playResY,
-      k = effect.up ? -height * (1 - progress) : -height * progress,
-      shift = round(effect.up ? progress * 100 : (1 - progress) * 100),
-      top = `calc(var(--overlay-height) * ${round(k, 5)} + ${shift}%)`,
-      bottom = `calc(var(--overlay-height) * ${round(k + height, 5)} + ${shift}%)`;
-    return `polygon(-100% ${top}, 200% ${top}, 200% ${bottom}, -100% ${bottom})`;
   }
 
   protected _buildFields(values: string[]) {
@@ -1405,6 +1340,18 @@ export class SSAParser implements CaptionsParser {
  * Splits a dialogue/style line into at most `count` fields. The last field (Text) may contain
  * commas so it is never split.
  */
+/** Per-run transform relative to the style's (which already sits on the cue box), or undefined. */
+function spanTransform(s: SpanState, d: SpanState): CueTransform | undefined {
+  const t: CueTransform = {};
+  if (s.scaleX !== d.scaleX) t.scaleX = round(s.scaleX / d.scaleX);
+  if (s.scaleY !== d.scaleY) t.scaleY = round(s.scaleY / d.scaleY);
+  // ASS rotates counter-clockwise, CSS rotates clockwise.
+  if (s.frz !== d.frz) t.rotate = round(-(s.frz - d.frz)) || 0;
+  if (s.frx !== d.frx) t.rotateX = round(-(s.frx - d.frx)) || 0;
+  if (s.fry !== d.fry) t.rotateY = round(-(s.fry - d.fry)) || 0;
+  return Object.keys(t).length ? t : undefined;
+}
+
 function splitFields(line: string, count: number): string[] {
   const fields: string[] = [];
   let start = 0;

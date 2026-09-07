@@ -36,7 +36,7 @@ const TIMESTAMPED = (() => {
 const SPANS = Object.fromEntries(
   Array.from({ length: 6 }, (_, i) => [
     `key${i}`,
-    { color: '#ffffff', backgroundColor: '#000000', fontWeight: 'bold', className: 'pen' },
+    { color: '#ffffff', backgroundColor: '#000000', fontWeight: 700, className: 'pen' },
   ]),
 );
 

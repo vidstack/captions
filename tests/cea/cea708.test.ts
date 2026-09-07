@@ -2,6 +2,9 @@ import type { CCDataTriplet } from '../../src/cea/cc-data';
 import { CEA708Decoder } from '../../src/cea/cea708-decoder';
 import type { VTTCue } from '../../src/vtt/vtt-cue';
 
+/** An `em` length as the decoder emits it. */
+const em = (value: number) => ({ unit: 'em' as const, value });
+
 /**
  * Build the `cc_data` triplets of one DTVCC packet from its payload (service blocks). The packet
  * header carries the sequence number (top 2 bits) and the size in 16-bit words including the
@@ -572,11 +575,19 @@ test('standard pen size and reserved size value leave the text unwrapped', () =>
 });
 
 test.each([
-  [1, 'raised', { textShadow: '-0.04em -0.04em 0 #000000' }],
-  [2, 'depressed', { textShadow: '0.04em 0.04em 0 #000000' }],
-  [3, 'uniform', { textStroke: '0.08em #000000' }],
-  [4, 'left drop shadow', { textShadow: '-0.06em 0.06em 0.06em #000000' }],
-  [5, 'right drop shadow', { textShadow: '0.06em 0.06em 0.06em #000000' }],
+  [1, 'raised', { shadow: { x: em(-0.04), y: em(-0.04), color: '#000000' } }],
+  [2, 'depressed', { shadow: { x: em(0.04), y: em(0.04), color: '#000000' } }],
+  [3, 'uniform', { stroke: { width: em(0.08), color: '#000000' } }],
+  [
+    4,
+    'left drop shadow',
+    { shadow: { x: em(-0.06), y: em(0.06), blur: em(0.06), color: '#000000' } },
+  ],
+  [
+    5,
+    'right drop shadow',
+    { shadow: { x: em(0.06), y: em(0.06), blur: em(0.06), color: '#000000' } },
+  ],
 ])(
   'pen edge type %i (%s) maps onto the cue text style with a black default colour',
   (edge, _, style) => {
@@ -600,7 +611,7 @@ test('edge colour comes from SPC and the first non-none edge in the window wins'
     ...DSW(1),
   ]);
   expect(cue.text).toBe('plain stroked\nraised');
-  expect(cue.textStyle).toEqual({ textStroke: '0.08em #0000ff' });
+  expect(cue.textStyle).toEqual({ stroke: { width: em(0.08), color: '#0000ff' } });
 });
 
 test('no edge type yields no text stroke or shadow', () => {
@@ -656,7 +667,7 @@ test('window border becomes an outline in the border colour', () => {
   expect(spanOf(cue)).toEqual({ backgroundColor: 'rgba(255,0,0,1)' });
   expect(cue.textStyle).toEqual({
     backgroundColor: 'rgba(0,0,0,0)',
-    outline: '0.08em solid #ffff00',
+    outline: { width: em(0.08), color: '#ffff00' },
   });
 });
 
@@ -1019,23 +1030,23 @@ test('wipe display effect animates clip-path with a minimum duration of 0.1 s', 
     {
       target: 'display',
       duration: 1,
-      keyframes: [{ clipPath: 'inset(0 0 0 100%)' }, { clipPath: 'inset(0)' }],
+      keyframes: [{ clip: { inset: [0, 0, 0, 100] } }, { clip: { inset: [0, 0, 0, 0] } }],
     },
   ]);
   expect(instant.animations).toEqual([
     {
       target: 'display',
       duration: 0.1,
-      keyframes: [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0)' }],
+      keyframes: [{ clip: { inset: [0, 100, 0, 0] } }, { clip: { inset: [0, 0, 0, 0] } }],
     },
   ]);
 });
 
 test.each([
-  [0, 'left-to-right', 'inset(0 100% 0 0)'],
-  [1, 'right-to-left', 'inset(0 0 0 100%)'],
-  [2, 'top-to-bottom', 'inset(0 0 100% 0)'],
-  [3, 'bottom-to-top', 'inset(100% 0 0 0)'],
+  [0, 'left-to-right', [0, 100, 0, 0]],
+  [1, 'right-to-left', [0, 0, 0, 100]],
+  [2, 'top-to-bottom', [0, 0, 100, 0]],
+  [3, 'bottom-to-top', [100, 0, 0, 0]],
 ])('wipe direction %i (%s) hides the side revealed last', (effectDirection, _, hidden) => {
   const cue = decodeOne([
     ...DF(),
@@ -1047,7 +1058,7 @@ test.each([
     {
       target: 'display',
       duration: 0.5,
-      keyframes: [{ clipPath: hidden }, { clipPath: 'inset(0)' }],
+      keyframes: [{ clip: { inset: hidden } }, { clip: { inset: [0, 0, 0, 0] } }],
     },
   ]);
 });
@@ -1104,7 +1115,7 @@ test('snap display effect and hidden-then-filled windows: the effect waits for t
 const MARQUEE = (duration: number) => ({
   target: 'display',
   duration,
-  keyframes: [{ left: '100%' }, { left: '-100%' }],
+  keyframes: [{ left: 100 }, { left: -100 }],
 });
 
 test('ticker windows get a full-width bottom layout and a marquee over the cue duration', () => {

@@ -163,9 +163,60 @@ if (IS_NATIVE) {
 }
 
 /**
- * Explicit cue box placement. Offsets are percentages of the overlay, sizes are percentages or
- * CSS sizing keywords, and the translation is a fraction of the cue box itself (so `x: -0.5`
- * with `left: 50` centres the box).
+ * A length. Plain numbers are pixels; `vw`/`vh` are percentages of the overlay width/height,
+ * `em` is relative to the cue font size, and `%` is relative to the box (transform origins).
+ * Writers serialise these to CSS (`calc(var(--overlay-height) * k)`) or resolve them to pixels.
+ */
+export type CueLength = number | { unit: 'vw' | 'vh' | 'em' | '%'; value: number };
+
+/** A CSS colour string. Parsers normalise to `rgba(r,g,b,a)` or `#rrggbb`. */
+export type CueColor = string;
+
+/** A 2D/3D transform about `origin` (default: the box centre). Angles are degrees, clockwise. */
+export interface CueTransform {
+  scaleX?: number;
+  scaleY?: number;
+  rotate?: number;
+  rotateX?: number;
+  rotateY?: number;
+  /** Pivot as percentages of the box (default `[50, 50]`). */
+  origin?: [number, number];
+  /** Pivot as a point on the overlay, in percentages (SSA `\\org`); wins over `origin`. */
+  originAt?: [number, number];
+}
+
+/** A text stroke (painted behind the glyphs) or a box outline. */
+export interface CueStroke {
+  width: CueLength;
+  color: CueColor;
+}
+
+export interface CueShadow {
+  x: CueLength;
+  y: CueLength;
+  blur?: CueLength;
+  color: CueColor;
+}
+
+/** Karaoke sweep: glyphs fill from `unsung` to `sung` as the span's `sweep` keyframe runs 0..1. */
+export interface CueSweep {
+  sung: CueColor;
+  unsung: CueColor;
+}
+
+/**
+ * A clip. `rect` (`[left, top, right, bottom]`) and `polygon` are overlay percentages and stay
+ * fixed on screen wherever the box lands; `inset` (`[top, right, bottom, left]`) is a percentage
+ * of the box itself (reveal effects).
+ */
+export type CueClip =
+  | { rect: [number, number, number, number] }
+  | { polygon: [number, number][]; evenOdd?: boolean }
+  | { inset: [number, number, number, number] };
+
+/**
+ * Explicit cue box placement. Offsets and sizes are percentages of the overlay; the translation
+ * is a fraction of the cue box itself (so `x: -0.5` with `left: 50` centres the box).
  */
 export interface CueLayout {
   top?: number;
@@ -178,45 +229,34 @@ export interface CueLayout {
   /** Explicit height as a percentage of the overlay (e.g., image cues). */
   height?: number;
   translate?: { x?: number; y?: number };
-  /** Never moved by collision avoidance, but other cues avoid it (e.g., SSA `\\pos`). */
+  /** Never moved by collision avoidance, but other cues avoid it (e.g., SSA `\pos`). */
   fixed?: boolean;
-  /** CSS `clip-path` applied to the cue box (e.g., SSA `\\clip` on positioned cues, scroll bands). */
-  clipPath?: string;
-  /**
-   * Clip rectangle in overlay percentages, resolved against the cue's final box after layout. Use
-   * this when the clip is fixed on screen but the cue itself is positioned by the layout engine
-   * (e.g., SSA `\\clip` on a dialogue line without `\\pos`).
-   */
-  clipRect?: { left: number; top: number; right: number; bottom: number };
+  /** Clip applied to the cue box (SSA `\clip`, scroll bands). Resolved against the final box. */
+  clip?: CueClip;
 }
 
 /** Styling for one run of text referenced from cue text via `<c.s-KEY>`. */
 export interface CueSpanStyle {
-  color?: string;
-  backgroundColor?: string;
+  color?: CueColor;
+  backgroundColor?: CueColor;
   fontFamily?: string;
-  fontSize?: string;
-  fontWeight?: string;
-  fontStyle?: string;
-  textDecoration?: string;
-  letterSpacing?: string;
-  textStroke?: string;
-  textShadow?: string;
-  transform?: string;
-  /** Pivot for `transform` (e.g., the SSA alignment anchor or `\\org`). */
-  transformOrigin?: string;
-  /** Needed for `transform` to take effect on a run (`inline-block`). */
-  display?: string;
-  opacity?: string;
-  filter?: string;
-  animation?: string;
+  fontSize?: CueLength;
+  /** 100..900. */
+  fontWeight?: number;
+  italic?: boolean;
+  underline?: boolean;
+  strike?: boolean;
+  letterSpacing?: CueLength;
+  /** `null` removes an inherited stroke. */
+  stroke?: CueStroke | null;
+  shadow?: CueShadow | null;
+  /** Blur radius (`0` = none). */
+  blur?: CueLength;
+  opacity?: number;
+  transform?: CueTransform;
+  sweep?: CueSweep;
   className?: string;
-  /** Gradient fills clipped to the glyphs (SSA karaoke sweeps). */
-  backgroundImage?: string;
-  backgroundSize?: string;
-  backgroundPosition?: string;
-  backgroundClip?: string;
-  /** Vector drawing rendered inline as SVG in place of text (SSA `\\p` drawings). */
+  /** Vector drawing rendered in place of text (SSA `\p` drawings). */
   drawing?: CueDrawing;
 }
 
@@ -228,55 +268,72 @@ export interface CueDrawing {
   /** Rendered size as percentages of the overlay width and height. */
   width: number;
   height: number;
-  fill?: string;
-  stroke?: string;
+  fill?: CueColor;
+  stroke?: CueColor;
   strokeWidth?: number;
 }
 
-/**
- * A media-synchronised animation. `keyframes` follow the Web Animations API (`offset` 0..1 plus
- * CSS properties in camelCase). Times are seconds relative to the cue start.
- */
+/** One keyframe of a cue animation. Positions are overlay percentages; `translate` a box fraction. */
+export interface CueKeyframe {
+  offset?: number;
+  opacity?: number;
+  color?: CueColor;
+  strokeColor?: CueColor;
+  strokeWidth?: CueLength;
+  fontSize?: CueLength;
+  letterSpacing?: CueLength;
+  shadow?: CueShadow | null;
+  blur?: CueLength;
+  transform?: CueTransform;
+  left?: number;
+  top?: number;
+  translate?: { x?: number; y?: number };
+  clip?: CueClip;
+  /** Karaoke sweep progress, 0 (nothing sung) to 1. */
+  sweep?: number;
+}
+
+/** A media-synchronised animation. Times are seconds relative to the cue start. */
 export interface CueAnimation {
   /** `display` = the positioned cue box (default), `cue` = the text box, or a span key. */
   target?: 'display' | 'cue' | { span: string };
   delay?: number;
   duration: number;
-  keyframes: Record<string, string | number>[];
+  keyframes: CueKeyframe[];
   easing?: string;
   fill?: 'none' | 'forwards' | 'backwards' | 'both';
 }
 
-/** Presentational cue styling. Values are CSS values. */
+/** Presentational cue styling, as values. Writers turn these into CSS or pixels. */
 export interface CueTextStyle {
-  color?: string;
-  backgroundColor?: string;
+  color?: CueColor;
+  backgroundColor?: CueColor;
   fontFamily?: string;
-  fontSize?: string;
-  fontWeight?: string;
-  fontStyle?: string;
-  textDecoration?: string;
-  letterSpacing?: string;
-  lineHeight?: string;
-  opacity?: string;
+  fontSize?: CueLength;
+  /** 100..900. */
+  fontWeight?: number;
+  italic?: boolean;
+  underline?: boolean;
+  strike?: boolean;
+  letterSpacing?: CueLength;
+  /** A length (`em` for multiples of the font size) or `'normal'`. */
+  lineHeight?: CueLength | 'normal';
+  opacity?: number;
   textAlign?: 'left' | 'center' | 'right' | 'start' | 'end';
-  whiteSpace?: string;
-  /** `<width> <color>`, painted behind the glyphs. */
-  textStroke?: string;
-  textShadow?: string;
+  /** `nowrap` keeps the text on one line (SSA WrapStyle 2, banners). */
+  wrap?: 'wrap' | 'nowrap';
+  /** Stroke painted behind the glyphs; `null` for none. */
+  stroke?: CueStroke | null;
+  shadow?: CueShadow | null;
   /** Box outline for opaque-box styles. */
-  outline?: string;
-  /** Vertical padding override (e.g., `0` for outline-only styles). */
-  paddingY?: string;
-  /** Extra transforms (scale/rotate) applied after the layout translation. */
-  transform?: string;
-  /** CSS `transform-origin` for `transform` (e.g., the SSA alignment anchor or `\\org`). */
-  transformOrigin?: string;
-  /** CSS `background-image` (e.g., IMSC image cues as data URLs). */
-  backgroundImage?: string;
-  /** CSS `animation` shorthand; `media-captions-fade-in` and `media-captions-wipe-in` keyframes ship in the stylesheet. */
-  animation?: string;
-  /** Extra class names for the cue element (e.g., CEA-708 pen sizes `pen-small`, `pen-large`). */
+  outline?: CueStroke;
+  /** Cue box padding overrides (e.g., `y: 0` for outline-only styles, `x: 0` for drawings). */
+  padding?: { x?: CueLength; y?: CueLength };
+  /** Scale/rotate applied after the layout translation, about `origin`. */
+  transform?: CueTransform;
+  /** An image painted in the box (IMSC image cues). */
+  image?: { url: string; fit?: 'contain' | 'cover' | 'fill' };
+  /** Extra class names for the cue element (e.g., CEA-708 `small-caps`, IMSC `forced`). */
   className?: string;
 }
 

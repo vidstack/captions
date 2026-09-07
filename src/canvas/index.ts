@@ -24,3 +24,4 @@ export * from './measure';
 export { ImageCache, paintCue, paintRegion, type PaintContext, type PaintOptions } from './paint';
 export * from './text-measurer';
 export * from './theme';
+export * from './values';

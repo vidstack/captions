@@ -1,21 +1,26 @@
-import type { CueAnimation } from '../vtt/vtt-cue';
-import { formatColor, parseColor, splitTopLevel } from './css-values';
+import type {
+  CueAnimation,
+  CueClip,
+  CueKeyframe,
+  CueLength,
+  CueShadow,
+  CueTransform,
+} from '../vtt/vtt-cue';
+import { formatColor, parseColor } from './values';
 
-export type SampledFrame = Record<string, string | number>;
-
-type Keyframe = SampledFrame & { offset: number };
+type Keyframe = CueKeyframe & { offset: number };
 
 /**
  * Evaluates a cue animation at a media time, the way the DOM writer's Web Animation would at
- * `animation.currentTime`. Interpolates numbers, lengths with a unit, `rgb()`/hex colours, and
- * transform lists with matching function shapes; anything else steps at the keyframe.
+ * `animation.currentTime`. Numbers, lengths of the same unit, `rgb()`/hex colours, transforms,
+ * shadows, and clips interpolate; anything else steps at the keyframe.
  */
 export function sampleAnimation(
   spec: CueAnimation,
   time: number,
   cueStart: number,
   reducedMotion = false,
-): SampledFrame {
+): CueKeyframe {
   const frames = withOffsets(spec.keyframes);
   if (!frames.length) return {};
 
@@ -32,20 +37,19 @@ export function sampleAnimation(
     span = b.offset - a.offset,
     t = span > 0 ? (eased - a.offset) / span : 1;
 
-  const result: SampledFrame = {};
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  const result: Record<string, unknown> = {};
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)] as (keyof CueKeyframe)[]);
   keys.delete('offset');
-  keys.delete('easing');
   for (const key of keys) {
     const from = a[key] ?? nearest(frames, prev, key, -1),
       to = b[key] ?? nearest(frames, next, key, 1);
     if (from === undefined && to === undefined) continue;
-    result[key] = interpolate(from ?? to!, to ?? from!, t);
+    result[key] = interpolate<Value>(from ?? to, to ?? from, t);
   }
-  return result;
+  return result as CueKeyframe;
 }
 
-function nearest(frames: Keyframe[], index: number, key: string, dir: -1 | 1) {
+function nearest(frames: Keyframe[], index: number, key: keyof CueKeyframe, dir: -1 | 1) {
   for (let i = index; i >= 0 && i < frames.length; i += dir) {
     if (frames[i][key] !== undefined) return frames[i][key];
   }
@@ -53,7 +57,7 @@ function nearest(frames: Keyframe[], index: number, key: string, dir: -1 | 1) {
 }
 
 /** Fills in missing `offset`s evenly, as the Web Animations API does. */
-function withOffsets(keyframes: Record<string, string | number>[]): Keyframe[] {
+function withOffsets(keyframes: CueKeyframe[]): Keyframe[] {
   const frames = keyframes.map((frame) => ({ ...frame })) as Keyframe[];
   if (!frames.length) return frames;
   const has = (i: number) => typeof frames[i].offset === 'number';
@@ -86,73 +90,79 @@ function ease(t: number, easing: string | undefined): number {
   }
 }
 
-// A dot must be followed by digits, so the number can only match one way (no quadratic backtracking).
-const NUMBER_UNIT_RE = /^(-?\d+(?:\.\d+)?|-?\.\d+)([a-z%]*)$/;
+type Value =
+  | number
+  | string
+  | CueLength
+  | CueTransform
+  | CueShadow
+  | CueClip
+  | { x?: number; y?: number }
+  | null
+  | undefined;
 
-export function interpolate(
-  from: string | number,
-  to: string | number,
-  t: number,
-): string | number {
-  if (t <= 0) return from;
+/** Interpolates two keyframe values of the same kind; mismatched kinds step at the midpoint. */
+export function interpolate<T extends Value>(from: T, to: T, t: number): T {
+  if (t <= 0 || from === to) return from;
   if (t >= 1) return to;
-  if (typeof from === 'number' && typeof to === 'number') return from + (to - from) * t;
+  if (from == null || to == null) return t < 0.5 ? from : to;
 
-  const a = String(from),
-    b = String(to);
-
-  const na = NUMBER_UNIT_RE.exec(a),
-    nb = NUMBER_UNIT_RE.exec(b);
-  if (na && nb && (na[2] === nb[2] || parseFloat(na[1]) === 0 || parseFloat(nb[1]) === 0)) {
-    return `${parseFloat(na[1]) + (parseFloat(nb[1]) - parseFloat(na[1])) * t}${na[2] ?? nb[2] ?? ''}`;
+  if (typeof from === 'number' && typeof to === 'number') {
+    return (from + (to - from) * t) as T;
   }
 
-  const ca = parseColor(a),
-    cb = parseColor(b);
-  if (ca && cb) {
-    return formatColor(ca.map((v, i) => v + (cb[i] - v) * t) as [number, number, number, number]);
+  if (typeof from === 'string' && typeof to === 'string') {
+    const ca = parseColor(from),
+      cb = parseColor(to);
+    if (ca && cb) {
+      return formatColor(
+        ca.map((v, i) => v + (cb[i] - v) * t) as [number, number, number, number],
+      ) as T;
+    }
+    return (t < 0.5 ? from : to) as T;
   }
 
-  const ta = splitTopLevel(a),
-    tb = splitTopLevel(b);
-  if (ta.length > 1 && ta.length === tb.length && ta.every((v, i) => numericPair(v, tb[i]))) {
-    // Lists of lengths such as `background-position: 100% 0`.
-    return ta.map((v, i) => interpolate(v, unitLike(tb[i], v), t)).join(' ');
+  if (typeof from === 'object' && typeof to === 'object') {
+    // Lengths: same unit only.
+    if ('unit' in from && 'unit' in to) {
+      if (from.unit !== to.unit) return (t < 0.5 ? from : to) as T;
+      return { unit: from.unit, value: from.value + (to.value - from.value) * t } as T;
+    }
+    // Clips of the same shape.
+    if ('rect' in from && 'rect' in to) {
+      return { rect: from.rect.map((v, i) => v + (to.rect[i] - v) * t) } as T;
+    }
+    if ('inset' in from && 'inset' in to) {
+      return { inset: from.inset.map((v, i) => v + (to.inset[i] - v) * t) } as T;
+    }
+    if ('polygon' in from && 'polygon' in to && from.polygon.length === to.polygon.length) {
+      return {
+        polygon: from.polygon.map(([x, y], i) => [
+          x + (to.polygon[i][0] - x) * t,
+          y + (to.polygon[i][1] - y) * t,
+        ]),
+        evenOdd: from.evenOdd,
+      } as T;
+    }
+    if ('rect' in from || 'inset' in from || 'polygon' in from) {
+      return (t < 0.5 ? from : to) as T;
+    }
+    // Transforms and shadows: field by field.
+    const out: Record<string, unknown> = { ...from, ...to };
+    for (const key of Object.keys(out)) {
+      out[key] = interpolate(
+        (from as Record<string, Value>)[key] ?? defaultFor(key),
+        (to as Record<string, Value>)[key] ?? defaultFor(key),
+        t,
+      );
+    }
+    return out as T;
   }
-  if (ta.length && ta.length === tb.length && ta.every((fn, i) => fnName(fn) === fnName(tb[i]))) {
-    return ta
-      .map((fn, i) => {
-        const argsA = fnArgs(fn),
-          argsB = fnArgs(tb[i]);
-        if (argsA.length !== argsB.length) return fn;
-        return `${fnName(fn)}(${argsA.map((arg, j) => interpolate(arg, argsB[j], t)).join(', ')})`;
-      })
-      .join(' ');
-  }
 
-  return t < 0.5 ? from : to;
+  return (t < 0.5 ? from : to) as T;
 }
 
-function numericPair(a: string, b: string) {
-  const na = NUMBER_UNIT_RE.exec(a),
-    nb = NUMBER_UNIT_RE.exec(b);
-  return !!na && !!nb && (na[2] === nb[2] || parseFloat(na[1]) === 0 || parseFloat(nb[1]) === 0);
-}
-
-/** Gives a unitless zero the unit of its partner so `0` and `100%` interpolate. */
-function unitLike(value: string, partner: string) {
-  const nv = NUMBER_UNIT_RE.exec(value),
-    np = NUMBER_UNIT_RE.exec(partner);
-  return nv && np && !nv[2] && np[2] ? `${nv[1]}${np[2]}` : value;
-}
-
-function fnName(fn: string) {
-  return fn.slice(0, fn.indexOf('('));
-}
-
-function fnArgs(fn: string) {
-  return fn
-    .slice(fn.indexOf('(') + 1, fn.lastIndexOf(')'))
-    .split(',')
-    .map((arg) => arg.trim());
+/** Neutral values for transform fields missing on one side. */
+function defaultFor(key: string): Value {
+  return key === 'scaleX' || key === 'scaleY' ? 1 : key.startsWith('rotate') ? 0 : undefined;
 }

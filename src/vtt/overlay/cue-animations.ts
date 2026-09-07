@@ -1,4 +1,5 @@
 import { setDataAttr } from '../../utils/style';
+import { keyframeToCSS } from '../style-css';
 import type { CueAnimation, VTTCue } from '../vtt-cue';
 
 export interface CueAnimationHandle {
@@ -34,7 +35,8 @@ export function attachCueAnimations(
       setDataAttr(display, 'fixed');
     }
 
-    const animation = target.animate(spec.keyframes, {
+    const keyframes = spec.keyframes.map((frame) => keyframeToCSS(frame, cue.layout));
+    const animation = target.animate(keyframes, {
       duration: Math.max(1, spec.duration * 1000),
       easing: spec.easing ?? 'linear',
       fill: spec.fill ?? 'both',
@@ -60,7 +62,11 @@ export function syncCueAnimations(
 }
 
 function animatesPosition(spec: CueAnimation) {
-  return spec.keyframes.some((frame) =>
-    ['left', 'top', 'right', 'bottom', 'transform', 'translate'].some((key) => key in frame),
+  return spec.keyframes.some(
+    (frame) =>
+      frame.left !== undefined ||
+      frame.top !== undefined ||
+      frame.translate !== undefined ||
+      frame.transform !== undefined,
   );
 }

@@ -224,7 +224,7 @@ describe('IMSC timing', () => {
     expect(cues).toHaveLength(11);
     expect(times(cues)[0]).toEqual([0.76, 3.45]);
     // 22px of a 480px root.
-    expect(cues[2].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.04583)' });
+    expect(cues[2].textStyle).toEqual({ fontSize: { unit: 'vh', value: 4.5833 } });
     expect(cues[2].text).toBe(
       '<c.yellow>It is puzzling, why is it\nwe do not see things upside-down?</c>',
     );
@@ -373,13 +373,15 @@ describe('IMSC styling', () => {
   test('fontsize-001: span font size and family become a span style', async () => {
     const { cues } = await parse(read('imsc1/ttml/fontSize/fontsize-001.ttml'));
     expect(cues[0].text).toBe('<c.white.bg_black.s-1>One line Subtitle.</c>');
-    expect(cues[0].spans).toEqual({ '1': { fontSize: '0.8em', fontFamily: 'monospace' } });
+    expect(cues[0].spans).toEqual({
+      '1': { fontSize: { unit: 'em', value: 0.8 }, fontFamily: 'monospace' },
+    });
   });
 
   test('FontSize001: pixel span font size relative to the 480px root', async () => {
     const { cues } = await parse(read('imsc1/ttml/fontSize/FontSize001.ttml'));
     expect(cues[0].text).toBe('The last word must be in <c.s-1>24px</c>.');
-    expect(cues[0].spans).toEqual({ '1': { fontSize: 'calc(var(--overlay-height) * 0.05)' } });
+    expect(cues[0].spans).toEqual({ '1': { fontSize: { unit: 'vh', value: 5 } } });
   });
 
   test('Color003 / backgroundcolor-rgba-001: translucent colours are span styles', async () => {
@@ -392,21 +394,36 @@ describe('IMSC styling', () => {
       read('imsc1/ttml/backgroundColor/backgroundcolor-rgba-001.ttml'),
     );
     expect(background.cues[0].spans).toEqual({
-      '1': { fontSize: '1.6em', fontFamily: 'monospace', backgroundColor: '#00000080' },
+      '1': {
+        fontSize: { unit: 'em', value: 1.6 },
+        fontFamily: 'monospace',
+        backgroundColor: '#00000080',
+      },
     });
   });
 
   test('TextOutline001: paragraph outline, span outline none', async () => {
     const { cues } = await parse(read('imsc1/ttml/textOutline/TextOutline001.ttml'));
-    expect(cues[0].textStyle).toEqual({ textStroke: 'calc(var(--overlay-height) * 0.00417) red' });
+    expect(cues[0].textStyle).toEqual({
+      stroke: { width: { unit: 'vh', value: 0.4167 }, color: 'red' },
+    });
     expect(cues[0].text).toBe('<c.s-1>This text has no outline.</c>');
-    expect(cues[0].spans).toEqual({ '1': { textStroke: '0' } });
+    expect(cues[0].spans).toEqual({ '1': { stroke: null } });
   });
 
   test('textShadow001: span text shadow, paragraph line height', async () => {
     const { cues } = await parse(read('imsc1_1/ttml/textShadow/textShadow001.ttml'));
-    expect(cues[0].textStyle).toEqual({ lineHeight: '1.25' });
-    expect(cues[0].spans).toEqual({ '1': { textShadow: '0.1em -0.2em 0.05em lime' } });
+    expect(cues[0].textStyle).toEqual({ lineHeight: { unit: 'em', value: 1.25 } });
+    expect(cues[0].spans).toEqual({
+      '1': {
+        shadow: {
+          x: { unit: 'em', value: 0.1 },
+          y: { unit: 'em', value: -0.2 },
+          blur: { unit: 'em', value: 0.05 },
+          color: 'lime',
+        },
+      },
+    });
     expect(cues[0].text).toContain('<c.white.bg_black.s-1>shadowy scenes,');
   });
 
@@ -415,7 +432,7 @@ describe('IMSC styling', () => {
     expect(normal.cues[0].textStyle).toEqual({ lineHeight: 'normal' });
 
     const percent = await parse(read('imsc1/ttml/aspectRatio/aspectRatio1.ttml'));
-    expect(percent.cues[0].textStyle).toEqual({ lineHeight: '1' });
+    expect(percent.cues[0].textStyle).toEqual({ lineHeight: { unit: 'em', value: 1 } });
   });
 
   test('forcedDisplay1: forced region cues get the `forced` class', async () => {
@@ -472,7 +489,7 @@ describe('IMSC images', () => {
     expect(cue.layout?.top).toBeCloseTo((736 / 1080) * 100);
     expect(cue.layout?.width).toBeCloseTo(100 / 3);
     expect(cue.layout?.height).toBeCloseTo((120 / 1080) * 100);
-    expect(cue.textStyle?.backgroundImage).toMatch(/^url\(data:image\/png;base64,iVBOR/);
+    expect(cue.textStyle?.image?.url).toMatch(/^data:image\/png;base64,iVBOR/);
     expect(cue.textStyle?.backgroundColor).toBe('transparent');
   });
 });

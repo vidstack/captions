@@ -42,17 +42,18 @@ async function parse(text: string) {
 describe('script info', () => {
   test('PlayRes scales font size, margins, and outline', async () => {
     const { cues } = await parse(ass([DEFAULT], [dialogue('x')]));
-    expect(cues[0].textStyle?.fontSize).toBe('calc(var(--overlay-height) * 0.06667)');
+    expect(cues[0].textStyle?.fontSize).toEqual({ unit: 'vh', value: 6.6667 });
     expect(cues[0].layout?.bottom).toBe(1.389);
     expect(cues[0].layout?.maxWidth).toBe(98.438);
-    expect(cues[0].textStyle?.textStroke).toBe(
-      'calc(var(--overlay-height) * 0.00556) rgba(0,0,0,1)',
-    );
+    expect(cues[0].textStyle?.stroke).toEqual({
+      width: { unit: 'vh', value: 0.5556 },
+      color: 'rgba(0,0,0,1)',
+    });
   });
 
   test('defaults to 384x288 when PlayRes is missing', async () => {
     const { cues } = await parse(ass([DEFAULT], [dialogue('x')], []));
-    expect(cues[0].textStyle?.fontSize).toBe('calc(var(--overlay-height) * 0.16667)');
+    expect(cues[0].textStyle?.fontSize).toEqual({ unit: 'vh', value: 16.6667 });
   });
 
   test('WrapStyle 2 turns soft breaks into hard breaks', async () => {
@@ -265,7 +266,7 @@ describe('override tags', () => {
     // `\\fnArial` matches the style font so only the blur differs. `\\t` precedes the blur and
     // no text has been emitted, so it animates the cue box as a whole.
     expect(cues[0].text).toBe('<c.s-0>visible text</c>');
-    expect(cues[0].spans!['0']).toEqual({ filter: 'blur(calc(var(--overlay-height) * 0.00278))' });
+    expect(cues[0].spans!['0']).toEqual({ blur: { unit: 'vh', value: 0.2778 } });
     expect(cues[0].animations!.map((a) => a.target)).toEqual(['display', 'cue', 'display']);
     expect(cues[0].layout?.fixed).toBe(true);
   });

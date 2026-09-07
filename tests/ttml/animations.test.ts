@@ -183,15 +183,15 @@ test('GOOD: opacity on a paragraph or region maps to textStyle.opacity', async (
   );
 
   expect(errors).toHaveLength(0);
-  expect(cues[0].textStyle).toEqual({ opacity: '0.5' });
-  expect(cues[1].textStyle).toEqual({ opacity: '0.25' });
+  expect(cues[0].textStyle).toEqual({ opacity: 0.5 });
+  expect(cues[1].textStyle).toEqual({ opacity: 0.25 });
   expect(times(cues.slice(2, 5))).toEqual([
     [2, 3, 'Fade'],
     [3, 4, 'Fade'],
     [4, 5, 'Fade'],
   ]);
   expect(cues[2].textStyle).toBeUndefined();
-  expect(cues[3].textStyle).toEqual({ opacity: '0' });
+  expect(cues[3].textStyle).toEqual({ opacity: 0 });
   expect(cues[4].textStyle).toBeUndefined();
   expect(cues[5].textStyle).toBeUndefined();
 });
@@ -258,7 +258,7 @@ test('GOOD: SMPTE-TT background image produces an image cue in the region box', 
   expect(cues[0].text).toBe('');
   expect(cues[0].layout).toEqual({ left: 10, top: 70, width: 80, height: 20 });
   expect(cues[0].textStyle).toEqual({
-    backgroundImage: `url(data:image/png;base64,${PNG_BASE64})`,
+    image: { url: `data:image/png;base64,${PNG_BASE64}` },
     backgroundColor: 'transparent',
   });
 
@@ -302,10 +302,10 @@ test('GOOD: tts:backgroundImage data URL and IMSC 1.1 image element', async () =
 
   // No region and two regions declared: full overlay.
   expect(cues[0].layout).toEqual({ left: 0, top: 0, width: 100, height: 100 });
-  expect(cues[0].textStyle?.backgroundImage).toBe(`url(data:image/png;base64,${PNG_BASE64})`);
+  expect(cues[0].textStyle?.image?.url).toBe(`data:image/png;base64,${PNG_BASE64}`);
 
   expect(cues[1].layout).toEqual({ left: 50, top: 50, width: 50, height: 50 });
-  expect(cues[1].textStyle?.backgroundImage).toBe(`url(data:image/png;base64,${PNG_BASE64})`);
+  expect(cues[1].textStyle?.image?.url).toBe(`data:image/png;base64,${PNG_BASE64}`);
 });
 
 test('GOOD: clock time base is relative to the earliest begin', async () => {

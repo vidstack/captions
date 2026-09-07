@@ -44,7 +44,7 @@ function styledCue() {
   const cue = new VTTCue(0, 10, 'Styled');
   cue.layer = 2;
   cue.layout = { left: 50, bottom: 5, width: 'max-content', translate: { x: -0.5 }, fixed: true };
-  cue.textStyle = { color: 'red', transform: 'rotate(5deg)', className: 'fancy' };
+  cue.textStyle = { color: 'red', transform: { rotate: 5 }, className: 'fancy' };
   cue.animations = [{ duration: 1, keyframes: [{ opacity: 0 }, { opacity: 1 }] }];
   return cue;
 }

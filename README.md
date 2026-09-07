@@ -1018,10 +1018,14 @@ rewriting yourself.
 ### Cue layout and text style model
 
 Formats with absolute positioning (SSA/ASS, TTML, CEA-708) express placement and styling through
-two structured fields on the cue rather than CSS strings, so custom renderers can read them
-directly and cues survive `structuredClone` / `postMessage`:
+typed fields on the cue, never CSS strings. Each writer serialises them: the DOM renderer to CSS
+variables and properties, the canvas renderer to pixels. Custom renderers can read them directly,
+and cues survive `structuredClone` / `postMessage` and `toJSON`:
 
 ```ts
+// Lengths: pixels, or relative to the overlay (`vw`/`vh`), the font (`em`), or the box (`%`).
+type CueLength = number | { unit: 'vw' | 'vh' | 'em' | '%'; value: number };
+
 cue.layout = {
   left: 50, // percentages of the overlay
   bottom: 5,
@@ -1029,26 +1033,32 @@ cue.layout = {
   maxWidth: 90,
   translate: { x: -0.5 }, // fraction of the cue box; centres the box on `left`
   fixed: false, // true: never moved by collision avoidance (SSA \pos)
+  clip: { rect: [0, 0, 100, 50] }, // screen-fixed, overlay %; or { polygon }, or a box { inset }
 };
 
 cue.textStyle = {
   color: 'rgba(255,255,255,1)',
-  fontSize: 'calc(var(--overlay-height) * 0.0667)',
-  textStroke: '2px black', // painted behind the glyphs
+  fontSize: { unit: 'vh', value: 6.67 },
+  stroke: { width: { unit: 'vh', value: 0.5 }, color: 'black' }, // painted behind the glyphs
+  shadow: { x: { unit: 'em', value: 0.06 }, y: { unit: 'em', value: 0.06 }, color: 'black' },
+  transform: { rotate: -15, scaleX: 1.1, origin: [50, 0] }, // pivot in box %, or `originAt` on the overlay
+  wrap: 'nowrap',
+  padding: { y: 0 },
   textAlign: 'center',
 };
-
-cue.style = { '--cue-padding-x': '0' }; // raw CSS escape hatch, applied last
 
 // Per-run typography: cue text references `cue.spans` with <c.s-KEY>.
 cue.text = 'Normal <c.s-big>bigger</c> and a <c.s-shape></c>';
 cue.spans = {
-  big: { fontSize: '1.5em', textStroke: '2px black' },
+  big: { fontSize: { unit: 'em', value: 1.5 }, stroke: { width: 2, color: 'black' } },
   shape: { drawing: { path: 'M0 0 L10 0 L10 10 Z', viewBox: [0, 0, 10, 10], width: 5, height: 8 } },
+  sung: { sweep: { sung: 'white', unsung: 'orange' } }, // karaoke fill, driven by a `sweep` keyframe
 };
 
-// Media-synchronised animations (Web Animations API driven from currentTime, so they scrub and
-// pause with the video). Times are seconds relative to the cue start.
+// Media-synchronised animations, sampled from `currentTime` so they scrub and pause with the
+// video. Keyframes carry the same typed values: `opacity`, `color`, `strokeColor`, `strokeWidth`,
+// `fontSize`, `letterSpacing`, `shadow`, `blur`, `transform`, `left`/`top` (overlay %),
+// `translate` (box fraction), `clip`, and `sweep` (0..1).
 cue.animations = [
   { duration: 0.5, keyframes: [{ opacity: 0 }, { opacity: 1 }] }, // fade in
   {
@@ -1058,6 +1068,8 @@ cue.animations = [
     keyframes: [{ color: 'white' }, { color: 'red' }],
   },
 ];
+
+cue.style = { '--cue-padding-x': '0' }; // raw CSS escape hatch for the DOM writer, applied last
 
 JSON.stringify(cue); // plain object, region referenced by id
 VTTCue.from(JSON.parse(json), regions); // rebuilds the cue

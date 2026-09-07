@@ -1,4 +1,14 @@
 import { setCSSVar, setDataAttr } from '../../utils/style';
+import {
+  fontWeightToCSS,
+  lengthToCSS,
+  outlineToCSS,
+  shadowToCSS,
+  strokeToCSS,
+  textDecorationToCSS,
+  transformOriginToCSS,
+  transformToCSS,
+} from '../style-css';
 import type { CueLayout, CueTextStyle } from '../vtt-cue';
 
 const SIDES = ['top', 'right', 'bottom', 'left'] as const;
@@ -18,52 +28,65 @@ export function applyCueLayout(el: HTMLElement, layout: CueLayout | undefined) {
   }
   if (layout.maxWidth !== undefined) setCSSVar(el, 'cue-max-width', layout.maxWidth + '%');
   if (layout.height !== undefined) setCSSVar(el, 'cue-height', layout.height + '%');
-  if (layout.clipPath) setCSSVar(el, 'cue-clip-path', layout.clipPath);
   if (layout.fixed) setDataAttr(el, 'fixed');
+  // `layout.clip` is resolved against the final box in the write phase (typesetting feature).
 }
 
-/** Builds the `--cue-transform` value from the layout translation plus extra text transforms. */
+/** Builds the `--cue-transform` value from the layout translation plus the text transform. */
 export function buildCueTransform(layout?: CueLayout, textStyle?: CueTextStyle): string {
   const parts: string[] = [];
   if (layout?.translate?.x) parts.push(`translateX(${layout.translate.x * 100}%)`);
   if (layout?.translate?.y) parts.push(`translateY(${layout.translate.y * 100}%)`);
-  if (textStyle?.transform) parts.push(textStyle.transform);
+  const transform = transformToCSS(textStyle?.transform);
+  if (transform) parts.push(transform);
   return parts.join(' ');
 }
 
-const TEXT_STYLE_VARS: Partial<Record<keyof CueTextStyle, string>> = {
-  color: 'cue-color',
-  backgroundColor: 'cue-bg-color',
-  textAlign: 'cue-text-align',
-  whiteSpace: 'cue-white-space',
-  lineHeight: 'cue-line-height',
-  textStroke: 'cue-text-stroke',
-  textShadow: 'cue-text-shadow',
-  outline: 'cue-outline',
-  paddingY: 'cue-padding-y',
+/**
+ * Maps `CueTextStyle` to CSS on the cue display element: stylesheet variables where the
+ * stylesheet consumes them (so user styles can still override), properties otherwise.
+ */
+export function applyCueTextStyle(
+  el: HTMLElement,
+  text: CueTextStyle | undefined,
+  layout?: CueLayout,
+) {
+  if (!text) return;
+  const prop = (name: string, value: string | undefined) => {
+    if (value !== undefined) el.style.setProperty(name, value);
+  };
+
+  if (text.color !== undefined) setCSSVar(el, 'cue-color', text.color);
+  if (text.backgroundColor !== undefined) setCSSVar(el, 'cue-bg-color', text.backgroundColor);
+  if (text.textAlign !== undefined) setCSSVar(el, 'cue-text-align', text.textAlign);
+  if (text.wrap !== undefined)
+    setCSSVar(el, 'cue-white-space', text.wrap === 'nowrap' ? 'pre' : 'pre-wrap');
+  if (text.lineHeight !== undefined) {
+    setCSSVar(
+      el,
+      'cue-line-height',
+      text.lineHeight === 'normal' ? 'normal' : lengthToCSS(text.lineHeight),
+    );
+  }
+  if (text.stroke !== undefined) setCSSVar(el, 'cue-text-stroke', strokeToCSS(text.stroke));
+  if (text.shadow !== undefined) setCSSVar(el, 'cue-text-shadow', shadowToCSS(text.shadow));
+  if (text.outline !== undefined) setCSSVar(el, 'cue-outline', outlineToCSS(text.outline));
+  if (text.padding?.x !== undefined) setCSSVar(el, 'cue-padding-x', lengthToCSS(text.padding.x));
+  if (text.padding?.y !== undefined) setCSSVar(el, 'cue-padding-y', lengthToCSS(text.padding.y));
   // A variable so the text box (the target of transform animations) shares the pivot.
-  transformOrigin: 'cue-transform-origin',
-};
+  const origin = transformOriginToCSS(text.transform, layout);
+  if (origin) setCSSVar(el, 'cue-transform-origin', origin);
 
-const TEXT_STYLE_PROPS: Partial<Record<keyof CueTextStyle, string>> = {
-  backgroundImage: 'background-image',
-  animation: 'animation',
-  fontFamily: 'font-family',
-  fontSize: 'font-size',
-  fontWeight: 'font-weight',
-  fontStyle: 'font-style',
-  textDecoration: 'text-decoration',
-  letterSpacing: 'letter-spacing',
-  opacity: 'opacity',
-};
-
-/** Maps `CueTextStyle` to CSS on the cue display element. */
-export function applyCueTextStyle(el: HTMLElement, textStyle: CueTextStyle | undefined) {
-  if (!textStyle) return;
-  for (const key of Object.keys(textStyle) as (keyof CueTextStyle)[]) {
-    const value = textStyle[key];
-    if (value === undefined || key === 'transform' || key === 'className') continue;
-    if (TEXT_STYLE_VARS[key]) setCSSVar(el, TEXT_STYLE_VARS[key]!, value);
-    else if (TEXT_STYLE_PROPS[key]) el.style.setProperty(TEXT_STYLE_PROPS[key]!, value);
+  prop('font-family', text.fontFamily);
+  if (text.fontSize !== undefined) prop('font-size', lengthToCSS(text.fontSize));
+  prop('font-weight', fontWeightToCSS(text.fontWeight));
+  if (text.italic !== undefined) prop('font-style', text.italic ? 'italic' : 'normal');
+  prop('text-decoration', textDecorationToCSS(text.underline, text.strike));
+  if (text.letterSpacing !== undefined) prop('letter-spacing', lengthToCSS(text.letterSpacing));
+  if (text.opacity !== undefined) prop('opacity', String(text.opacity));
+  if (text.image) {
+    prop('background-image', `url(${JSON.stringify(text.image.url)})`);
+    if (text.image.fit)
+      prop('background-size', text.image.fit === 'fill' ? '100% 100%' : text.image.fit);
   }
 }

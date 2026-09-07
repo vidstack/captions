@@ -107,8 +107,7 @@ test('\\move carries the cue between its start and end positions', async () => {
 
 test('transformed text is not clipped by the cue box', async () => {
   const rotated = cue(0, 10, 'Rotated <c.s-r>and scaled</c> text');
-  // Transforms only apply to inline-block spans, which is what the SSA parser emits.
-  rotated.spans = { r: { display: 'inline-block', transform: 'rotate(15deg) scale(3)' } };
+  rotated.spans = { r: { transform: { rotate: 15, scaleX: 3, scaleY: 3 } } };
   fixture.renderer.changeTrack({ cues: [rotated] });
   fixture.renderer.currentTime = 1;
   await nextFrame();

@@ -1,6 +1,13 @@
 import { ParseError, ParseErrorCode } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit, ParsedCaptionsResult } from '../parse/types';
-import { type CueSpanStyle, type CueTextStyle, VTTCue } from '../vtt/vtt-cue';
+import {
+  type CueLength,
+  type CueShadow,
+  type CueSpanStyle,
+  type CueStroke,
+  type CueTextStyle,
+  VTTCue,
+} from '../vtt/vtt-cue';
 import type { VTTHeaderMetadata } from '../vtt/vtt-header';
 
 const CLOCK_TIME_RE = /^(\d+):(\d{1,2}):(\d{1,2})(?:[.,](\d+)|:(\d+)(?:[.,](\d+))?)?$/,
@@ -1626,7 +1633,7 @@ export class TTMLParser implements CaptionsParser {
       ? { left: region.x, top: region.y, width: region.w, height: region.h }
       : { left: 0, top: 0, width: 100, height: 100 };
 
-    cue.textStyle = { backgroundImage: `url(${url})`, backgroundColor: 'transparent' };
+    cue.textStyle = { image: { url }, backgroundColor: 'transparent' };
     if (forced) cue.textStyle.className = 'forced';
 
     this._emit(cue);
@@ -1699,21 +1706,17 @@ export class TTMLParser implements CaptionsParser {
       rootHeight = this._rootHeight,
       textStyle: CueTextStyle = {};
 
-    const fontSize = toCSSFontSize(style.fontSize, rows, rootHeight, false);
+    const fontSize = toFontSize(style.fontSize, rows, rootHeight, false);
     if (fontSize) textStyle.fontSize = fontSize;
 
-    const lineHeight = toCSSLineHeight(style.lineHeight, rows, rootHeight);
+    const lineHeight = toLineHeight(style.lineHeight, rows, rootHeight);
     if (lineHeight) textStyle.lineHeight = lineHeight;
 
-    const textStroke = style.textOutline
-      ? toCSSTextStroke(style.textOutline, rows, rootHeight)
-      : null;
-    if (textStroke && textStroke !== '0') textStyle.textStroke = textStroke;
+    const stroke = style.textOutline ? toStroke(style.textOutline, rows, rootHeight) : undefined;
+    if (stroke) textStyle.stroke = stroke;
 
-    const textShadow = style.textShadow
-      ? toCSSTextShadow(style.textShadow, rows, rootHeight)
-      : null;
-    if (textShadow && textShadow !== 'none') textStyle.textShadow = textShadow;
+    const shadow = style.textShadow ? toShadow(style.textShadow, rows, rootHeight) : undefined;
+    if (shadow) textStyle.shadow = shadow;
 
     // `tts:opacity` is not inherited, so it only applies from the paragraph or its region.
     const opacity = toOpacity(style.opacity ?? region?.style.opacity);
@@ -1831,7 +1834,7 @@ export class TTMLParser implements CaptionsParser {
 
     if (s.fontSize !== p.fontSize) {
       // Relative to the paragraph font size, which the cue element carries.
-      const value = toCSSFontSize(s.fontSize, rows, rootHeight, true);
+      const value = toFontSize(s.fontSize, rows, rootHeight, true);
       if (value) span.fontSize = value;
     }
 
@@ -1841,8 +1844,8 @@ export class TTMLParser implements CaptionsParser {
     }
 
     if (s.textOutline !== p.textOutline) {
-      const value = toCSSTextStroke(s.textOutline ?? 'none', rows, rootHeight);
-      if (value) span.textStroke = value;
+      const value = toStroke(s.textOutline ?? 'none', rows, rootHeight);
+      if (value !== undefined) span.stroke = value;
     }
 
     if (s.color !== p.color && !toVTTColor(s.color, true)) {
@@ -1863,12 +1866,12 @@ export class TTMLParser implements CaptionsParser {
 
     if (s.opacity !== p.opacity) {
       const num = parseFloat(s.opacity ?? '1');
-      if (num >= 0) span.opacity = String(Math.min(1, num));
+      if (num >= 0) span.opacity = Math.min(1, num);
     }
 
     if (s.textShadow !== p.textShadow) {
-      const value = toCSSTextShadow(s.textShadow ?? 'none', rows, rootHeight);
-      if (value) span.textShadow = value;
+      const value = toShadow(s.textShadow ?? 'none', rows, rootHeight);
+      if (value !== undefined) span.shadow = value;
     }
 
     const json = JSON.stringify(span);
@@ -1954,7 +1957,7 @@ function leadTimestamp(runs: TextRun[], begin: number): number | undefined {
 }
 
 /**
- * Converts a TTML length into a CSS value relative to the overlay.
+ * Converts a TTML length into a typed length relative to the overlay.
  *
  * - `%`: relative to the default font size (5% of the overlay height), or when `relative` to the
  *   inherited font size as `em` (span font sizes, outlines, shadows).
@@ -1963,7 +1966,12 @@ function leadTimestamp(runs: TextRun[], begin: number): number | undefined {
  * - `rw` / `rh` (TTML2): percentages of the overlay width / height.
  * - `em`: passed through, relative to the inherited font size.
  */
-function toCSSLength(value: string, rows: number, rootHeight: number, relative: boolean) {
+function toLength(
+  value: string,
+  rows: number,
+  rootHeight: number,
+  relative: boolean,
+): CueLength | null {
   const match = LENGTH_RE.exec(value);
   if (!match) return null;
 
@@ -1972,44 +1980,48 @@ function toCSSLength(value: string, rows: number, rootHeight: number, relative: 
   switch (match[2]) {
     case '%':
       return relative
-        ? `${round(num / 100)}em`
-        : `calc(var(--overlay-height) * ${BASE_FONT_SIZE} * ${round(num / 100)})`;
+        ? { unit: 'em', value: round(num / 100) }
+        : { unit: 'vh', value: round(BASE_FONT_SIZE * num, 4) };
     case 'c':
-      return `calc(var(--overlay-height) * ${round(num / rows)})`;
+      return { unit: 'vh', value: round((num / rows) * 100, 4) };
     case 'px':
-      return `calc(var(--overlay-height) * ${round(num / rootHeight)})`;
+      return { unit: 'vh', value: round((num / rootHeight) * 100, 4) };
     case 'rh':
-      return `calc(var(--overlay-height) * ${round(num / 100)})`;
+      return { unit: 'vh', value: round(num, 4) };
     case 'rw':
-      return `calc(var(--overlay-width) * ${round(num / 100)})`;
+      return { unit: 'vw', value: round(num, 4) };
     case 'em':
-      return `${num}em`;
+      return { unit: 'em', value: num };
     default:
       return null;
   }
 }
 
 /**
- * Converts a TTML `tts:fontSize` into a CSS value. Two-value font sizes use the second
+ * Converts a TTML `tts:fontSize` into a typed length. Two-value font sizes use the second
  * (vertical) value. Returns `null` for unsupported units.
  */
-function toCSSFontSize(
+function toFontSize(
   value: string | undefined,
   rows: number,
   rootHeight: number,
   relative: boolean,
-) {
+): CueLength | null {
   if (!value) return null;
 
   const parts = value.trim().split(WHITESPACE_RE),
     size = parts[parts.length - 1];
 
   if (!(parseFloat(size) > 0)) return null;
-  return toCSSLength(size, rows, rootHeight, relative);
+  return toLength(size, rows, rootHeight, relative);
 }
 
-/** Converts `tts:lineHeight` to CSS: `normal`, a unitless multiple for `%`, or a scaled length. */
-function toCSSLineHeight(value: string | undefined, rows: number, rootHeight: number) {
+/** Converts `tts:lineHeight`: `normal`, an `em` multiple for `%`, or a scaled length. */
+function toLineHeight(
+  value: string | undefined,
+  rows: number,
+  rootHeight: number,
+): CueLength | 'normal' | null {
   if (!value) return null;
 
   const text = value.trim();
@@ -2017,18 +2029,18 @@ function toCSSLineHeight(value: string | undefined, rows: number, rootHeight: nu
 
   const match = LENGTH_RE.exec(text);
   if (!match || !(parseFloat(match[1]) >= 0)) return null;
-  if (match[2] === '%') return String(round(parseFloat(match[1]) / 100));
-  return toCSSLength(text, rows, rootHeight, true);
+  if (match[2] === '%') return { unit: 'em', value: round(parseFloat(match[1]) / 100) };
+  return toLength(text, rows, rootHeight, true);
 }
 
 /**
- * Converts `tts:textOutline` (`none | <color>? <length> <length>?`) to a CSS text stroke
- * (`<width> <color>`); the blur radius has no CSS equivalent. `none` yields `0`.
+ * Converts `tts:textOutline` (`none | <color>? <length> <length>?`) to a stroke; the blur radius
+ * has no equivalent. `none` yields `null` (no stroke), invalid input `undefined`.
  */
-function toCSSTextStroke(value: string, rows: number, rootHeight: number) {
+function toStroke(value: string, rows: number, rootHeight: number): CueStroke | null | undefined {
   const text = value.trim();
-  if (!text) return null;
-  if (text === 'none') return '0';
+  if (!text) return undefined;
+  if (text === 'none') return null;
 
   const parts = text.split(WHITESPACE_RE);
   let color: string | null = null,
@@ -2036,45 +2048,45 @@ function toCSSTextStroke(value: string, rows: number, rootHeight: number) {
 
   if (!LENGTH_RE.test(parts[0])) {
     color = toCSSColor(parts[0]);
-    if (!color) return null;
+    if (!color) return undefined;
     i = 1;
   }
 
-  if (!parts[i] || !(parseFloat(parts[i]) >= 0)) return null;
-  const width = toCSSLength(parts[i], rows, rootHeight, true);
-  if (!width) return null;
+  if (!parts[i] || !(parseFloat(parts[i]) >= 0)) return undefined;
+  const width = toLength(parts[i], rows, rootHeight, true);
+  if (!width) return undefined;
 
-  return color ? `${width} ${color}` : width;
+  return { width, color: color ?? 'currentColor' };
 }
 
-/** Converts `tts:textShadow` (`none | [<length>{2,3} <color>?]#`) to CSS `text-shadow`. */
-function toCSSTextShadow(value: string, rows: number, rootHeight: number) {
+/**
+ * Converts `tts:textShadow` (`none | [<length>{2,3} <color>?]#`) to a shadow (the first one of a
+ * list). `none` yields `null`, invalid input `undefined`.
+ */
+function toShadow(value: string, rows: number, rootHeight: number): CueShadow | null | undefined {
   const text = value.trim();
-  if (!text) return null;
-  if (text === 'none') return 'none';
+  if (!text) return undefined;
+  if (text === 'none') return null;
 
-  const shadows: string[] = [];
+  const part = text.split(',')[0],
+    lengths: CueLength[] = [];
+  let color: string | null = null;
 
-  for (const part of text.split(',')) {
-    const lengths: string[] = [];
-    let color: string | null = null;
-
-    for (const token of part.trim().split(WHITESPACE_RE)) {
-      if (LENGTH_RE.test(token)) {
-        const length = toCSSLength(token, rows, rootHeight, true);
-        if (!length) return null;
-        lengths.push(length);
-      } else {
-        color = toCSSColor(token);
-        if (!color) return null;
-      }
+  for (const token of part.trim().split(WHITESPACE_RE)) {
+    if (LENGTH_RE.test(token)) {
+      const length = toLength(token, rows, rootHeight, true);
+      if (!length) return undefined;
+      lengths.push(length);
+    } else {
+      color = toCSSColor(token);
+      if (!color) return undefined;
     }
-
-    if (lengths.length < 2 || lengths.length > 3) return null;
-    shadows.push(color ? `${lengths.join(' ')} ${color}` : lengths.join(' '));
   }
 
-  return shadows.join(', ');
+  if (lengths.length < 2 || lengths.length > 3) return undefined;
+  const shadow: CueShadow = { x: lengths[0], y: lengths[1], color: color ?? 'currentColor' };
+  if (lengths[2]) shadow.blur = lengths[2];
+  return shadow;
 }
 
 /** Maps a TTML `tts:fontFamily` list to CSS, translating generic family names. */
@@ -2093,12 +2105,12 @@ function toCSSFontFamily(value: string | undefined) {
   return families.length ? families.join(', ') : null;
 }
 
-/** Converts `tts:opacity` to a CSS value, or `null` when absent, invalid, or fully opaque. */
-function toOpacity(value: string | undefined): string | null {
+/** Converts `tts:opacity` to a number, or `null` when absent, invalid, or fully opaque. */
+function toOpacity(value: string | undefined): number | null {
   if (!value) return null;
   const num = parseFloat(value);
   if (!(num >= 0) || num >= 1) return null;
-  return String(Math.min(1, num));
+  return Math.min(1, num);
 }
 
 /**

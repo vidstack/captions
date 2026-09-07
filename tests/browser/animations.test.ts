@@ -70,8 +70,8 @@ test('moving cues animate position and are exempt from collision avoidance', asy
     {
       duration: 10,
       keyframes: [
-        { left: '10%', top: '20%' },
-        { left: '60%', top: '20%' },
+        { left: 10, top: 20 },
+        { left: 60, top: 20 },
       ],
     },
   ];
@@ -105,7 +105,7 @@ test('span-targeted animations affect only that run', async () => {
 test('collision boxes use the painted box, so rotated cues do not overlap', async () => {
   const a = cue(0, 10, 'A rather long rotated caption line'),
     b = cue(0, 10, 'Another rather long caption line');
-  a.textStyle = { transform: 'rotate(90deg)' };
+  a.textStyle = { transform: { rotate: 90 } };
   a.layout = { left: 50, top: 50, width: 'max-content', translate: { x: -0.5, y: -0.5 } };
   b.layout = { left: 50, top: 50, width: 'max-content', translate: { x: -0.5, y: -0.5 } };
   await show([a, b], 1);
@@ -116,9 +116,11 @@ test('collision boxes use the painted box, so rotated cues do not overlap', asyn
 
 test('clip paths apply to the cue box', async () => {
   const clipped = cue(0, 10, 'Clipped');
-  clipped.layout = { clipPath: 'inset(0 50% 0 0)' };
+  clipped.layout = { clip: { inset: [0, 50, 0, 0] } };
   await show([clipped], 1);
-  expect(getComputedStyle(cueDisplays(fixture.overlay)[0]).clipPath).toBe('inset(0px 50% 0px 0px)');
+  expect(getComputedStyle(cueDisplays(fixture.overlay)[0]).clipPath).toMatch(
+    /^inset\(0(px|%) 50% 0(px|%) 0(px|%)\)$/,
+  );
 });
 
 test('stacking: spec keeps the earliest cue in the default slot', async () => {
@@ -202,9 +204,9 @@ test('screen-fixed clip rectangles resolve against the final cue box', async () 
   const clipped = cue(0, 10, 'Clipped by a screen rectangle');
   // Keep only the top half of the overlay visible; the default cue sits at the bottom so it is
   // fully clipped, then a cue positioned at the top is untouched.
-  clipped.layout = { clipRect: { left: 0, top: 0, right: 100, bottom: 50 } };
+  clipped.layout = { clip: { rect: [0, 0, 100, 50] } };
   const topCue = cue(0, 10, 'Top', { line: 0 });
-  topCue.layout = { clipRect: { left: 0, top: 0, right: 100, bottom: 50 } };
+  topCue.layout = { clip: { rect: [0, 0, 100, 50] } };
   await show([clipped, topCue], 1);
   const [bottomEl, topEl] = cueDisplays(fixture.overlay),
     bottomClip = getComputedStyle(bottomEl).clipPath,

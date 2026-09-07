@@ -778,15 +778,15 @@ describe('stpp', () => {
     );
 
     expect(cues).toHaveLength(3);
-    expect(cues[0].textStyle?.backgroundImage).toBe(
-      `url(data:image/png;base64,${Buffer.from(png).toString('base64')})`,
+    expect(cues[0].textStyle?.image?.url).toBe(
+      `data:image/png;base64,${Buffer.from(png).toString('base64')}`,
     );
-    expect(cues[1].textStyle?.backgroundImage).toBe(
-      `url(data:image/jpeg;base64,${Buffer.from(jpeg).toString('base64')})`,
+    expect(cues[1].textStyle?.image?.url).toBe(
+      `data:image/jpeg;base64,${Buffer.from(jpeg).toString('base64')}`,
     );
     // An unresolvable reference is left alone: not an image, text still shows.
     expect(cues[2].text).toBe('T');
-    expect(cues[2].textStyle?.backgroundImage).toBeUndefined();
+    expect(cues[2].textStyle?.image).toBeUndefined();
   });
 
   test('BAD: a sample that is not TTML reports an error and yields no cues', () => {
