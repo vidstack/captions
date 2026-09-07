@@ -157,7 +157,7 @@ The typed model landed in one step, since the package ships with breaking change
 
 ## Known gaps in the canvas writer
 
-Vertical writing modes (rendered horizontally), ruby positioning (inline, smaller), `rotateX`/
+Ruby positioning (inline, smaller), `rotateX`/
 `rotateY`, karaoke sweep gradients (final colour), blur filters, `\move` easing beyond linear,
 STYLE blocks (no CSS engine), and the `text-wrap: balance` heuristic is an approximation of the
 browser's. Fonts are limited to what the canvas can resolve by name; `loadEmbeddedFonts` still

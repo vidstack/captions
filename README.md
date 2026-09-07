@@ -101,6 +101,9 @@ The library is old, outdated, and unmaintained.
 
 ## Installation
 
+> Coming from media-captions 1.x? See [docs/MIGRATION.md](./docs/MIGRATION.md) for every
+> breaking change and its replacement.
+
 First, install the NPM package:
 
 ```bash
@@ -814,15 +817,41 @@ roll-up, the SSA/TTML/CEA-708 layout and text style model (boxes, anchors, colou
 strokes, shadows, rotation and scale about the alignment anchor or `\org`, clip rectangles and
 polygons, `\p` drawings via `Path2D`, image cues), and `cue.animations` sampled at media time.
 
-Not yet: vertical writing modes (drawn horizontally), ruby positioning, 3D rotations, karaoke
-sweep gradients (final colour), blur, and WebVTT `STYLE` blocks. Line breaking is a greedy wrap
-with a balance pass, so long lines may break differently from the browser.
+Vertical writing modes flow into columns (`text-orientation: mixed`: CJK upright, other scripts
+sideways). Not yet: ruby positioning, 3D rotations, and WebVTT `STYLE` blocks. Line breaking is a
+greedy wrap with a balance pass, so long lines may break differently from the browser.
 
 **Options** (`CanvasCaptionsOptions`): `fontFamily`, `fontSize` (fraction of the height, default
 `0.05`), `lineHeight` (`1.2`), `paddingX`/`paddingY` (em), `safeArea` (fraction of the width,
 `0.01`), `color`, `backgroundColor`, `edgeStyle` + `edgeColor`, `classColors`, `dir`, `stacking`,
 `lineStep`, `reducedMotion`. These mirror the stylesheet defaults so both writers agree on
 geometry; the browser suite checks the DOM and canvas boxes land within a couple of pixels.
+
+**Picture-in-picture and iOS fullscreen.** Those surfaces show video pixels only, so composite the
+frame and the captions into one canvas and stream it:
+
+```ts
+const frame = document.createElement('canvas'),
+  ctx = frame.getContext('2d')!,
+  out = document.createElement('video');
+out.muted = true;
+out.playsInline = true;
+out.srcObject = frame.captureStream(30);
+
+function tick() {
+  frame.width = video.videoWidth;
+  frame.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0); // or a WebCodecs VideoFrame
+  paintCaptions(ctx, renderer.activeCues, video.currentTime, { edgeStyle: 'uniform' });
+  video.requestVideoFrameCallback(tick);
+}
+video.requestVideoFrameCallback(tick);
+
+await out.play();
+await out.requestPictureInPicture(); // or out.webkitEnterFullscreen() on iOS
+```
+
+The playground's Canvas tab has both buttons wired up against its mock video.
 
 **Headless pieces** are exported for other writers and tests: `measureCue` (text flow to
 `CueLayoutInput` without a DOM), `layoutCaptions` (measure + layout, no painting), `flowCue`,

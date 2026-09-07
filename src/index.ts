@@ -20,3 +20,4 @@ export * from './vtt/overlay/renderer-core';
 export * from './vtt/overlay/sync-renderer';
 export * from './vtt/vtt-timestamp-map';
 export * from './vtt/vtt-style';
+export * from './vtt/style-css';
