@@ -54,6 +54,8 @@ const MIME_FORMATS: [RegExp, CaptionsFileFormat][] = [
   [/scc|scenarist/i, 'scc'],
   [/lrc/i, 'lrc'],
   [/sbv/i, 'sbv'],
+  [/sami|smi/i, 'smi'],
+  [/microdvd/i, 'sub'],
 ];
 
 const EXTENSION_FORMATS: Record<string, CaptionsFileFormat> = {
@@ -67,6 +69,9 @@ const EXTENSION_FORMATS: Record<string, CaptionsFileFormat> = {
   scc: 'scc',
   lrc: 'lrc',
   sbv: 'sbv',
+  smi: 'smi',
+  sami: 'smi',
+  sub: 'sub',
 };
 
 /**

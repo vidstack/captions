@@ -48,6 +48,14 @@ export async function parseTextStream(
       case 'sbv':
         factory = (await import('../sbv/sbv-parser')).default;
         break;
+      case 'smi':
+      case 'sami':
+        factory = (await import('../sami/sami-parser')).default;
+        break;
+      case 'sub':
+      case 'microdvd':
+        factory = (await import('../microdvd/microdvd-parser')).default;
+        break;
       default:
         factory = (await import('../vtt/vtt-parser')).default;
     }

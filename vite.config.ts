@@ -25,6 +25,8 @@ const PARSERS: [string, string][] = [
   ['scc', 'src/scc/scc-parser.ts'],
   ['lrc', 'src/lrc/lrc-parser.ts'],
   ['sbv', 'src/sbv/sbv-parser.ts'],
+  ['sami', 'src/sami/sami-parser.ts'],
+  ['microdvd', 'src/microdvd/microdvd-parser.ts'],
 ];
 
 /**

@@ -63,17 +63,17 @@
       "development": "./dist/dev-cea.js",
       "default": "./dist/prod-cea.js"
     },
-    "./entities": {
-      "types": "./dist/prod-entities.d.ts",
-      "test": "./dist/dev-entities.js",
-      "development": "./dist/dev-entities.js",
-      "default": "./dist/prod-entities.js"
-    },
     "./element": {
       "types": "./dist/prod-element.d.ts",
       "test": "./dist/dev-element.js",
       "development": "./dist/dev-element.js",
       "default": "./dist/prod-element.js"
+    },
+    "./entities": {
+      "types": "./dist/prod-entities.d.ts",
+      "test": "./dist/dev-entities.js",
+      "development": "./dist/dev-entities.js",
+      "default": "./dist/prod-entities.js"
     },
     "./parsers/vtt": {
       "types": "./dist/prod-parser-vtt.d.ts",
@@ -116,6 +116,18 @@
       "test": "./dist/dev-parser-sbv.js",
       "development": "./dist/dev-parser-sbv.js",
       "default": "./dist/prod-parser-sbv.js"
+    },
+    "./parsers/sami": {
+      "types": "./dist/prod-parser-sami.d.ts",
+      "test": "./dist/dev-parser-sami.js",
+      "development": "./dist/dev-parser-sami.js",
+      "default": "./dist/prod-parser-sami.js"
+    },
+    "./parsers/microdvd": {
+      "types": "./dist/prod-parser-microdvd.d.ts",
+      "test": "./dist/dev-parser-microdvd.js",
+      "development": "./dist/dev-parser-microdvd.js",
+      "default": "./dist/prod-parser-microdvd.js"
     },
     "./styles/*": "./styles/*",
     "./package.json": "./package.json"

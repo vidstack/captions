@@ -13,7 +13,11 @@ export type CaptionsFileFormat =
   | 'xml'
   | 'scc'
   | 'lrc'
-  | 'sbv';
+  | 'sbv'
+  | 'smi'
+  | 'sami'
+  | 'sub'
+  | 'microdvd';
 
 export interface CaptionsParserFactory {
   (): CaptionsParser;
@@ -87,7 +91,7 @@ export interface ParseCaptionsOptions {
   /**
    * The captions file format to be parsed or a custom parser factory (functions that returns a
    * captions parser). Supported types include: 'vtt', 'srt', 'ssa', 'ass', 'ttml' (also 'dfxp'
-   * and 'xml'), 'scc' (CEA-608), 'lrc', and 'sbv'.
+   * and 'xml'), 'scc' (CEA-608), 'lrc', 'sbv', 'smi'/'sami', and 'sub'/'microdvd'.
    */
   type?: CaptionsFileFormat | CaptionsParserFactory;
   /**
