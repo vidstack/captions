@@ -1,15 +1,17 @@
 import { setCSSVar, setDataAttr, setPartAttr } from '../../utils/style';
 import { debounce } from '../../utils/timing';
 import { CueTrack } from '../cue-track';
-import { renderVTTTokensDOM, renderVTTTokensText, updateTimedVTTCueNodes } from '../render-cue';
+import { renderVTTTokensDOM, updateTimedVTTCueNodes } from '../render-cue';
 import { tokenizeVTTCue } from '../tokenize-cue';
-import type { CueAnimation, VTTCue } from '../vtt-cue';
+import type { VTTCue } from '../vtt-cue';
 import type { VTTHeaderMetadata } from '../vtt-header';
 import type { VTTRegion } from '../vtt-region';
-import { transformVTTStyle } from '../vtt-style';
+import { announceCues, createAnnouncer } from './announcer';
 import { createBox, LAYOUT_CACHE, type Box } from './box';
+import { attachCueAnimations, syncCueAnimations, type CueAnimationHandle } from './cue-animations';
 import { applyCueLayout, applyCueTextStyle, buildCueTransform } from './cue-style';
 import { layoutItems, type LayoutInput } from './layout';
+import { orderForPositioning, type StackingMode } from './ordering';
 import {
   computeCuePosition,
   computeCuePositionAlignment,
@@ -22,6 +24,7 @@ import {
   writeRegionBox,
   writeRegionHeight,
 } from './position-region';
+import { injectCueStyles } from './style-injection';
 
 export class CaptionsRenderer {
   readonly overlay: HTMLElement;
@@ -41,12 +44,11 @@ export class CaptionsRenderer {
 
   private _styleEl: HTMLStyleElement | null = null;
   private _announcer: HTMLElement | null = null;
-  private _stacking: 'reading-order' | 'spec' | undefined;
-  private _metadataStacking: 'reading-order' | 'spec' | undefined;
+  private _stacking: StackingMode | undefined;
+  private _metadataStacking: StackingMode | undefined;
   private readonly _lineStep: 'line-height' | 'box';
   private readonly _animations = new Map<VTTCue, CueAnimationHandle[]>();
   private _reducedMotion: boolean;
-  private static _scopeId = 0;
 
   /* Text direction. */
   get dir() {
@@ -104,7 +106,9 @@ export class CaptionsRenderer {
         ? typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
         : init.reducedMotion;
     if (this._reducedMotion) setDataAttr(overlay, 'reduced-motion');
-    if (init?.announce) this._createAnnouncer(init.announce === true ? 'polite' : init.announce);
+    if (init?.announce) {
+      this._announcer = createAnnouncer(overlay, init.announce === true ? 'polite' : init.announce);
+    }
     overlay.setAttribute('translate', 'yes');
     overlay.setAttribute('aria-live', 'off');
     overlay.setAttribute('aria-atomic', 'true');
@@ -117,7 +121,7 @@ export class CaptionsRenderer {
   changeTrack({ regions, cues, metadata, styles }: CaptionsRendererTrack) {
     this.reset();
     this._applyMetadata(metadata);
-    this._applyStyles(styles);
+    this._styleEl = injectCueStyles(this.overlay, styles);
     this._buildRegions(regions);
     this.attachTrack(
       cues instanceof CueTrack ? cues : new CueTrack(cues, { retention: this._retention }),
@@ -210,28 +214,6 @@ export class CaptionsRenderer {
     setCSSVar(this.overlay, 'overlay-height', this._overlayBox.height + 'px');
   }
 
-  /**
-   * The visual overlay is `aria-live="off"` because sighted users read it, and duplicating the
-   * audio for screen reader users is usually unwanted. When announcements are enabled a separate
-   * visually hidden live region receives the plain text of cues as they appear.
-   */
-  private _createAnnouncer(mode: 'polite' | 'assertive') {
-    const el = document.createElement('div');
-    setPartAttr(el, 'announcer');
-    el.setAttribute('aria-live', mode);
-    el.setAttribute('aria-atomic', 'true');
-    el.style.cssText =
-      'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;';
-    this.overlay.insertAdjacentElement('afterend', el);
-    this._announcer = el;
-  }
-
-  private _announce(cues: VTTCue[]) {
-    if (!this._announcer) return;
-    const text = cues.map((cue) => renderVTTTokensText(tokenizeVTTCue(cue)).trim()).filter(Boolean);
-    if (text.length) this._announcer.textContent = text.join('\n');
-  }
-
   private _applyMetadata(metadata?: VTTHeaderMetadata) {
     // WebVTT header `Language: en-US` (also lower-cased variants). Setting `lang` enables correct
     // hyphenation, quotes, and font fallback for the cue text.
@@ -243,31 +225,6 @@ export class CaptionsRenderer {
     const collisions = metadata?.Collisions?.toLowerCase();
     this._metadataStacking =
       collisions === 'normal' ? 'spec' : collisions === 'reverse' ? 'reading-order' : undefined;
-  }
-
-  /**
-   * Applies WebVTT `STYLE` blocks. Selectors are rewritten to the overlay DOM and scoped to this
-   * overlay via a unique `data-scope` attribute so multiple renderers never leak styles.
-   */
-  private _applyStyles(styles?: string[]) {
-    if (!styles?.length) return;
-
-    if (!this.overlay.hasAttribute('data-scope')) {
-      setDataAttr(this.overlay, 'scope', `mc${++CaptionsRenderer._scopeId}`);
-    }
-
-    const scope = `[data-scope="${this.overlay.getAttribute('data-scope')}"]`,
-      css = styles
-        .map((style) => transformVTTStyle(style, scope))
-        .filter(Boolean)
-        .join('\n');
-
-    if (!css) return;
-
-    this._styleEl = document.createElement('style');
-    setPartAttr(this._styleEl, 'style');
-    this._styleEl.textContent = css;
-    this.overlay.append(this._styleEl);
   }
 
   private _render(forceUpdate = false) {
@@ -324,7 +281,10 @@ export class CaptionsRenderer {
     if (forceUpdate) this._layout(activeCues);
 
     updateTimedVTTCueNodes(this.overlay, this._currentTime);
-    this._syncAnimations(activeCues);
+    for (const active of activeCues) {
+      const handles = this._animations.get(active);
+      if (handles) syncCueAnimations(active, handles, this._currentTime, this._reducedMotion);
+    }
 
     // Cue lifecycle events (mirrors the native TextTrackCue `enter`/`exit`).
     const previous = this._activeCues;
@@ -337,7 +297,7 @@ export class CaptionsRenderer {
         active.dispatchEvent(new Event('enter'));
       }
     }
-    if (entered.length) this._announce(entered);
+    if (entered.length && this._announcer) announceCues(this._announcer, entered);
 
     if (this._retention !== undefined) this._track.evict(this._currentTime);
   }
@@ -500,107 +460,15 @@ export class CaptionsRenderer {
     el.append(renderVTTTokensDOM(tokenizeVTTCue(cue), this._currentTime));
     display.append(el);
 
-    this._attachAnimations(cue, display, el);
+    const handles = attachCueAnimations(cue, display, el);
+    if (handles) this._animations.set(cue, handles);
 
     return display;
-  }
-
-  /**
-   * Creates paused Web Animations for `cue.animations`; `_syncAnimations` drives their current
-   * time from media time so they scrub, pause, and seek with playback instead of running on the
-   * wall clock.
-   */
-  private _attachAnimations(cue: VTTCue, display: HTMLElement, cueEl: HTMLElement) {
-    if (!cue.animations?.length || typeof display.animate !== 'function') return;
-
-    const handles: CueAnimationHandle[] = [];
-
-    for (const spec of cue.animations) {
-      let target: Element | null = display;
-      if (spec.target === 'cue') target = cueEl;
-      else if (typeof spec.target === 'object') {
-        target = display.querySelector(`[data-span="${spec.target.span}"]`);
-      }
-      if (!target) continue;
-
-      // Animated box positions must not be fought by collision avoidance.
-      if ((spec.target ?? 'display') === 'display' && animatesPosition(spec)) {
-        setDataAttr(display, 'fixed');
-      }
-
-      const animation = target.animate(spec.keyframes, {
-        duration: Math.max(1, spec.duration * 1000),
-        easing: spec.easing ?? 'linear',
-        fill: spec.fill ?? 'both',
-      });
-      animation.pause();
-      handles.push({ animation, delay: spec.delay ?? 0, duration: spec.duration });
-    }
-
-    if (handles.length) this._animations.set(cue, handles);
-  }
-
-  private _syncAnimations(activeCues: VTTCue[]) {
-    if (!this._animations.size) return;
-    for (const cue of activeCues) {
-      const handles = this._animations.get(cue);
-      if (!handles) continue;
-      for (const { animation, delay, duration } of handles) {
-        // Reduced motion: hold the final state so content is readable without movement.
-        const local = this._reducedMotion ? duration : this._currentTime - cue.startTime - delay;
-        animation.currentTime = Math.min(Math.max(local, 0), duration) * 1000;
-      }
-    }
   }
 
   private _hasRegion(cue: VTTCue) {
     return cue.region && cue.size === 100 && cue.vertical === '' && cue.line === 'auto';
   }
-}
-
-/**
- * Cues are positioned so they read top-down in cue order. Bottom anchored cues are positioned
- * last-to-first (the newest cue takes the default slot and older cues are pushed up), while top
- * anchored cues are positioned first-to-last so older cues stay on top and newer ones are pushed
- * down. Fixed cues go first so everything else avoids them.
- */
-function orderForPositioning(cues: VTTCue[], stacking: 'reading-order' | 'spec'): VTTCue[] {
-  const fixed: VTTCue[] = [],
-    top: VTTCue[] = [],
-    bottom: VTTCue[] = [];
-
-  for (const cue of cues) {
-    if (cue.layout?.fixed) fixed.push(cue);
-    else if (isTopAnchored(cue)) top.push(cue);
-    else bottom.push(cue);
-  }
-
-  // Spec stacking: the earliest cue keeps its slot and later cues are pushed away from the edge.
-  if (stacking === 'spec') return [...fixed, ...top, ...bottom];
-
-  return [...fixed, ...top, ...bottom.reverse()];
-}
-
-function animatesPosition(spec: CueAnimation) {
-  return spec.keyframes.some((frame) =>
-    ['left', 'top', 'right', 'bottom', 'transform', 'translate'].some((key) => key in frame),
-  );
-}
-
-interface CueAnimationHandle {
-  animation: Animation;
-  delay: number;
-  duration: number;
-}
-
-function isTopAnchored(cue: VTTCue): boolean {
-  if (cue.line === 'auto') {
-    const top = cue.layout?.top ?? cue.style?.['--cue-top'],
-      bottom = cue.layout?.bottom ?? cue.style?.['--cue-bottom'];
-    return top !== undefined && bottom === undefined;
-  }
-  if (cue.snapToLines) return cue.line >= 0;
-  return cue.lineAlign === 'end' ? cue.line <= 50 : cue.line < 50;
 }
 
 export interface CaptionsRendererInit {
