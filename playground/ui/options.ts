@@ -6,6 +6,7 @@ import {
   type EdgeStyle,
   type LineStep,
   type PlaygroundState,
+  type Features,
   type Stacking,
 } from './state';
 
@@ -105,6 +106,20 @@ export class OptionsPanel {
           null,
           'CaptionsRenderer init',
           h('span', { class: 'hint' }, ' (recreates the renderer)'),
+        ),
+        labelled(
+          'features',
+          sel<'features'>('features', [
+            { value: 'all' satisfies Features, label: 'all (CaptionsRenderer)' },
+            { value: 'core' satisfies Features, label: 'core only (createRenderer)' },
+            { value: 'core-regions' satisfies Features, label: 'core + regions()' },
+            { value: 'core-typesetting' satisfies Features, label: 'core + typesetting()' },
+            {
+              value: 'core-typesetting-animations' satisfies Features,
+              label: 'core + typesetting() + animations()',
+            },
+          ]),
+          'Composable renderer: which features are installed',
         ),
         labelled(
           'stacking',

@@ -16,6 +16,15 @@ import {
 } from '../src';
 import { defineMediaCaptionsElement, type MediaCaptionsElement } from '../src/element';
 import { registerFullHTMLEntities } from '../src/entities';
+import {
+  animations,
+  announcer as announcerFeature,
+  createRenderer,
+  regions,
+  typesetting,
+  type CaptionsRendererCore,
+  type RendererFeature,
+} from '../src/renderer';
 import { findSample, samples, type Sample } from './samples';
 import { button, clamp, h, preview, throttle } from './ui/dom';
 import { Gallery } from './ui/gallery';
@@ -54,7 +63,7 @@ media.playbackRate = state.rate;
 let sample: Sample = findSample(state.format),
   result: ParsedCaptionsResult | null = null,
   feeder: LiveCaptionFeeder | null = null,
-  renderer: CaptionsRenderer,
+  renderer: CaptionsRendererCore,
   stopSync: (() => void) | null = null,
   unsubscribeTrack: (() => void) | null = null,
   announcerObserver: MutationObserver | null = null,
@@ -182,15 +191,31 @@ function setVar(el: HTMLElement, name: string, value: string, set: boolean) {
   else el.style.removeProperty(name);
 }
 
-function applyReducedMotion(target: CaptionsRenderer) {
+function applyReducedMotion(target: CaptionsRendererCore) {
   // Feature-detected: older builds only have the `data-reduced-motion` attribute hook.
   if (supportsReducedMotion && target.reducedMotion !== state.reducedMotion) {
     target.reducedMotion = state.reducedMotion;
   }
 }
 
-function createRenderer(overlay: HTMLElement) {
-  const created = new CaptionsRenderer(overlay, rendererInit());
+/** The feature set behind the `features` preset (see `FEATURE_PRESETS`). */
+function presetFeatures(): RendererFeature[] | null {
+  if (state.features === 'all') return null;
+  const features: RendererFeature[] = [];
+  if (state.features.includes('regions')) features.push(regions());
+  if (state.features.includes('typesetting')) features.push(typesetting());
+  if (state.features.includes('animations')) features.push(animations());
+  if (state.announce) features.push(announcerFeature());
+  return features;
+}
+
+function buildRenderer(overlay: HTMLElement): CaptionsRendererCore {
+  const init = rendererInit(),
+    features = presetFeatures();
+  // `all` is the batteries-included class; anything else composes the core with chosen features.
+  const created = features
+    ? createRenderer(overlay, { ...init, features })
+    : new CaptionsRenderer(overlay, init);
   styleOverlay(overlay);
   return created;
 }
@@ -204,9 +229,9 @@ function rebuildRenderer() {
   announcerObserver = null;
   inspector.unwatchAll();
   // `destroy()` leaves the overlay element in place, so the same node is reused.
-  (renderer as CaptionsRenderer | undefined)?.destroy();
+  (renderer as CaptionsRendererCore | undefined)?.destroy();
 
-  renderer = createRenderer(stage.overlay!);
+  renderer = buildRenderer(stage.overlay!);
   observeAnnouncer();
   attachCurrentTrack();
   setDrive();
@@ -471,7 +496,7 @@ function setView(view: View) {
         samples,
         time: media.currentTime,
         aspect: state.aspect,
-        createRenderer,
+        createRenderer: buildRenderer,
         onTime: (time) => {
           media.seek(time);
           persist();

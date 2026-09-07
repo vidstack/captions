@@ -7,6 +7,15 @@ export type Stacking = 'auto' | 'reading-order' | 'spec';
 export type LineStep = 'line-height' | 'box';
 export type EdgeStyle = 'default' | 'uniform' | 'drop-shadow' | 'raised' | 'depressed' | 'none';
 export type InspectorTab = 'active' | 'cues' | 'meta' | 'errors' | 'events';
+/** Renderer feature presets: `all` is `CaptionsRenderer`, the rest use `createRenderer`. */
+export const FEATURE_PRESETS = [
+  'all',
+  'core',
+  'core-regions',
+  'core-typesetting',
+  'core-typesetting-animations',
+] as const;
+export type Features = (typeof FEATURE_PRESETS)[number];
 
 export interface PlaygroundState {
   /** Sample id (see `samples/index.ts`). */
@@ -21,6 +30,7 @@ export interface PlaygroundState {
   drive: Drive;
   view: View;
   dir: 'ltr' | 'rtl';
+  features: Features;
   stacking: Stacking;
   lineStep: LineStep;
   /** Safe-area inset in percent. */
@@ -52,6 +62,7 @@ export const DEFAULT_STATE: PlaygroundState = {
   drive: 'direct',
   view: 'stage',
   dir: 'ltr',
+  features: 'all',
   stacking: 'auto',
   lineStep: 'line-height',
   safeArea: 1,
@@ -72,6 +83,7 @@ export const DEFAULT_STATE: PlaygroundState = {
 
 /** Keys whose change requires a new `CaptionsRenderer` (init-time options). */
 export const RENDERER_INIT_KEYS: (keyof PlaygroundState)[] = [
+  'features',
   'stacking',
   'lineStep',
   'retention',
@@ -122,6 +134,7 @@ export function readState(search = location.search): PlaygroundState {
     drive: oneOf(p.get('drive'), ['direct', 'sync'], d.drive),
     view: oneOf(p.get('view'), ['stage', 'element', 'gallery'], d.view),
     dir: oneOf(p.get('dir'), ['ltr', 'rtl'], d.dir),
+    features: oneOf(p.get('features'), FEATURE_PRESETS, d.features),
     stacking: oneOf(p.get('stacking'), ['auto', 'reading-order', 'spec'], d.stacking),
     lineStep: oneOf(p.get('lineStep'), ['line-height', 'box'], d.lineStep),
     safeArea: num(p.get('safeArea'), d.safeArea, 0, 25),

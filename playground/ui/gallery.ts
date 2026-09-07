@@ -1,4 +1,4 @@
-import { parseText, type CaptionsRenderer } from '../../src';
+import { parseText, type CaptionsRendererCore } from '../../src';
 import type { Sample } from '../samples';
 import { fmtTime, h } from './dom';
 import { LiveCaptionFeeder } from './live-cea';
@@ -9,14 +9,14 @@ export interface GalleryOptions {
   samples: Sample[];
   time: number;
   aspect: Aspect;
-  createRenderer(overlay: HTMLElement): CaptionsRenderer;
+  createRenderer(overlay: HTMLElement): CaptionsRendererCore;
   onTime(time: number): void;
   onError(sampleId: string, error: unknown): void;
 }
 
 interface Tile {
   stage: Stage;
-  renderer: CaptionsRenderer;
+  renderer: CaptionsRendererCore;
   feeder: LiveCaptionFeeder | null;
   duration: number;
 }
@@ -109,7 +109,7 @@ export class Gallery {
   }
 
   /** Re-applies overlay styling (edge style, variables) through the given callback. */
-  eachOverlay(fn: (overlay: HTMLElement, renderer: CaptionsRenderer) => void) {
+  eachOverlay(fn: (overlay: HTMLElement, renderer: CaptionsRendererCore) => void) {
     for (const tile of this._tiles) fn(tile.renderer.overlay, tile.renderer);
   }
 
