@@ -952,9 +952,9 @@ function frame(now: number) {
     flushLiveLog();
   }
 
-  if (state.drive === 'direct' && (time !== lastTime || cuesDirty)) {
-    renderer.currentTime = time;
-  }
+  // Decided once: `lastTime` is advanced below, so a later comparison would never see a change.
+  const timeChanged = time !== lastTime || cuesDirty;
+  if (state.drive === 'direct' && timeChanged) renderer.currentTime = time;
   lastTime = time;
 
   refreshCuesIfDirty();
@@ -962,7 +962,8 @@ function frame(now: number) {
   stage.setTime(time);
   elementStage?.setTime(time);
   canvasStage?.setTime(time);
-  if (canvasRenderer && (time !== lastTime || cuesDirty)) canvasRenderer.currentTime = time;
+  // The canvas writer is always driven directly; it has no media element to sync to here.
+  if (canvasRenderer && timeChanged) canvasRenderer.currentTime = time;
   transport.update();
   timeline.draw(time, renderer.activeCues);
   updateInspector(renderer.activeCues, time);
