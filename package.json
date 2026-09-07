@@ -168,7 +168,8 @@
     "docs": "typedoc",
     "coverage": "vp test --run --project unit --coverage",
     "playground": "vp dev --open=/playground/index.html --port=3200",
-    "bench": "vp test bench --run --project unit"
+    "bench": "vp test bench --run --project unit",
+    "playground:screenshots": "node playground/screenshot.mjs"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",

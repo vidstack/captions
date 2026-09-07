@@ -13,6 +13,7 @@ const GENERATED = [
   'tests/imsc/vendor/**',
   'tests/corpus/__snapshots__/**',
   'tests/corpus/files/**',
+  'playground/screenshots/**',
   'tests/browser/__screenshots__/**',
   'src/entities/html-entities.ts',
   'pnpm-lock.yaml',

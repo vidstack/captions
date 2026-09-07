@@ -29,6 +29,6 @@
     "types": ["vitest/globals"],
     "verbatimModuleSyntax": true
   },
-  "include": ["src", "tests"],
+  "include": ["src", "tests", "playground"],
   "exclude": ["**/*.mjs", "node_modules", "dist"]
 }
