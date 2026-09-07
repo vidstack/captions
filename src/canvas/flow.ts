@@ -48,24 +48,45 @@ export interface RunStyle {
   sweep?: CueSweep;
 }
 
+/** `<rt>` text drawn over (horizontal) or beside (vertical) its ruby base. */
+export interface RubyAnnotation {
+  text: string;
+  /** Advance along the line at the annotation's (halved) font size. */
+  width: number;
+  style: RunStyle;
+  upright?: boolean;
+}
+
 export interface Run {
   text: string;
   style: RunStyle;
-  /** Advance along the line: horizontal width, or the column advance for vertical text. */
+  /**
+   * Advance along the line: horizontal width, or the column advance for vertical text. A ruby run
+   * advances by the wider of its base and its annotation; the narrower one is centred.
+   */
   width: number;
   /** Vertical text: glyphs stand upright (CJK) rather than rotated sideways (Latin). */
   upright?: boolean;
+  ruby?: RubyAnnotation;
+  /** Advance of the base text alone when `ruby` is set. */
+  baseWidth?: number;
 }
 
 export interface Line {
   runs: Run[];
   width: number;
+  /**
+   * Extra space across the line for ruby annotations (above horizontal lines, beside vertical
+   * columns), like the taller line box a browser gives `<ruby>`.
+   */
+  rubyHeight: number;
 }
 
 export interface CueFlow {
   lines: Line[];
   /** Widest line. */
   width: number;
+  /** Sum of the line heights plus ruby space; for vertical text the width of all columns. */
   height: number;
   lineHeight: number;
 }
@@ -93,11 +114,16 @@ interface Segment {
   style: RunStyle;
   width: number;
   upright?: boolean;
+  ruby?: RubyAnnotation;
+  baseWidth?: number;
   /** Whitespace: collapsible at line edges and a break opportunity. */
   space: boolean;
   /** Forced line break. */
   br?: boolean;
 }
+
+/** Ruby annotation size relative to its base (browser default `font-size: 50%`). */
+const RUBY_SCALE = 0.5;
 
 export function fontString(style: RunStyle): string {
   return `${style.italic ? 'italic ' : ''}${style.bold ? 'bold ' : ''}${style.fontSize}px ${style.fontFamily}`;
@@ -167,7 +193,7 @@ export function flowCue(tokens: VTTNode[], base: RunStyle, options: FlowOptions)
   return {
     lines: merged,
     width,
-    height: merged.length * options.lineHeight,
+    height: merged.reduce((sum, line) => sum + options.lineHeight + line.rubyHeight, 0),
     lineHeight: options.lineHeight,
   };
 }
@@ -183,6 +209,11 @@ function collect(tokens: VTTNode[], base: RunStyle, options: FlowOptions, out: S
     // The tokenizer nests the text that follows a timestamp inside the timestamp node.
     if (token.type === 'timestamp') style = { ...style, timestamp: token.time };
 
+    if (token.type === 'ruby') {
+      pushRuby(token, style, options, out);
+      continue;
+    }
+
     const next = { ...style };
     switch (token.type) {
       case 'b':
@@ -195,9 +226,8 @@ function collect(tokens: VTTNode[], base: RunStyle, options: FlowOptions, out: S
         next.underline = true;
         break;
       case 'rt':
-        // Ruby text is drawn inline at a smaller size (a simplification of `ruby-position`).
-        next.fontSize = style.fontSize * 0.6;
-        break;
+        // Only meaningful inside `<ruby>` (handled by `pushRuby`); the tokenizer drops it elsewhere.
+        continue;
     }
     if (token.color) next.color = options.classColors[token.color] ?? token.color;
     if (token.bgColor) next.bgColor = options.classColors[token.bgColor] ?? token.bgColor;
@@ -218,6 +248,49 @@ function collect(tokens: VTTNode[], base: RunStyle, options: FlowOptions, out: S
 
     collect(token.children, next, options, out);
   }
+}
+
+/**
+ * `<ruby>base<rt>annotation</rt></ruby>`: the base is one unbreakable segment (its first style
+ * wins) carrying the annotation, which is flowed at half size. Without `<rt>` the children flow
+ * normally.
+ */
+function pushRuby(
+  token: Extract<VTTNode, { type: 'ruby' }>,
+  style: RunStyle,
+  options: FlowOptions,
+  out: Segment[],
+) {
+  const base: Segment[] = [],
+    annotation: Segment[] = [],
+    rtStyle: RunStyle = { ...style, fontSize: style.fontSize * RUBY_SCALE };
+  for (const child of token.children) {
+    if (child.type === 'rt') collect(child.children, rtStyle, options, annotation);
+    else collect([child], style, options, base);
+  }
+  const bases = base.filter((s) => !s.br),
+    rts = annotation.filter((s) => !s.br);
+  if (!rts.length || !bases.length) {
+    out.push(...bases);
+    return;
+  }
+  const sum = (segments: Segment[]) => segments.reduce((total, s) => total + s.width, 0),
+    text = (segments: Segment[]) => segments.map((s) => s.text).join(''),
+    baseWidth = sum(bases),
+    ruby: RubyAnnotation = { text: text(rts), width: sum(rts), style: rts[0].style },
+    segment: Segment = {
+      text: text(bases),
+      style: bases[0].style,
+      width: Math.max(baseWidth, ruby.width),
+      baseWidth,
+      ruby,
+      space: false,
+    };
+  if (options.vertical) {
+    if (bases.every((s) => s.upright)) segment.upright = true;
+    if (rts.every((s) => s.upright)) ruby.upright = true;
+  }
+  out.push(segment);
 }
 
 function applySpan(style: RunStyle, span: CueSpanStyle, env: LengthEnv, spanKey?: string) {
@@ -335,7 +408,13 @@ function wrap(segments: Segment[], maxWidth: number | null): Segment[][] {
       flush();
     }
 
-    if (maxWidth !== null && !segment.space && segment.width > maxWidth && !segment.style.drawing) {
+    if (
+      maxWidth !== null &&
+      !segment.space &&
+      segment.width > maxWidth &&
+      !segment.style.drawing &&
+      !segment.ruby
+    ) {
       // A word wider than the line: break it wherever it overflows.
       for (const piece of splitToFit(segment, maxWidth)) {
         if (line.length && width + piece.width > maxWidth) flush();
@@ -366,10 +445,13 @@ function splitToFit(segment: Segment, maxWidth: number): Segment[] {
 
 function mergeRuns(segments: Segment[]): Line {
   const runs: Run[] = [];
+  let rubyHeight = 0;
   for (const segment of segments) {
     const last = runs[runs.length - 1];
     if (
       last &&
+      !last.ruby &&
+      !segment.ruby &&
       last.style === segment.style &&
       !!last.upright === !!segment.upright &&
       !segment.style.drawing
@@ -379,8 +461,13 @@ function mergeRuns(segments: Segment[]): Line {
     } else {
       const run: Run = { text: segment.text, style: segment.style, width: segment.width };
       if (segment.upright) run.upright = true;
+      if (segment.ruby) {
+        run.ruby = segment.ruby;
+        run.baseWidth = segment.baseWidth;
+        rubyHeight = Math.max(rubyHeight, segment.ruby.style.fontSize);
+      }
       runs.push(run);
     }
   }
-  return { runs, width: runs.reduce((sum, run) => sum + run.width, 0) };
+  return { runs, width: runs.reduce((sum, run) => sum + run.width, 0), rubyHeight };
 }

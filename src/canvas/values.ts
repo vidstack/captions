@@ -30,29 +30,53 @@ export function lengthToPx(length: CueLength | undefined, env: LengthEnv): numbe
   }
 }
 
-/** A transform's 2D part (3D rotations have no canvas equivalent and are ignored). */
-export interface Transform2D {
-  scaleX: number;
-  scaleY: number;
-  rotate: number;
-}
+/**
+ * A transform flattened to a 2D affine matrix, `[a, b, c, d]` as `ctx.transform()` takes it
+ * (`x' = a·x + c·y`, `y' = b·x + d·y`). 3D rotations are projected orthographically, which is what
+ * CSS does without `perspective`: `rotateX` squashes the box vertically, `rotateY` horizontally,
+ * and both together shear it.
+ */
+export type Transform2D = [a: number, b: number, c: number, d: number];
 
-export const IDENTITY: Transform2D = { scaleX: 1, scaleY: 1, rotate: 0 };
+export const IDENTITY: Transform2D = [1, 0, 0, 1];
 
+const RAD = Math.PI / 180;
+
+/** Flattens a cue transform in the CSS order `scaleX() scaleY() rotate() rotateX() rotateY()`. */
 export function transform2D(transform: CueTransform | undefined): Transform2D {
-  return {
-    scaleX: transform?.scaleX ?? 1,
-    scaleY: transform?.scaleY ?? 1,
-    rotate: transform?.rotate ?? 0,
-  };
+  if (!transform) return IDENTITY;
+  const sx = transform.scaleX ?? 1,
+    sy = transform.scaleY ?? 1,
+    z = (transform.rotate ?? 0) * RAD,
+    x = (transform.rotateX ?? 0) * RAD,
+    y = (transform.rotateY ?? 0) * RAD;
+  if (sx === 1 && sy === 1 && !z && !x && !y) return IDENTITY;
+  // Top-left 2x2 of Rx·Ry: [[cos y, 0], [sin x·sin y, cos x]], then Rz, then the scales.
+  const cz = Math.cos(z),
+    sz = Math.sin(z),
+    m00 = Math.cos(y),
+    m10 = Math.sin(x) * Math.sin(y),
+    m11 = Math.cos(x);
+  return [
+    sx * (cz * m00 - sz * m10),
+    sy * (sz * m00 + cz * m10),
+    -(sx * sz * m11) || 0, // `|| 0` folds -0 away
+    sy * cz * m11,
+  ];
 }
 
+export function isIdentity(t: Transform2D): boolean {
+  return t[0] === 1 && t[1] === 0 && t[2] === 0 && t[3] === 1;
+}
+
+/** Multiplies transforms so the first applies outermost, like a CSS `transform` list. */
 export function combineTransforms(...transforms: Transform2D[]): Transform2D {
-  return transforms.reduce((a, b) => ({
-    scaleX: a.scaleX * b.scaleX,
-    scaleY: a.scaleY * b.scaleY,
-    rotate: a.rotate + b.rotate,
-  }));
+  return transforms.reduce(([a1, b1, c1, d1], [a2, b2, c2, d2]) => [
+    a1 * a2 + c1 * b2,
+    b1 * a2 + d1 * b2,
+    a1 * c2 + c1 * d2,
+    b1 * c2 + d1 * d2,
+  ]);
 }
 
 /**

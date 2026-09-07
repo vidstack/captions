@@ -1,12 +1,13 @@
 import type { Box } from '../vtt/overlay/box';
 import type { CueAnimation, CueKeyframe } from '../vtt/vtt-cue';
 import { sampleAnimation } from './animate';
-import { fontString, shadowPx, type Run } from './flow';
+import { fontString, shadowPx, type Run, type RunStyle } from './flow';
 import type { MeasuredCue, MeasuredRegion } from './measure';
 import type { CanvasTheme } from './theme';
 import {
   clipToPolygon,
   combineTransforms,
+  isIdentity,
   lengthToPx,
   transform2D,
   transformOriginPx,
@@ -188,27 +189,56 @@ function paintCueContent(
   }
 
   const contentWidth = textBox.width - 2 * style.paddingX;
+  let y = textBox.top + style.paddingY;
 
-  flow.lines.forEach((line, index) => {
-    const y = textBox.top + style.paddingY + index * flow.lineHeight,
-      slack = contentWidth - line.width;
+  for (const line of flow.lines) {
+    // Ruby annotations sit in a band above the line.
+    y += line.rubyHeight;
+    const slack = contentWidth - line.width;
     let x =
       textBox.left +
       style.paddingX +
       (style.textAlign === 'center' ? slack / 2 : style.textAlign === 'right' ? slack : 0);
 
     for (const run of line.runs) {
-      const span = run.style.spanKey ? sampleTarget(cue, { span: run.style.spanKey }, options) : {};
-      paintRun(ctx, run, x, y, flow.lineHeight, cue, theme, {
-        color: span.color ?? (run.style.color === style.color ? inner.color : undefined),
-        strokeColor: inner.strokeColor ?? span.strokeColor,
-        alpha: span.opacity ?? 1,
-        frame: span,
-        time: options.time,
-      });
+      const span = run.style.spanKey ? sampleTarget(cue, { span: run.style.spanKey }, options) : {},
+        over: RunOverrides = {
+          color: span.color ?? (run.style.color === style.color ? inner.color : undefined),
+          strokeColor: inner.strokeColor ?? span.strokeColor,
+          alpha: span.opacity ?? 1,
+          frame: span,
+          time: options.time,
+        };
+      if (run.ruby) {
+        const { ruby } = run,
+          baseWidth = run.baseWidth ?? run.width;
+        paintRun(
+          ctx,
+          { text: ruby.text, style: ruby.style, width: ruby.width },
+          x + (run.width - ruby.width) / 2,
+          y - line.rubyHeight,
+          line.rubyHeight,
+          cue,
+          theme,
+          over,
+        );
+        paintRun(
+          ctx,
+          { text: run.text, style: run.style, width: baseWidth },
+          x + (run.width - baseWidth) / 2,
+          y,
+          flow.lineHeight,
+          cue,
+          theme,
+          over,
+        );
+      } else {
+        paintRun(ctx, run, x, y, flow.lineHeight, cue, theme, over);
+      }
       x += run.width;
     }
-  });
+    y += flow.lineHeight;
+  }
 }
 
 interface RunOverrides {
@@ -358,7 +388,8 @@ function paintRun(
 }
 
 /**
- * Vertical writing: each line is a column `lineHeight` wide, read right-to-left (`rl`) or
+ * Vertical writing: each line is a column `lineHeight` wide (plus room for ruby annotations, which
+ * sit to the right of their base in both `rl` and `lr`), read right-to-left (`rl`) or
  * left-to-right (`lr`). Upright runs stack one glyph per em; sideways runs are rotated a quarter
  * turn clockwise and read downwards.
  */
@@ -375,13 +406,17 @@ function paintColumns(
     padAcross = style.paddingX,
     contentHeight = textBox.height - 2 * padAlong;
 
-  flow.lines.forEach((column, index) => {
-    const x =
-        cue.vertical === 'rl'
-          ? textBox.left + textBox.width - padAcross - (index + 1) * flow.lineHeight
-          : textBox.left + padAcross + index * flow.lineHeight,
+  // The edge the next column is laid against: the right edge for `rl`, the left for `lr`.
+  let edge =
+    cue.vertical === 'rl' ? textBox.left + textBox.width - padAcross : textBox.left + padAcross;
+
+  for (const column of flow.lines) {
+    const columnWidth = flow.lineHeight + column.rubyHeight,
+      x = cue.vertical === 'rl' ? edge - columnWidth : edge,
       cx = x + flow.lineHeight / 2,
+      rubyCx = x + flow.lineHeight + column.rubyHeight / 2,
       slack = contentHeight - column.width;
+    edge = cue.vertical === 'rl' ? x : edge + columnWidth;
     let y =
       textBox.top +
       padAlong +
@@ -392,9 +427,7 @@ function paintColumns(
         fill = resolveFill(run, cue, theme, {
           color: span.color ?? (run.style.color === style.color ? inner.color : undefined),
           time: options.time,
-        }),
-        stroke = run.style.stroke === undefined ? cue.style.stroke : run.style.stroke,
-        shadow = run.style.shadow === undefined ? cue.style.shadow : run.style.shadow;
+        });
 
       ctx.save();
       ctx.globalAlpha *= run.style.opacity * (span.opacity ?? 1);
@@ -402,40 +435,72 @@ function paintColumns(
         ctx.fillStyle = run.style.bgColor;
         ctx.fillRect(x, y, flow.lineHeight, run.width);
       }
-      ctx.font = fontString(run.style);
-      if (shadow) {
-        ctx.shadowOffsetX = shadow.x;
-        ctx.shadowOffsetY = shadow.y;
-        ctx.shadowBlur = shadow.blur;
-        ctx.shadowColor = shadow.color;
-      }
-      const draw = (text: string, tx: number, ty: number) => {
-        if (stroke && stroke.width > 0) {
-          ctx.lineWidth = stroke.width;
-          ctx.strokeStyle = stroke.color === 'currentColor' ? fill : stroke.color;
-          ctx.strokeText(text, tx, ty);
-          ctx.shadowColor = 'transparent';
-        }
-        ctx.fillStyle = fill;
-        ctx.fillText(text, tx, ty);
-      };
 
-      if (run.upright) {
-        ctx.textAlign = 'center';
-        for (const glyph of run.text) {
-          draw(glyph, cx, y + run.style.fontSize / 2);
-          y += run.style.fontSize;
-        }
+      if (run.ruby) {
+        const { ruby } = run,
+          baseWidth = run.baseWidth ?? run.width;
+        paintVerticalText(ctx, cue, ruby, fill, rubyCx, y + (run.width - ruby.width) / 2);
+        paintVerticalText(
+          ctx,
+          cue,
+          { text: run.text, style: run.style, width: baseWidth, upright: run.upright },
+          fill,
+          cx,
+          y + (run.width - baseWidth) / 2,
+        );
       } else {
-        ctx.textAlign = 'left';
-        ctx.translate(cx, y);
-        ctx.rotate(Math.PI / 2);
-        draw(run.text, 0, 0);
-        y += run.width;
+        paintVerticalText(ctx, cue, run, fill, cx, y);
       }
+      y += run.width;
       ctx.restore();
     }
-  });
+  }
+}
+
+/** Draws one vertical run (or ruby annotation) centred on column `cx`, starting at `y`. */
+function paintVerticalText(
+  ctx: PaintContext,
+  cue: MeasuredCue,
+  run: { text: string; style: RunStyle; width: number; upright?: boolean },
+  fill: string,
+  cx: number,
+  y: number,
+) {
+  const stroke = run.style.stroke === undefined ? cue.style.stroke : run.style.stroke,
+    shadow = run.style.shadow === undefined ? cue.style.shadow : run.style.shadow;
+
+  ctx.save();
+  ctx.font = fontString(run.style);
+  if (shadow) {
+    ctx.shadowOffsetX = shadow.x;
+    ctx.shadowOffsetY = shadow.y;
+    ctx.shadowBlur = shadow.blur;
+    ctx.shadowColor = shadow.color;
+  }
+  const draw = (text: string, tx: number, ty: number) => {
+    if (stroke && stroke.width > 0) {
+      ctx.lineWidth = stroke.width;
+      ctx.strokeStyle = stroke.color === 'currentColor' ? fill : stroke.color;
+      ctx.strokeText(text, tx, ty);
+      ctx.shadowColor = 'transparent';
+    }
+    ctx.fillStyle = fill;
+    ctx.fillText(text, tx, ty);
+  };
+
+  if (run.upright) {
+    ctx.textAlign = 'center';
+    for (const glyph of run.text) {
+      draw(glyph, cx, y + run.style.fontSize / 2);
+      y += run.style.fontSize;
+    }
+  } else {
+    ctx.textAlign = 'left';
+    ctx.translate(cx, y);
+    ctx.rotate(Math.PI / 2);
+    draw(run.text, 0, 0);
+  }
+  ctx.restore();
 }
 
 /** The fill colour of a run after animation overrides and timed-text colouring. */
@@ -476,9 +541,8 @@ function sampleTarget(
 }
 
 function applyTransform(ctx: PaintContext, t: Transform2D, [ox, oy]: [number, number]) {
-  if (t.scaleX === 1 && t.scaleY === 1 && !t.rotate) return;
+  if (isIdentity(t)) return;
   ctx.translate(ox, oy);
-  if (t.rotate) ctx.rotate((t.rotate * Math.PI) / 180);
-  if (t.scaleX !== 1 || t.scaleY !== 1) ctx.scale(t.scaleX, t.scaleY);
+  ctx.transform(t[0], t[1], t[2], t[3], 0, 0);
   ctx.translate(-ox, -oy);
 }

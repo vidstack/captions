@@ -11,7 +11,14 @@ import {
   type RunStyle,
 } from 'media-captions/canvas';
 
-import { clipToPolygon, lengthToPx, parseColor, transformOriginPx } from '../../src/canvas/values';
+import {
+  clipToPolygon,
+  combineTransforms,
+  lengthToPx,
+  parseColor,
+  transform2D,
+  transformOriginPx,
+} from '../../src/canvas/values';
 import { tokenizeVTTCue } from '../../src/vtt/tokenize-cue';
 
 // A 1000x500 frame with a 1% safe area: container 980x480, font 24px, line 28.8px.
@@ -54,6 +61,23 @@ describe('typed value resolution', () => {
     expect(transformOriginPx({ origin: [0, 100] }, container, box)).toEqual([0, 40]);
     // An overlay point (SSA \\org) is relative to the box position.
     expect(transformOriginPx({ originAt: [50, 50] }, container, box)).toEqual([390, 190]);
+  });
+
+  test('flattens transforms to a matrix, projecting 3D rotations orthographically', () => {
+    const near = (m: number[]) => m.map((v) => expect.closeTo(v, 6));
+    expect(transform2D(undefined)).toEqual([1, 0, 0, 1]);
+    expect(transform2D({ scaleX: 2, scaleY: 0.5 })).toEqual([2, 0, 0, 0.5]);
+    // A quarter turn clockwise (y down): x maps to y.
+    expect(transform2D({ rotate: 90 })).toEqual(near([0, 1, -1, 0]));
+    // rotateX squashes vertically, rotateY horizontally, as CSS does without perspective.
+    expect(transform2D({ rotateX: 60 })).toEqual(near([1, 0, 0, 0.5]));
+    expect(transform2D({ rotateY: 60 })).toEqual(near([0.5, 0, 0, 1]));
+    // Both together shear: Rx·Ry has sin(x)·sin(y) in the lower-left cell.
+    expect(transform2D({ rotateX: 90, rotateY: 90 })).toEqual(near([0, 1, 0, 0]));
+    // Combining applies the first transform outermost, like a CSS transform list.
+    expect(combineTransforms(transform2D({ scaleX: 2 }), transform2D({ rotate: 90 }))).toEqual(
+      near([0, 1, -2, 0]),
+    );
   });
 
   test('parses colours', () => {
@@ -168,6 +192,53 @@ describe('text flow', () => {
   });
 });
 
+describe('ruby', () => {
+  test('flows the annotation over its base and reserves a band above the line', () => {
+    const tokens = tokenizeVTTCue(new VTTCue(0, 1, 'a <ruby>漢字<rt>kanji</rt></ruby> b'));
+    const flow = flowCue(tokens, base, {
+      maxWidth: 1000,
+      lineHeight: 28.8,
+      measurer,
+      env,
+      classColors: {},
+    });
+    const [line] = flow.lines,
+      ruby = line.runs.find((run) => run.ruby)!;
+    expect(line.runs.map((run) => run.text)).toEqual(['a ', '漢字', ' b']);
+    // The base is 2 glyphs (24px), the annotation 5 glyphs at half size (30px): the run is as
+    // wide as the annotation and the base is centred inside it.
+    expect(ruby.baseWidth).toBe(24);
+    expect(ruby.ruby).toMatchObject({ text: 'kanji', width: 30 });
+    expect(ruby.ruby!.style.fontSize).toBe(12);
+    expect(ruby.width).toBe(30);
+    expect(line.rubyHeight).toBe(12);
+    expect(flow.height).toBe(28.8 + 12);
+  });
+
+  test('a ruby base never breaks and a ruby without <rt> flows normally', () => {
+    const tokens = tokenizeVTTCue(new VTTCue(0, 1, '<ruby>abcdef<rt>x</rt></ruby>'));
+    const narrow = flowCue(tokens, base, {
+      maxWidth: 30,
+      lineHeight: 28.8,
+      measurer,
+      env,
+      classColors: {},
+    });
+    expect(narrow.lines).toHaveLength(1);
+    expect(narrow.lines[0].runs[0].text).toBe('abcdef');
+
+    const plain = flowCue(tokenizeVTTCue(new VTTCue(0, 1, '<ruby>ab cd</ruby>')), base, {
+      maxWidth: 1000,
+      lineHeight: 28.8,
+      measurer,
+      env,
+      classColors: {},
+    });
+    expect(plain.lines[0].runs.map((run) => run.text)).toEqual(['ab cd']);
+    expect(plain.lines[0].rubyHeight).toBe(0);
+  });
+});
+
 describe('vertical writing', () => {
   test('flows CJK upright one em per glyph and Latin sideways by its width', () => {
     const tokens = tokenizeVTTCue(new VTTCue(0, 1, '縦書き abc'));
@@ -186,6 +257,19 @@ describe('vertical writing', () => {
       [' abc', false, 48],
     ]);
     expect(flow.width).toBe(120);
+  });
+
+  test('ruby annotations widen their column', () => {
+    const cue = new VTTCue(0, 1, '<ruby>漢字<rt>かんじ</rt></ruby>');
+    cue.vertical = 'rl';
+    const m = measureCue(cue, theme, measurer);
+    const [column] = m.flow.lines,
+      run = column.runs[0];
+    expect(run.upright).toBe(true);
+    expect(run.ruby).toMatchObject({ text: 'かんじ', upright: true, width: 36 });
+    expect(column.rubyHeight).toBe(12);
+    // One column: line height plus the annotation band, plus the (swapped) padding.
+    expect(m.box.width).toBeCloseTo(theme.lineHeight + 12 + 2 * theme.paddingY);
   });
 
   test('wraps into columns and measures a vertical cue along the height', () => {

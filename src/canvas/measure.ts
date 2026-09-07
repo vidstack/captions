@@ -369,9 +369,9 @@ function measureVerticalCue(
     vertical: true,
   });
 
+  // Columns are a line height wide, plus room beside them for ruby annotations.
   const hasText = flow.lines.some((line) => line.runs.length),
-    columns = hasText ? flow.lines.length : 0,
-    textWidth = columns * lineHeight + (hasText ? 2 * padAcross : 0),
+    textWidth = hasText ? flow.height + 2 * padAcross : 0,
     textHeight = hasText ? flow.width + 2 * padAlong : 0,
     displayWidth = textWidth,
     displayHeight = Math.max(height, textHeight);

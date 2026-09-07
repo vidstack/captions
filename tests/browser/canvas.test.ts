@@ -271,3 +271,55 @@ test('vertical cues flow into columns that match the DOM box', async () => {
   }
   expect(painted).toBeGreaterThanOrEqual(4);
 });
+
+test('ruby annotations sit in a band above the base and grow the box like the DOM', async () => {
+  const c = cue(0, 10, 'Read <ruby>漢字<rt>kanji</rt></ruby> aloud');
+  fixture.renderer.changeTrack({ cues: [c] });
+  fixture.renderer.currentTime = 1;
+  await nextFrame();
+  const dom = rect(cueDisplays(fixture.overlay)[0]);
+
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  const { flow, textBox } = target.item,
+    [line] = flow.lines;
+  expect(line.runs.some((run) => run.ruby)).toBe(true);
+  expect(line.rubyHeight).toBeGreaterThan(0);
+  // The annotation band makes the box taller than a plain line, like the browser's ruby line box.
+  expect(target.box.height).toBeGreaterThan(theme.lineHeight + 2 * theme.paddingY);
+  expect(Math.abs(target.box.height - dom.height)).toBeLessThan(8);
+
+  paintCaptions(ctx, [c], 1, {});
+  const x = theme.container.left + target.box.left + textBox.left,
+    bandTop = theme.container.top + target.box.top + textBox.top + theme.paddingY,
+    white = ([r, g, b]: number[]) => r > 200 && g > 200 && b > 200;
+  // Only the annotation is painted in the band above the line.
+  expect(some(x, bandTop, textBox.width, line.rubyHeight, white)).toBe(true);
+  // The base line still has glyphs below the band.
+  expect(some(x, bandTop + line.rubyHeight, textBox.width, flow.lineHeight, white)).toBe(true);
+});
+
+test('3D rotations project orthographically: rotateY squashes the box horizontally', () => {
+  const c = cue(0, 10, 'Rotated around Y');
+  c.textStyle = { backgroundColor: '#ff0000', transform: { rotateY: 80 } };
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  paintCaptions(ctx, [c], 1, {});
+
+  const { box } = target,
+    left = theme.container.left + box.left,
+    cy = theme.container.top + box.top + box.height / 2,
+    red = ([r, g, b]: number[]) => r > 200 && g < 50 && b < 50;
+  // cos(80deg) = 0.17: the background survives around the centre and vanishes from the outer 30%.
+  expect(some(left + box.width / 2 - 2, cy - 2, 4, 4, red)).toBe(true);
+  expect(clear(left, cy - 2, box.width * 0.3, 4)).toBe(true);
+  expect(clear(left + box.width * 0.7, cy - 2, box.width * 0.3, 4)).toBe(true);
+});
