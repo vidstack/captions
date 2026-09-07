@@ -157,6 +157,55 @@
     --cue-text-stroke: 0;
   }
 
+  /*
+   * Reduced motion: no region scroll transition or CSS animations. The renderer also holds
+   * Web Animations at their final state.
+   */
+  :where([data-part='captions'][data-reduced-motion] *) {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /*
+   * User presets (FCC/CVAA style caption settings). Set on the overlay element:
+   *   data-text-size="small" | "medium" | "large" | "x-large"
+   *   data-contrast="high"                      (white on black, no translucency)
+   *   data-background="none" | "translucent" | "opaque"
+   *   data-font="sans" | "serif" | "mono" | "casual"
+   */
+  :where([data-part='captions'][data-text-size='small']) {
+    --cue-font-size: 3.5cqh;
+  }
+  :where([data-part='captions'][data-text-size='large']) {
+    --cue-font-size: 6.5cqh;
+  }
+  :where([data-part='captions'][data-text-size='x-large']) {
+    --cue-font-size: 8cqh;
+  }
+  :where([data-part='captions'][data-contrast='high']) {
+    --cue-color: white;
+    --cue-bg-color: black;
+    --cue-edge-color: black;
+  }
+  :where([data-part='captions'][data-background='none']) {
+    --cue-bg-color: transparent;
+  }
+  :where([data-part='captions'][data-background='translucent']) {
+    --cue-bg-color: rgba(0, 0, 0, 0.5);
+  }
+  :where([data-part='captions'][data-background='opaque']) {
+    --cue-bg-color: black;
+  }
+  :where([data-part='captions'][data-font='serif']) {
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  :where([data-part='captions'][data-font='mono']) {
+    font-family: 'Courier New', Courier, monospace;
+  }
+  :where([data-part='captions'][data-font='casual']) {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', casual, sans-serif;
+  }
+
   /* CEA-708 pen sizes and display effects. */
   :where([data-part='captions'] [data-part='cue'] .pen-small) {
     font-size: 0.8em;

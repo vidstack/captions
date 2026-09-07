@@ -45,6 +45,7 @@ export class CaptionsRenderer {
   private _metadataStacking: 'reading-order' | 'spec' | undefined;
   private readonly _lineStep: 'line-height' | 'box';
   private readonly _animations = new Map<VTTCue, CueAnimationHandle[]>();
+  private _reducedMotion: boolean;
   private static _scopeId = 0;
 
   /* Text direction. */
@@ -76,6 +77,21 @@ export class CaptionsRenderer {
     return this._track;
   }
 
+  /**
+   * When true, cue animations jump to their final state instead of playing, and the stylesheet
+   * disables transitions (`data-reduced-motion`). Defaults to the user's OS preference.
+   */
+  get reducedMotion() {
+    return this._reducedMotion;
+  }
+
+  set reducedMotion(value: boolean) {
+    this._reducedMotion = value;
+    if (value) setDataAttr(this.overlay, 'reduced-motion');
+    else this.overlay.removeAttribute('data-reduced-motion');
+    this.update(true);
+  }
+
   constructor(overlay: HTMLElement, init?: CaptionsRendererInit) {
     this.overlay = overlay;
     this.dir = init?.dir ?? 'ltr';
@@ -83,6 +99,11 @@ export class CaptionsRenderer {
     this._stacking = init?.stacking;
     this._lineStep = init?.lineStep ?? 'line-height';
     if (init?.safeArea !== undefined) setCSSVar(overlay, 'overlay-padding', init.safeArea + '%');
+    this._reducedMotion =
+      init?.reducedMotion === 'auto' || init?.reducedMotion === undefined
+        ? typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+        : init.reducedMotion;
+    if (this._reducedMotion) setDataAttr(overlay, 'reduced-motion');
     if (init?.announce) this._createAnnouncer(init.announce === true ? 'polite' : init.announce);
     overlay.setAttribute('translate', 'yes');
     overlay.setAttribute('aria-live', 'off');
@@ -525,7 +546,8 @@ export class CaptionsRenderer {
       const handles = this._animations.get(cue);
       if (!handles) continue;
       for (const { animation, delay, duration } of handles) {
-        const local = this._currentTime - cue.startTime - delay;
+        // Reduced motion: hold the final state so content is readable without movement.
+        const local = this._reducedMotion ? duration : this._currentTime - cue.startTime - delay;
         animation.currentTime = Math.min(Math.max(local, 0), duration) * 1000;
       }
     }
@@ -611,6 +633,11 @@ export interface CaptionsRendererInit {
    * typically assumes a title-safe area of about 10%.
    */
   safeArea?: number;
+  /**
+   * Disable cue animations and transitions. `'auto'` (default) follows the
+   * `prefers-reduced-motion` media query.
+   */
+  reducedMotion?: boolean | 'auto';
 }
 
 export interface CaptionsRendererTrack {

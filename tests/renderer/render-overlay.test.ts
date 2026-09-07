@@ -340,3 +340,14 @@ test('announces entering cues in a hidden live region when enabled', () => {
   renderer.destroy();
   expect(document.querySelector('[data-part="announcer"]')).toBeNull();
 });
+
+test('reduced motion is reflected on the overlay and toggleable', () => {
+  const overlay = document.createElement('div');
+  document.body.append(overlay);
+  const renderer = new CaptionsRenderer(overlay, { reducedMotion: true });
+  expect(overlay.hasAttribute('data-reduced-motion')).toBe(true);
+  expect(renderer.reducedMotion).toBe(true);
+  renderer.reducedMotion = false;
+  expect(overlay.hasAttribute('data-reduced-motion')).toBe(false);
+  renderer.destroy();
+});

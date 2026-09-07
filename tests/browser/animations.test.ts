@@ -165,3 +165,35 @@ test('lineStep: box stacks negative lines by the padded box height', async () =>
   viewport.remove();
   fixture = createFixture();
 });
+
+test('reduced motion holds animations at their final state', async () => {
+  fixture.destroy();
+  const viewport = document.createElement('div');
+  viewport.style.cssText = 'position: relative; width: 640px; height: 360px;';
+  const overlay = document.createElement('div');
+  viewport.append(overlay);
+  document.body.append(viewport);
+  const renderer = new CaptionsRenderer(overlay, { reducedMotion: true });
+  const fading = cue(0, 10, 'Fade');
+  fading.animations = [{ duration: 8, keyframes: [{ opacity: 0 }, { opacity: 1 }] }];
+  renderer.changeTrack({ cues: [fading] });
+  renderer.currentTime = 1;
+  await nextFrame();
+  expect(opacityOf(overlay.querySelector('[data-part="cue-display"]')!)).toBeCloseTo(1, 1);
+  renderer.destroy();
+  viewport.remove();
+  fixture = createFixture();
+});
+
+test('user presets change size, background, and font via data attributes', async () => {
+  await show([cue(0, 10, 'Preset')], 1);
+  const box = cueBoxes(fixture.overlay)[0],
+    base = parseFloat(getComputedStyle(box).fontSize);
+  fixture.overlay.setAttribute('data-text-size', 'x-large');
+  fixture.overlay.setAttribute('data-background', 'none');
+  fixture.overlay.setAttribute('data-font', 'mono');
+  await nextFrame();
+  expect(parseFloat(getComputedStyle(box).fontSize)).toBeGreaterThan(base * 1.4);
+  expect(getComputedStyle(box).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+  expect(getComputedStyle(box).fontFamily.toLowerCase()).toContain('courier');
+});
