@@ -369,7 +369,7 @@ function measureVerticalCue(
     vertical: true,
   });
 
-  // Columns are a line height wide, plus room beside them for ruby annotations.
+  // Columns are a line height wide; ruby annotations overflow beside them like the browser's.
   const hasText = flow.lines.some((line) => line.runs.length),
     textWidth = hasText ? flow.height + 2 * padAcross : 0,
     textHeight = hasText ? flow.width + 2 * padAlong : 0,

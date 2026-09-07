@@ -272,7 +272,7 @@ test('vertical cues flow into columns that match the DOM box', async () => {
   expect(painted).toBeGreaterThanOrEqual(4);
 });
 
-test('ruby annotations sit in a band above the base and grow the box like the DOM', async () => {
+test('ruby annotations sit in a band above the base without growing the box, like the DOM', async () => {
   const c = cue(0, 10, 'Read <ruby>漢字<rt>kanji</rt></ruby> aloud');
   fixture.renderer.changeTrack({ cues: [c] });
   fixture.renderer.currentTime = 1;
@@ -289,18 +289,17 @@ test('ruby annotations sit in a band above the base and grow the box like the DO
     [line] = flow.lines;
   expect(line.runs.some((run) => run.ruby)).toBe(true);
   expect(line.rubyHeight).toBeGreaterThan(0);
-  // The annotation band makes the box taller than a plain line, like the browser's ruby line box.
-  expect(target.box.height).toBeGreaterThan(theme.lineHeight + 2 * theme.paddingY);
-  expect(Math.abs(target.box.height - dom.height)).toBeLessThan(8);
+  // Browsers let the annotation overflow the line box (it lands in the padding), so the box is
+  // about as tall as a plain line in both writers.
+  expect(Math.abs(target.box.height - dom.height)).toBeLessThan(3);
 
   paintCaptions(ctx, [c], 1, {});
   const x = theme.container.left + target.box.left + textBox.left,
-    bandTop = theme.container.top + target.box.top + textBox.top + theme.paddingY,
+    lineTop = theme.container.top + target.box.top + textBox.top + theme.paddingY,
     white = ([r, g, b]: number[]) => r > 200 && g > 200 && b > 200;
-  // Only the annotation is painted in the band above the line.
-  expect(some(x, bandTop, textBox.width, line.rubyHeight, white)).toBe(true);
-  // The base line still has glyphs below the band.
-  expect(some(x, bandTop + line.rubyHeight, textBox.width, flow.lineHeight, white)).toBe(true);
+  // The annotation is painted in the band above the line, the base on the line itself.
+  expect(some(x, lineTop - line.rubyHeight, textBox.width, line.rubyHeight, white)).toBe(true);
+  expect(some(x, lineTop, textBox.width, flow.lineHeight, white)).toBe(true);
 });
 
 test('3D rotations project orthographically: rotateY squashes the box horizontally', () => {

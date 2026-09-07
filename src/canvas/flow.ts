@@ -76,8 +76,10 @@ export interface Line {
   runs: Run[];
   width: number;
   /**
-   * Extra space across the line for ruby annotations (above horizontal lines, beside vertical
-   * columns), like the taller line box a browser gives `<ruby>`.
+   * Height of the ruby annotation band drawn above the line (beside the column for vertical text),
+   * 0 without `<ruby>`. Browsers let annotations overflow the line box rather than grow it (with
+   * the default half-size annotations the box grows by about a pixel), so this does not add to
+   * `CueFlow.height`; the band lands in the cue's padding.
    */
   rubyHeight: number;
 }
@@ -86,7 +88,7 @@ export interface CueFlow {
   lines: Line[];
   /** Widest line. */
   width: number;
-  /** Sum of the line heights plus ruby space; for vertical text the width of all columns. */
+  /** Lines times the line height; for vertical text the width of all columns. */
   height: number;
   lineHeight: number;
 }
@@ -193,7 +195,7 @@ export function flowCue(tokens: VTTNode[], base: RunStyle, options: FlowOptions)
   return {
     lines: merged,
     width,
-    height: merged.reduce((sum, line) => sum + options.lineHeight + line.rubyHeight, 0),
+    height: merged.length * options.lineHeight,
     lineHeight: options.lineHeight,
   };
 }

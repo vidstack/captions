@@ -192,8 +192,7 @@ function paintCueContent(
   let y = textBox.top + style.paddingY;
 
   for (const line of flow.lines) {
-    // Ruby annotations sit in a band above the line.
-    y += line.rubyHeight;
+    // Ruby annotations sit in a band above the line, overflowing it as in the browser.
     const slack = contentWidth - line.width;
     let x =
       textBox.left +
@@ -388,10 +387,9 @@ function paintRun(
 }
 
 /**
- * Vertical writing: each line is a column `lineHeight` wide (plus room for ruby annotations, which
- * sit to the right of their base in both `rl` and `lr`), read right-to-left (`rl`) or
- * left-to-right (`lr`). Upright runs stack one glyph per em; sideways runs are rotated a quarter
- * turn clockwise and read downwards.
+ * Vertical writing: each line is a column `lineHeight` wide, read right-to-left (`rl`) or
+ * left-to-right (`lr`); ruby annotations overflow to the right of their base in both. Upright runs
+ * stack one glyph per em; sideways runs are rotated a quarter turn clockwise and read downwards.
  */
 function paintColumns(
   ctx: PaintContext,
@@ -406,17 +404,14 @@ function paintColumns(
     padAcross = style.paddingX,
     contentHeight = textBox.height - 2 * padAlong;
 
-  // The edge the next column is laid against: the right edge for `rl`, the left for `lr`.
-  let edge =
-    cue.vertical === 'rl' ? textBox.left + textBox.width - padAcross : textBox.left + padAcross;
-
-  for (const column of flow.lines) {
-    const columnWidth = flow.lineHeight + column.rubyHeight,
-      x = cue.vertical === 'rl' ? edge - columnWidth : edge,
+  flow.lines.forEach((column, index) => {
+    const x =
+        cue.vertical === 'rl'
+          ? textBox.left + textBox.width - padAcross - (index + 1) * flow.lineHeight
+          : textBox.left + padAcross + index * flow.lineHeight,
       cx = x + flow.lineHeight / 2,
       rubyCx = x + flow.lineHeight + column.rubyHeight / 2,
       slack = contentHeight - column.width;
-    edge = cue.vertical === 'rl' ? x : edge + columnWidth;
     let y =
       textBox.top +
       padAlong +
@@ -454,7 +449,7 @@ function paintColumns(
       y += run.width;
       ctx.restore();
     }
-  }
+  });
 }
 
 /** Draws one vertical run (or ruby annotation) centred on column `cx`, starting at `y`. */

@@ -211,8 +211,9 @@ describe('ruby', () => {
     expect(ruby.ruby).toMatchObject({ text: 'kanji', width: 30 });
     expect(ruby.ruby!.style.fontSize).toBe(12);
     expect(ruby.width).toBe(30);
+    // The band overflows the line box like the browser's; the flow height is unchanged.
     expect(line.rubyHeight).toBe(12);
-    expect(flow.height).toBe(28.8 + 12);
+    expect(flow.height).toBe(28.8);
   });
 
   test('a ruby base never breaks and a ruby without <rt> flows normally', () => {
@@ -259,7 +260,7 @@ describe('vertical writing', () => {
     expect(flow.width).toBe(120);
   });
 
-  test('ruby annotations widen their column', () => {
+  test('ruby annotations flow upright beside their column', () => {
     const cue = new VTTCue(0, 1, '<ruby>漢字<rt>かんじ</rt></ruby>');
     cue.vertical = 'rl';
     const m = measureCue(cue, theme, measurer);
@@ -268,8 +269,8 @@ describe('vertical writing', () => {
     expect(run.upright).toBe(true);
     expect(run.ruby).toMatchObject({ text: 'かんじ', upright: true, width: 36 });
     expect(column.rubyHeight).toBe(12);
-    // One column: line height plus the annotation band, plus the (swapped) padding.
-    expect(m.box.width).toBeCloseTo(theme.lineHeight + 12 + 2 * theme.paddingY);
+    // One column plus the (swapped) padding; the annotation overflows beside it.
+    expect(m.box.width).toBeCloseTo(theme.lineHeight + 2 * theme.paddingY);
   });
 
   test('wraps into columns and measures a vertical cue along the height', () => {
