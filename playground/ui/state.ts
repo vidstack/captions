@@ -2,7 +2,7 @@
 
 export type Aspect = '16:9' | '4:3' | '9:16';
 export type Drive = 'direct' | 'sync';
-export type View = 'stage' | 'element' | 'gallery';
+export type View = 'stage' | 'canvas' | 'element' | 'gallery';
 export type Stacking = 'auto' | 'reading-order' | 'spec';
 export type LineStep = 'line-height' | 'box';
 export type EdgeStyle = 'default' | 'uniform' | 'drop-shadow' | 'raised' | 'depressed' | 'none';
@@ -132,7 +132,7 @@ export function readState(search = location.search): PlaygroundState {
     width: num(p.get('width'), d.width, 320, 1280),
     aspect: oneOf(p.get('aspect'), ASPECTS, d.aspect),
     drive: oneOf(p.get('drive'), ['direct', 'sync'], d.drive),
-    view: oneOf(p.get('view'), ['stage', 'element', 'gallery'], d.view),
+    view: oneOf(p.get('view'), ['stage', 'canvas', 'element', 'gallery'], d.view),
     dir: oneOf(p.get('dir'), ['ltr', 'rtl'], d.dir),
     features: oneOf(p.get('features'), FEATURE_PRESETS, d.features),
     stacking: oneOf(p.get('stacking'), ['auto', 'reading-order', 'spec'], d.stacking),

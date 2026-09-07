@@ -14,6 +14,7 @@ import {
   type ParsedCaptionsResult,
   type VTTCue,
 } from '../src';
+import { CanvasCaptionsRenderer, type CanvasCaptionsOptions } from '../src/canvas';
 import { defineMediaCaptionsElement, type MediaCaptionsElement } from '../src/element';
 import { registerFullHTMLEntities } from '../src/entities';
 import {
@@ -69,6 +70,10 @@ let sample: Sample = findSample(state.format),
   announcerObserver: MutationObserver | null = null,
   element: MediaCaptionsElement | null = null,
   elementStage: Stage | null = null,
+  canvasStage: Stage | null = null,
+  canvasRenderer: CanvasCaptionsRenderer | null = null,
+  canvasEl: HTMLCanvasElement | null = null,
+  canvasObserver: ResizeObserver | null = null,
   gallery: Gallery | null = null,
   loadId = 0,
   lastPersist = 0,
@@ -119,6 +124,7 @@ const copyLink = button('Copy link', () => void copyShareLink(), {
 
 const stageView = h('div', { class: 'view stage-view' }, stage.el);
 const transportView = h('div', { class: 'view transport-view' }, transport.el, timeline.el);
+const canvasView = h('div', { class: 'view canvas-view', hidden: true });
 const elementView = h('div', { class: 'view element-view', hidden: true });
 const galleryView = h('div', { class: 'view gallery-view', hidden: true });
 
@@ -140,7 +146,16 @@ root.append(
     'div',
     { class: 'layout' },
     nav,
-    h('main', { class: 'center' }, stageView, elementView, galleryView, transportView, sources.el),
+    h(
+      'main',
+      { class: 'center' },
+      stageView,
+      canvasView,
+      elementView,
+      galleryView,
+      transportView,
+      sources.el,
+    ),
     h('aside', { class: 'side' }, options.el, inspector.el),
   ),
 );
@@ -260,6 +275,7 @@ function attachCurrentTrack() {
   if (feeder) renderer.changeTrack({ cues: feeder.track });
   else if (result) renderer.changeTrack(result);
   else renderer.reset();
+  attachCanvasTrack();
 
   const track = renderer.track;
   for (const cue of track.cues) inspector.watchCue(cue, () => media.currentTime);
@@ -422,6 +438,73 @@ function describeError(error: unknown) {
 
 // --- Element demo ----------------------------------------------------------------------------
 
+/** The canvas writer's presentation options, mirroring the overlay styling controls. */
+function canvasOptions(): CanvasCaptionsOptions {
+  const opts: CanvasCaptionsOptions = {
+    dir: state.dir,
+    lineStep: state.lineStep,
+    safeArea: state.safeArea / 100,
+    fontSize: state.fontSize / 100,
+    edgeStyle: state.edge === 'default' ? 'none' : state.edge,
+    reducedMotion: state.reducedMotion,
+    // The playground stylesheet lights up sung karaoke words in the accent colour.
+    timedColors: { past: getComputedStyle(document.documentElement).getPropertyValue('--accent') },
+  };
+  if (state.stacking !== 'auto') opts.stacking = state.stacking;
+  if (state.color !== DEFAULT_STATE.color) opts.color = state.color;
+  if (state.bg !== DEFAULT_STATE.bg || state.bgAlpha !== DEFAULT_STATE.bgAlpha) {
+    opts.backgroundColor = rgba(state.bg, state.bgAlpha);
+  }
+  if (state.edgeColor !== DEFAULT_STATE.edgeColor) opts.edgeColor = state.edgeColor;
+  if (state.font !== DEFAULT_STATE.font) opts.fontFamily = state.font;
+  return opts;
+}
+
+/**
+ * The canvas view paints the same track into a `<canvas>` sized to the stage (at device pixel
+ * ratio), so the DOM and canvas writers can be compared on identical content and time.
+ */
+function ensureCanvasView() {
+  if (canvasRenderer) return;
+  canvasStage ??= new Stage({ overlay: false, label: 'CanvasCaptionsRenderer' });
+  canvasStage.setSize(state.width, state.aspect);
+  if (!canvasStage.el.isConnected) canvasView.append(canvasStage.el);
+
+  canvasEl = h('canvas', { class: 'stage-canvas' });
+  canvasEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
+  canvasStage.mount(canvasEl);
+  canvasRenderer = new CanvasCaptionsRenderer(canvasEl, canvasOptions());
+
+  const fit = () => {
+    const rect = canvasStage!.el.getBoundingClientRect(),
+      dpr = window.devicePixelRatio || 1;
+    canvasEl!.width = Math.round(rect.width * dpr);
+    canvasEl!.height = Math.round(rect.height * dpr);
+    canvasRenderer!.update();
+  };
+  canvasObserver = new ResizeObserver(fit);
+  canvasObserver.observe(canvasStage.el);
+  fit();
+  attachCanvasTrack();
+}
+
+function destroyCanvasView() {
+  canvasObserver?.disconnect();
+  canvasObserver = null;
+  canvasRenderer?.destroy();
+  canvasRenderer = null;
+  canvasEl?.remove();
+  canvasEl = null;
+}
+
+function attachCanvasTrack() {
+  if (!canvasRenderer) return;
+  if (feeder) canvasRenderer.changeTrack({ cues: feeder.track });
+  else if (result) canvasRenderer.changeTrack(result);
+  else canvasRenderer.reset();
+  canvasRenderer.currentTime = media.currentTime;
+}
+
 function ensureElementView() {
   if (element) return;
 
@@ -482,12 +565,16 @@ function destroyElementView() {
 function setView(view: View) {
   state.view = view;
   stageView.hidden = view !== 'stage';
+  canvasView.hidden = view !== 'canvas';
   elementView.hidden = view !== 'element';
   galleryView.hidden = view !== 'gallery';
   transportView.hidden = view === 'gallery';
 
   if (view === 'element') ensureElementView();
   else destroyElementView();
+
+  if (view === 'canvas') ensureCanvasView();
+  else destroyCanvasView();
 
   if (view === 'gallery') {
     if (!gallery) {
@@ -523,6 +610,7 @@ function setView(view: View) {
 function buildViewTabs() {
   const views: { id: View; label: string }[] = [
     { id: 'stage', label: 'Stage' },
+    { id: 'canvas', label: 'Canvas' },
     { id: 'element', label: '<media-captions>' },
     { id: 'gallery', label: 'Gallery' },
   ];
@@ -615,6 +703,7 @@ function applyPatch(patch: Partial<PlaygroundState>) {
       case 'aspect':
         stage.setSize(state.width, state.aspect);
         elementStage?.setSize(state.width, state.aspect);
+        canvasStage?.setSize(state.width, state.aspect);
         if (key === 'aspect' && gallery) {
           gallery.destroy();
           gallery = null;
@@ -686,6 +775,11 @@ function applyPatch(patch: Partial<PlaygroundState>) {
   if (rebuildElement && element) {
     destroyElementView();
     ensureElementView();
+  }
+
+  // The canvas writer takes the same presentation as options, not CSS.
+  if (canvasRenderer && (restyle || rebuild || keys.includes('dir'))) {
+    canvasRenderer.options = canvasOptions();
   }
 
   options.sync(state);
@@ -820,6 +914,8 @@ function frame(now: number) {
 
   stage.setTime(time);
   elementStage?.setTime(time);
+  canvasStage?.setTime(time);
+  if (canvasRenderer && (time !== lastTime || cuesDirty)) canvasRenderer.currentTime = time;
   transport.update();
   timeline.draw(time, renderer.activeCues);
   updateInspector(renderer.activeCues, time);
