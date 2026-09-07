@@ -9,7 +9,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
     "moduleResolution": "bundler",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noImplicitOverride": true,
     "noImplicitReturns": false,
     "noUnusedParameters": false,
@@ -29,5 +29,6 @@
     "types": ["vitest/globals"],
     "verbatimModuleSyntax": true
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests"],
+  "exclude": ["**/*.mjs", "node_modules", "dist"]
 }

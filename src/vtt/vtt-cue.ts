@@ -16,6 +16,9 @@ const IS_NATIVE = !IS_SERVER && typeof window.VTTCue === 'function',
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/VTTCue}
  */
 export class VTTCue extends CueBase {
+  /** Set when the cue is open-ended on the native base (see `OPEN_END_SENTINEL`). */
+  declare [OPEN_END]?: boolean;
+
   constructor(startTime: number, endTime: number, text: string) {
     // Only the native base rejects non-finite times; the fallback stores Infinity directly.
     const open = IS_NATIVE && !Number.isFinite(endTime);

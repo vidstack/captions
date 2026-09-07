@@ -1,6 +1,8 @@
 import '../../styles/captions.css';
 import '../../styles/regions.css';
 
+import type { VTTCue } from 'media-captions';
+
 import {
   DEFAULT_MEDIA_CAPTIONS_STYLES,
   defineMediaCaptionsElement,
@@ -145,7 +147,7 @@ test('honours the `type` attribute when the response type is generic', async () 
 
 test('changing `src` aborts the previous load', async () => {
   const loads: string[] = [];
-  el.addEventListener('load', (event) => loads.push(event.detail.cues[0].text));
+  el.addEventListener('load', (event) => loads.push((event.detail.cues as VTTCue[])[0].text));
 
   el.src = blobURL(VTT, 'text/vtt');
   await Promise.resolve();

@@ -3,7 +3,7 @@ import { parseVTTTimestamp } from './vtt-parser';
 
 const DIGIT_RE = /[0-9]/,
   MULTI_SPACE_RE = /[\s\t]+/g,
-  TAG_NAME = {
+  TAG_NAME: Record<string, string> = {
     c: 'span',
     i: 'i',
     b: 'b',
@@ -14,7 +14,7 @@ const DIGIT_RE = /[0-9]/,
     lang: 'span',
     timestamp: 'span',
   },
-  HTML_ENTITIES = {
+  HTML_ENTITIES: Record<string, string> = {
     amp: '&',
     lt: '<',
     gt: '>',

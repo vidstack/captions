@@ -26,7 +26,7 @@ const MILLISECOND_SEP_RE = /,/g,
     'black',
   ]),
   // HTML colour names that are commonly used in SRT files but are not part of the WebVTT palette.
-  HTML_COLORS = {
+  HTML_COLORS: Record<string, string> = {
     green: '#008000',
     orange: '#ffa500',
     purple: '#800080',

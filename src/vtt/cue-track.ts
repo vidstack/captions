@@ -68,7 +68,7 @@ export class CueTrack {
     return this._set.has(cue);
   }
 
-  add(cue: VTTCue) {
+  add(cue: VTTCue): void {
     if (this.has(cue)) return this.update(cue);
     if (this._dedupe && this.findDuplicate(cue)) return;
     this._insert(cue);
@@ -94,7 +94,7 @@ export class CueTrack {
    * Re-indexes a cue whose `startTime`, `endTime`, or content changed. Renderers listening for
    * `update` re-render it in place.
    */
-  update(cue: VTTCue) {
+  update(cue: VTTCue): void {
     const index = this._cues.indexOf(cue);
     if (index === -1) return this.add(cue);
     this._cues.splice(index, 1);

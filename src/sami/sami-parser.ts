@@ -33,7 +33,7 @@ const TAG_RE = /<(\/?)([a-zA-Z][\w:-]*)\s*([^>]*)>/y,
     'black',
   ]),
   // HTML colour names commonly used in SAMI files that are not part of the WebVTT palette.
-  HTML_COLORS = {
+  HTML_COLORS: Record<string, string> = {
     green: '#008000',
     orange: '#ffa500',
     purple: '#800080',
@@ -51,7 +51,7 @@ const TAG_RE = /<(\/?)([a-zA-Z][\w:-]*)\s*([^>]*)>/y,
     fuchsia: '#ff00ff',
   },
   // Inline HTML formatting mapped onto WebVTT tags; everything else is dropped.
-  FORMAT_TAGS = { b: 'b', strong: 'b', i: 'i', em: 'i', u: 'u' },
+  FORMAT_TAGS: Record<string, string> = { b: 'b', strong: 'b', i: 'i', em: 'i', u: 'u' },
   /** Duration of a cue that is never cleared, measured from the last `<SYNC>` in the file. */
   DEFAULT_CUE_DURATION = 5;
 

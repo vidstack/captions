@@ -1,4 +1,4 @@
-export function debounce<Fn extends (...args: any[]) => void>(fn: Fn, delay): Fn {
+export function debounce<Fn extends (...args: any[]) => void>(fn: Fn, delay: number): Fn {
   let timeout: any = null,
     args: any[] | undefined;
 
