@@ -680,6 +680,8 @@ video.addEventListener('timeupdate', () => {
 - `lineStep`: `'line-height'` (spec) or `'box'`, which snaps lines by the padded cue box height so
   stacked lines never overlap.
 - `safeArea`: inset from the overlay edges in percent (broadcast title-safe is about 10).
+- `reducedMotion`: `true`, `false`, or `'auto'` (default, follows `prefers-reduced-motion`). When
+  on, cue animations hold their final state and transitions are disabled. Also a live property.
 
 **Props**
 
@@ -738,6 +740,8 @@ const decoder = new CEA708Decoder({
 - `add(cue)`, `addAll(cues)`, `remove(cue)`, `update(cue)`, `clear()`, `has(cue)`, `size`, `cues`.
 - `activeAt(time)`: cues active at a time, in start order.
 - `evict(time)`: drops cues that ended more than `retention` seconds ago; `maxCues` caps the total.
+- `dedupe: true` ignores cues that duplicate an existing one (same times, id, and text), which HLS
+  and DASH segments produce whenever a cue straddles a segment boundary or a segment is re-fetched.
 - `on(listener)`: subscribe to `add`, `remove`, `update`, and `clear` events; returns an unsubscribe.
 
 ## `<media-captions>`
@@ -948,6 +952,20 @@ with `@property` so they are typed, have fallbacks, and can be transitioned.
 Cue text uses `text-wrap: balance`, which is what the WebVTT rendering rules ask for and which
 browsers now support natively, and region (roll-up) cues use `text-wrap: stable` so earlier lines
 never reflow. Japanese cues get `word-break: auto-phrase`.
+
+### Caption settings presets
+
+Players are expected to offer viewer controls for caption appearance. Set these attributes on the
+overlay element (or the `<media-captions>` element's overlay via `renderer.overlay`):
+
+| Attribute             | Values                                       |
+| --------------------- | -------------------------------------------- |
+| `data-text-size`      | `small`, `medium`, `large`, `x-large`        |
+| `data-contrast`       | `high`                                       |
+| `data-background`     | `none`, `translucent`, `opaque`              |
+| `data-font`           | `sans`, `serif`, `mono`, `casual`            |
+| `data-edge-style`     | see below                                    |
+| `data-reduced-motion` | set by the renderer's `reducedMotion` option |
 
 ### Edge Styles
 
@@ -1335,7 +1353,11 @@ pnpm typecheck       # tsc
 pnpm test            # unit suites (node + jsdom) and real-browser layout suites (Playwright)
 pnpm test:unit
 pnpm test:browser    # needs `pnpm exec playwright install chromium` once
-pnpm build           # vp pack (tsdown) -> dist/prod.js (+ cea, element, entities, parsers/* entries)
+pnpm build           # vp pack (tsdown + publint + attw) -> dist/prod.js and the cea, element, entities, parsers/* entries
+pnpm size            # gzipped size budgets per entry (scripts/size-check.mjs)
+pnpm coverage        # unit suites with V8 coverage
+pnpm docs            # TypeDoc API reference into docs/api
+pnpm playground      # interactive playground at http://localhost:3200/playground/index.html
 pnpm sandbox         # interactive scenarios at http://localhost:3100/.sandbox/index.html
 pnpm screenshots     # regenerates the README images from the sandbox scenarios
 ```
@@ -1347,8 +1369,10 @@ Sandbox scenarios: `cues`, `regions`, `region-scroll`, `collisions`, `ssa`, `edg
 `layout` (the cue layout/text style model), `live` (a `CueTrack` fed incrementally), and
 `element` (`<media-captions>`).
 
-CI (`.github/workflows/ci.yml`) runs formatting, type-checking, the unit and WPT suites, the
-Chromium layout suites, and the build. Screenshot baselines are per platform, so the visual suite
+CI (`.github/workflows/ci.yml`) runs formatting, linting, type-checking, the unit, WPT, IMSC,
+corpus, and fuzz suites with coverage, the Chromium layout suites, the build with package checks,
+the size budgets, and publishes the API docs as an artifact. `release.yml` publishes to npm with
+provenance when a `v*` tag is pushed. Screenshot baselines are per platform, so the visual suite
 is excluded in CI until Linux baselines exist; the manual `record-baselines.yml` workflow records
 them and opens a pull request.
 
