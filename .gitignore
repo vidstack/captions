@@ -13,3 +13,6 @@ pnpm-debug.log*
 
 
 .vitest-attachments/
+
+docs/api/
+coverage/

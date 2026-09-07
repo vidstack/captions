@@ -69,6 +69,10 @@ function pack({ dev }: { dev: boolean }): PackUserConfig {
     clean: !dev,
     treeshake: true,
     dts: !dev,
+    // Package checks run on the prod build. This is an ESM-only package, so the node10 and
+    // CJS-resolution attw profiles do not apply.
+    publint: !dev,
+    attw: dev ? false : { profile: 'esm-only' },
     define: {
       __DEV__: dev ? 'true' : 'false',
     },

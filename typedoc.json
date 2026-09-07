@@ -1,0 +1,16 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/index.ts",
+    "src/cea/index.ts",
+    "src/element/index.ts",
+    "src/entities/index.ts"
+  ],
+  "out": "docs/api",
+  "name": "media-captions",
+  "readme": "README.md",
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "treatWarningsAsErrors": false,
+  "categorizeByGroup": true
+}
