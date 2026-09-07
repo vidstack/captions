@@ -32,7 +32,18 @@ export class VTTCue extends CueBase {
    *
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/VTTCue/region}
    */
-  region: VTTRegion | null = null;
+  get region(): VTTRegion | null {
+    return this.#region;
+  }
+
+  set region(region: VTTRegion | null) {
+    this.#region = region;
+  }
+
+  // Firefox and WebKit ship a native `region` setter that only accepts their own `VTTRegion`
+  // (Chromium has none), so ours lives on this prototype and shadows it.
+  #region: VTTRegion | null = null;
+
   /**
    * The cue writing direction.
    *
