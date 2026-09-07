@@ -169,8 +169,14 @@ export interface CueLayout {
   translate?: { x?: number; y?: number };
   /** Never moved by collision avoidance, but other cues avoid it (e.g., SSA `\\pos`). */
   fixed?: boolean;
-  /** CSS `clip-path` applied to the cue box (e.g., SSA `\\clip`, scroll bands). */
+  /** CSS `clip-path` applied to the cue box (e.g., SSA `\\clip` on positioned cues, scroll bands). */
   clipPath?: string;
+  /**
+   * Clip rectangle in overlay percentages, resolved against the cue's final box after layout. Use
+   * this when the clip is fixed on screen but the cue itself is positioned by the layout engine
+   * (e.g., SSA `\\clip` on a dialogue line without `\\pos`).
+   */
+  clipRect?: { left: number; top: number; right: number; bottom: number };
 }
 
 /** Styling for one run of text referenced from cue text via `<c.s-KEY>`. */

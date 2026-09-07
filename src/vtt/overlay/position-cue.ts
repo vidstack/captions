@@ -64,7 +64,7 @@ export function measureCue(
  * WRITE phase: applies the laid out (visual) box. The CSS position is the layout box moved by
  * however far collision avoidance moved the visual box, so transforms stay intact.
  */
-export function writeCueBox(container: Box, displayEl: HTMLElement, box: Box) {
+export function writeCueBox(container: Box, displayEl: HTMLElement, box: Box, cue?: VTTCue) {
   const cache = displayEl[LAYOUT_CACHE] as CueMeasureCache | null;
   let written = box;
   if (cache) {
@@ -75,6 +75,23 @@ export function writeCueBox(container: Box, displayEl: HTMLElement, box: Box) {
     moveBox(written, '+y', box.top - visual.top);
   }
   setBoxCSSVars(displayEl, container, written, 'cue');
+
+  // Screen-fixed clip rectangles become an inset in the box's own coordinates once its final
+  // (painted) position is known.
+  const clip = cue?.layout?.clipRect;
+  if (clip) {
+    const top = (clip.top / 100) * container.height - box.top,
+      right = box.right - (clip.right / 100) * container.width,
+      bottom = box.bottom - (clip.bottom / 100) * container.height,
+      left = (clip.left / 100) * container.width - box.left,
+      inset = [top, right, bottom, left].map((v) => Math.max(0, v));
+    displayEl.style.setProperty(
+      '--cue-clip-path',
+      inset.some((v) => v > 0)
+        ? `inset(${inset.map((v) => `${Math.round(v * 100) / 100}px`).join(' ')})`
+        : 'none',
+    );
+  }
 }
 
 function createMeasureCache(

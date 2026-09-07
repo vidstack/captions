@@ -1123,8 +1123,9 @@ The following features are supported:
     `\rStyle`.
   - Per-run typography via `cue.spans`: `\fs`, `\fn`, `\fsp`, `\fscx`/`\fscy`, `\frx`/`\fry`/`\frz`, `\bord`,
     `\xbord`/`\ybord`, `\shad`, `\xshad`/`\yshad`, `\blur`, `\be`.
-  - Placement: `\an`/`\a`, `\pos`, `\move` (media-synced position animation), `\clip` with rectangles or
-    drawings on positioned cues (exact polygon clip paths), `\q`.
+  - Placement: `\an`/`\a`, `\pos`, `\move` (media-synced position animation), `\clip` (rectangles
+    anywhere, resolved against the final box; drawings on positioned cues as exact polygon clip
+    paths), `\q`.
   - Animation: `\fad`, `\fade`, and `\t` (colours, alpha, scale, rotation, border, blur, font size,
     spacing, shadow; acceleration is sampled; chained `\t` blocks compose).
   - Karaoke: `\k` timestamps, `\kf`/`\K` fill sweeps, `\ko` outline highlights.
@@ -1140,7 +1141,8 @@ video rather than running on the wall clock.
 The following are approximated or not supported:
 
 - `\iclip`, `\fax`/`\fay` shear, `\org` rotation origin, `\pbo`, `\kt`, `\fe`.
-- `\clip` on non-positioned cues (ignored) and on `\move` cues (travels with the box).
+- Vector `\clip` drawings on non-positioned cues (rectangular clips work everywhere; on `\move`
+  cues the clip travels with the box).
 - Karaoke sweeps use a text-clipped gradient, so strokes and shadows inside the syllable can show
   through.
 - Movie, Picture, Sound, and Command events.

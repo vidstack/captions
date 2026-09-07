@@ -608,3 +608,32 @@ describe('serialisation', () => {
     expect(renderVTTCueString(copy)).toBe(renderVTTCueString(cue));
   });
 });
+
+describe('tag emission', () => {
+  const STYLE =
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1';
+  const doc = (text: string) =>
+    `[Script Info]\nPlayResX: 1280\nPlayResY: 720\n\n[V4+ Styles]\n${STYLE}\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:01.00,0:00:05.00,Default,,0,0,0,,${text}\n`;
+
+  test('closing tags out of order never leaves empty pairs', async () => {
+    const { cues } = await parseText(doc('{\\b1\\i1\\u1}x{\\b0\\i0\\u0}'), { type: 'ass' });
+    expect(cues[0].text).toBe('<b><i><u>x</u></i></b>');
+  });
+
+  test('toggling with no text in between emits nothing', async () => {
+    const { cues } = await parseText(doc('{\\b1}{\\b0}plain {\\i1}{\\i0}text'), { type: 'ass' });
+    expect(cues[0].text).toBe('plain text');
+  });
+
+  test('re-opened tags are emitted before the next text run', async () => {
+    const { cues } = await parseText(doc('{\\b1\\i1}a{\\b0}b{\\i0}c'), { type: 'ass' });
+    expect(cues[0].text).toBe('<b><i>a</i></b><i>b</i>c');
+  });
+
+  test('rectangular \\clip without \\pos becomes a screen-fixed clip rectangle', async () => {
+    const { cues } = await parseText(doc('{\\clip(0,0,640,360)}clipped'), { type: 'ass' });
+    expect(cues[0].layout?.clipRect).toEqual({ left: 0, top: 0, right: 50, bottom: 50 });
+    expect(cues[0].layout?.clipPath).toBeUndefined();
+    expect(cues[0].layout?.fixed).toBeUndefined();
+  });
+});

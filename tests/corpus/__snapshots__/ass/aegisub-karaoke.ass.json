@@ -875,7 +875,7 @@
       "id": "",
       "startTime": 22,
       "endTime": 26,
-      "text": "<c.#2a2a2a><c.s-0></c></c>",
+      "text": "<c.s-0></c>",
       "region": null,
       "vertical": "",
       "snapToLines": true,
@@ -927,7 +927,7 @@
       "id": "",
       "startTime": 22,
       "endTime": 26,
-      "text": "<c.#e8e8e8><c.s-0></c></c>",
+      "text": "<c.s-0></c>",
       "region": null,
       "vertical": "",
       "snapToLines": true,
@@ -997,7 +997,13 @@
         "translate": {
           "x": -0.5
         },
-        "bottom": 4.63
+        "bottom": 4.63,
+        "clipRect": {
+          "left": 0,
+          "top": 0,
+          "right": 50,
+          "bottom": 100
+        }
       },
       "textStyle": {
         "fontFamily": "\"Open Sans Semibold\", sans-serif",

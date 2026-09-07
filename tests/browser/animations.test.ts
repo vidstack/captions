@@ -197,3 +197,21 @@ test('user presets change size, background, and font via data attributes', async
   expect(getComputedStyle(box).backgroundColor).toBe('rgba(0, 0, 0, 0)');
   expect(getComputedStyle(box).fontFamily.toLowerCase()).toContain('courier');
 });
+
+test('screen-fixed clip rectangles resolve against the final cue box', async () => {
+  const clipped = cue(0, 10, 'Clipped by a screen rectangle');
+  // Keep only the top half of the overlay visible; the default cue sits at the bottom so it is
+  // fully clipped, then a cue positioned at the top is untouched.
+  clipped.layout = { clipRect: { left: 0, top: 0, right: 100, bottom: 50 } };
+  const topCue = cue(0, 10, 'Top', { line: 0 });
+  topCue.layout = { clipRect: { left: 0, top: 0, right: 100, bottom: 50 } };
+  await show([clipped, topCue], 1);
+  const [bottomEl, topEl] = cueDisplays(fixture.overlay),
+    bottomClip = getComputedStyle(bottomEl).clipPath,
+    topClip = getComputedStyle(topEl).clipPath;
+  expect(bottomClip.startsWith('inset(')).toBe(true);
+  // The cue sits below the visible half, so the inset from the bottom covers the whole box.
+  const [, , bottomInset] = bottomClip.slice(6, -1).split(' ').map(parseFloat);
+  expect(bottomInset).toBeGreaterThanOrEqual(rect(bottomEl).height - 1);
+  expect(topClip).toBe('none');
+});

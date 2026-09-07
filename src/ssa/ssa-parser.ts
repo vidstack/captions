@@ -217,7 +217,12 @@ interface ParsedDrawing {
 }
 
 /** Open inline formatting tags, innermost last. `s` is a `<c.s-KEY>` span. */
-type OpenTags = { key: 'i' | 'b' | 'u' | 'c' | 's'; open: string; close: string }[];
+type OpenTags = {
+  key: 'i' | 'b' | 'u' | 'c' | 's';
+  open: string;
+  close: string;
+  emitted: boolean;
+}[];
 
 export class SSAParser implements CaptionsParser {
   protected _init!: CaptionsParserInit;
@@ -749,6 +754,9 @@ export class SSAParser implements CaptionsParser {
         return;
       }
       syncSpan();
+      // Tags are opened lazily, right before the text they wrap, so toggling formatting with no
+      // text in between never produces empty `<b></b>` pairs.
+      result += flushOpenTags(open);
       result += escapeText(raw);
     };
 
@@ -1157,10 +1165,24 @@ export class SSAParser implements CaptionsParser {
 
     if (transform.length) text.transform = transform.join(' ');
 
-    // `\clip` is only resolvable when the box position is known (fixed `\pos` cues): the clip is
-    // expressed in the box's own coordinate space using the overlay size. `\move` cues keep the
-    // clip attached to the moving box (approximation).
-    if (style.clip && style.pos && !effect) layout.clipPath = this._clipPath(style.clip, layout);
+    // `\clip` on positioned cues is expressed in the box's own coordinate space (the origin is
+    // known from `\pos`). Without `\pos` the box is placed by the layout engine, so rectangular
+    // clips are handed over as overlay percentages and resolved against the final box at write
+    // time; vector clips need a known origin and are only applied to positioned cues. `\move` cues
+    // keep the clip attached to the moving box (approximation).
+    if (style.clip && !effect) {
+      if (style.pos) {
+        layout.clipPath = this._clipPath(style.clip, layout);
+      } else if ('rect' in style.clip) {
+        const [x1, y1, x2, y2] = style.clip.rect;
+        layout.clipRect = {
+          left: this._pctX(Math.min(x1, x2)),
+          top: this._pctY(Math.min(y1, y2)),
+          right: this._pctX(Math.max(x1, x2)),
+          bottom: this._pctY(Math.max(y1, y2)),
+        };
+      }
+    }
 
     if (effect) this._applyEffect(cue, effect, layout);
 
@@ -1713,14 +1735,28 @@ function toggleTag(open: OpenTags, key: 'i' | 'b' | 'u', start: string, end: str
   return '';
 }
 
+/** Registers an open tag. Nothing is emitted until text follows (see `flushOpenTags`). */
 function openTag(open: OpenTags, key: OpenTags[number]['key'], start: string, end: string) {
-  open.push({ key, open: start, close: end });
-  return start;
+  open.push({ key, open: start, close: end, emitted: false });
+  return '';
+}
+
+/** Emits the opening markup of every registered tag that has not been written yet. */
+function flushOpenTags(open: OpenTags) {
+  let result = '';
+  for (const tag of open) {
+    if (!tag.emitted) {
+      result += tag.open;
+      tag.emitted = true;
+    }
+  }
+  return result;
 }
 
 /**
- * Closes the given tag. Tags opened after it are closed first and re-opened afterwards so the
- * output is always properly nested (SSA tags toggle independently, HTML tags nest).
+ * Closes the given tag. Tags opened after it are closed first and re-registered afterwards so the
+ * output is always properly nested (SSA tags toggle independently, HTML tags nest). Tags that were
+ * never emitted close silently.
  */
 function closeTag(open: OpenTags, key: OpenTags[number]['key']) {
   const index = open.findIndex((tag) => tag.key === key);
@@ -1728,18 +1764,19 @@ function closeTag(open: OpenTags, key: OpenTags[number]['key']) {
 
   let result = '';
   const reopen = open.splice(index + 1);
-  for (let i = reopen.length - 1; i >= 0; i--) result += reopen[i].close;
-  result += open.pop()!.close;
-  for (const tag of reopen) {
-    result += tag.open;
-    open.push(tag);
-  }
+  for (let i = reopen.length - 1; i >= 0; i--) if (reopen[i].emitted) result += reopen[i].close;
+  const closed = open.pop()!;
+  if (closed.emitted) result += closed.close;
+  for (const tag of reopen) open.push({ ...tag, emitted: false });
   return result;
 }
 
 function closeTags(open: OpenTags) {
   let result = '';
-  while (open.length) result += open.pop()!.close;
+  while (open.length) {
+    const tag = open.pop()!;
+    if (tag.emitted) result += tag.close;
+  }
   return result;
 }
 

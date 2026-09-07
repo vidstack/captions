@@ -347,7 +347,7 @@ export class CaptionsRenderer {
     // Write.
     for (let i = 0; i < targets.length; i++) {
       if (targets[i].region) writeRegionBox(container, targets[i].el, boxes[i]);
-      else writeCueBox(container, targets[i].el, boxes[i]);
+      else writeCueBox(container, targets[i].el, boxes[i], targets[i].cue);
     }
   }
 
