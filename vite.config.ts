@@ -11,6 +11,8 @@ const GENERATED = [
   'tests/wpt/vendor/**',
   'tests/wpt/fixtures/**',
   'tests/imsc/vendor/**',
+  'tests/corpus/__snapshots__/**',
+  'tests/corpus/files/**',
   'tests/browser/__screenshots__/**',
   'src/entities/html-entities.ts',
   'pnpm-lock.yaml',
