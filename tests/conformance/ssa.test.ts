@@ -222,24 +222,52 @@ describe('override tags', () => {
     const { cues } = await parse(
       ass([DEFAULT], [dialogue('{\\k50}Ka{\\K100}ra{\\kf50}o{\\ko50}ke')]),
     );
-    expect(cues[0].text).toBe('<00:00:01.000>Ka<00:00:01.500>ra<00:00:02.500>o<00:00:03.000>ke');
+    // `\\K`/`\\kf`/`\\ko` syllables are additionally wrapped in spans that carry the sweep
+    // animation (see ssa-typesetting.test.ts); plain `\\k` only needs the timestamp.
+    expect(cues[0].text).toBe(
+      '<00:00:01.000>Ka<00:00:01.500><c.s-0>ra</c><00:00:02.500><c.s-1>o</c><00:00:03.000><c.s-2>ke</c>',
+    );
+    expect(Object.keys(cues[0].spans!)).toEqual(['0', '1', '2']);
   });
 
-  test('drawing commands are hidden and hard spaces preserved', async () => {
+  test('drawing commands become a drawing span and hard spaces are preserved', async () => {
     const { cues } = await parse(
       ass([DEFAULT], [dialogue('{\\p1}m 0 0 l 10 10{\\p0}text\\hmore')]),
     );
-    expect(cues[0].text).toBe('text&nbsp;more');
+    // Drawings used to be dropped; they are now rendered as an inline SVG span with no text.
+    expect(cues[0].text).toBe('<c.s-0></c>text&nbsp;more');
+    expect(cues[0].spans!['0'].drawing?.path).toBe('M0 0L10 10Z');
   });
 
   test('unsupported tags are stripped without losing text', async () => {
     const { cues } = await parse(
       ass(
         [DEFAULT],
-        [dialogue('{\\fad(200,200)\\t(\\fs40)\\fnArial\\blur2}visible {\\move(0,0,10,10)}text')],
+        [
+          dialogue(
+            '{\\fax0.2\\fay0\\org(10,10)\\pbo-2\\fe1\\iclip(0,0,10,10)}visible {\\kt10}text',
+          ),
+        ],
       ),
     );
     expect(cues[0].text).toBe('visible text');
+    expect(cues[0].spans).toBeUndefined();
+    expect(cues[0].animations).toBeUndefined();
+  });
+
+  test('typesetting tags keep the text intact while adding spans and animations', async () => {
+    const { cues } = await parse(
+      ass(
+        [DEFAULT],
+        [dialogue('{\\fad(200,200)\\t(\\fs40)\\fnArial\\blur2}visible {\\move(0,0,10,10)}text')],
+      ),
+    );
+    // `\\fnArial` matches the style font so only the blur differs. `\\t` precedes the blur and
+    // no text has been emitted, so it animates the cue box as a whole.
+    expect(cues[0].text).toBe('<c.s-0>visible text</c>');
+    expect(cues[0].spans!['0']).toEqual({ filter: 'blur(calc(var(--overlay-height) * 0.00278))' });
+    expect(cues[0].animations!.map((a) => a.target)).toEqual(['display', 'cue', 'display']);
+    expect(cues[0].layout?.fixed).toBe(true);
   });
 
   test('\\pos produces a fixed, translated cue', async () => {

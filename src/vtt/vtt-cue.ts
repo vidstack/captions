@@ -183,10 +183,17 @@ export interface CueSpanStyle {
   textStroke?: string;
   textShadow?: string;
   transform?: string;
+  /** Needed for `transform` to take effect on a run (`inline-block`). */
+  display?: string;
   opacity?: string;
   filter?: string;
   animation?: string;
   className?: string;
+  /** Gradient fills clipped to the glyphs (SSA karaoke sweeps). */
+  backgroundImage?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundClip?: string;
   /** Vector drawing rendered inline as SVG in place of text (SSA `\\p` drawings). */
   drawing?: CueDrawing;
 }

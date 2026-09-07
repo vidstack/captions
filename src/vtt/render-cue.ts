@@ -15,9 +15,14 @@ const SPAN_STYLE_PROPS: Record<string, string> = {
   textStroke: '-webkit-text-stroke',
   textShadow: 'text-shadow',
   transform: 'transform',
+  display: 'display',
   opacity: 'opacity',
   filter: 'filter',
   animation: 'animation',
+  backgroundImage: 'background-image',
+  backgroundSize: 'background-size',
+  backgroundPosition: 'background-position',
+  backgroundClip: '-webkit-background-clip',
 };
 
 const SVG_NS = 'http://www.w3.org/2000/svg',
