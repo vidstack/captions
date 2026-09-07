@@ -29,9 +29,37 @@ test('drop-frame timecodes', () => {
   expect(parseTTMLTime('00:01:00:02', ntsc)).toBeCloseTo((1800 * 1001) / 30000, 6);
   // An explicit multiplier wins over the implied 1000/1001.
   expect(parseTTMLTime('00:00:01:00', { ...ntsc, frameRateMultiplier: 1 })).toBe(1);
-  // Non-drop and the (unsupported) PAL rule count frames linearly.
+  // Non-drop counts frames linearly.
   expect(parseTTMLTime('00:10:00:00', { frameRate: 30, dropMode: 'nonDrop' })).toBe(600);
-  expect(parseTTMLTime('00:10:00:00', { frameRate: 25, dropMode: 'dropPAL' })).toBe(600);
+});
+
+test('dropPAL timecodes', () => {
+  // TTML1 §6.2.3: frames 00-03 are dropped at the start of every even minute except 00, 20, 40.
+  const pal = { frameRate: 30, dropMode: 'dropPAL' } as const,
+    fps = 30000 / 1001;
+
+  expect(parseTTMLTime('00:00:00:00', pal)).toBe(0);
+  expect(parseTTMLTime('00:00:01:00', pal)).toBeCloseTo(30 / fps, 9);
+  // Minute 1 is odd: nothing dropped yet.
+  expect(parseTTMLTime('00:01:00:00', pal)).toBeCloseTo(1800 / fps, 9);
+  // Minute 2 drops four frames: 00:02:00:04 is frame 3600.
+  expect(parseTTMLTime('00:02:00:04', pal)).toBeCloseTo(3600 / fps, 9);
+  // The spec's example: 01:09:59:29 is followed by 01:10:00:04.
+  expect(parseTTMLTime('01:10:00:04', pal)! - parseTTMLTime('01:09:59:29', pal)!).toBeCloseTo(
+    1 / fps,
+    9,
+  );
+  // Minute 20 does not drop.
+  expect(parseTTMLTime('00:20:00:00', pal)! - parseTTMLTime('00:19:59:29', pal)!).toBeCloseTo(
+    1 / fps,
+    9,
+  );
+  // Over an hour both rules drop 108 frames: 30 even minutes minus 00, 20, 40 times four.
+  expect(parseTTMLTime('01:00:00:00', pal)).toBeCloseTo((108000 - 108) / fps, 6);
+  expect(parseTTMLTime('01:00:00:00', pal)).toBeCloseTo(
+    parseTTMLTime('01:00:00:00', { frameRate: 30, dropMode: 'dropNTSC' })!,
+    9,
+  );
 });
 
 test('offset-time expressions', () => {

@@ -1,6 +1,6 @@
 import { ParseError, ParseErrorCode } from '../parse/parse-error';
 import type { CaptionsParser, CaptionsParserInit, ParsedCaptionsResult } from '../parse/types';
-import { VTTCue } from '../vtt/vtt-cue';
+import { type CueSpanStyle, type CueTextStyle, VTTCue } from '../vtt/vtt-cue';
 import type { VTTHeaderMetadata } from '../vtt/vtt-header';
 
 const CLOCK_TIME_RE = /^(\d+):(\d{1,2}):(\d{1,2})(?:[.,](\d+)|:(\d+)(?:[.,](\d+))?)?$/,
@@ -10,7 +10,8 @@ const CLOCK_TIME_RE = /^(\d+):(\d{1,2}):(\d{1,2})(?:[.,](\d+)|:(\d+)(?:[.,](\d+)
   TRAILING_SPACES_RE = / +$/,
   LENGTH_RE = /^(-?\d*\.?\d+)(%|px|c|em|rw|rh)?$/,
   HEX_COLOR_RE = /^#([0-9a-f]{6})([0-9a-f]{2})?$/,
-  RGB_COLOR_RE = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/,
+  RGB_COLOR_RE = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?\)$/,
+  COLOR_NAME_RE = /^[a-z]+$/,
   UNDERLINE_RE = /(^|\s)underline(\s|$)/,
   TAG_NAME_END_RE = /[ .]/,
   AMP_RE = /&/g,
@@ -59,6 +60,7 @@ const ENTITIES: Record<string, string> = {
     'backgroundColor',
     'origin',
     'extent',
+    'position',
     'displayAlign',
     'opacity',
     'overflow',
@@ -76,7 +78,23 @@ const ENTITIES: Record<string, string> = {
     jpg: 'image/jpeg',
     gif: 'image/gif',
     webp: 'image/webp',
-  };
+  },
+  /** Maps TTML generic font family names to CSS generic families. */
+  FONT_FAMILIES: Record<string, string> = {
+    default: '',
+    monospace: 'monospace',
+    sansSerif: 'sans-serif',
+    serif: 'serif',
+    monospaceSansSerif: 'monospace',
+    monospaceSerif: 'monospace',
+    proportionalSansSerif: 'sans-serif',
+    proportionalSerif: 'serif',
+  },
+  /** `tts:ruby` values whose text children are structural whitespace, not content. */
+  RUBY_CONTAINERS = /*#__PURE__*/ new Set(['container', 'baseContainer', 'textContainer']),
+  /** `tts:position` keywords as a fraction of the free space along their axis. */
+  H_KEYWORDS: Record<string, number> = { left: 0, center: 0.5, right: 1 },
+  V_KEYWORDS: Record<string, number> = { top: 0, center: 0.5, bottom: 1 };
 
 const DEFAULT_FRAME_RATE = 30,
   DEFAULT_DURATION = 10,
@@ -115,9 +133,9 @@ export interface TTMLTimeContext {
   tickRate?: number;
   /**
    * `ttp:dropMode` for the `smpte` time base. `dropNTSC` converts `hh:mm:ss:ff` as SMPTE 12M
-   * drop-frame timecode (frames 0 and 1 skipped every minute except every tenth). `dropPAL`
-   * (M/PAL, 4 frames skipped every other minute) is rare and its residual error is not exactly
-   * specified, so it is treated as `nonDrop`.
+   * drop-frame timecode (frames 0 and 1 skipped at the start of every minute except every tenth).
+   * `dropPAL` is the M/PAL variant (frames 0-3 skipped at the start of every even minute except
+   * minutes 0, 20 and 40). Both imply a `1000/1001` frame rate multiplier unless one is given.
    *
    * @defaultValue 'nonDrop'
    */
@@ -145,7 +163,9 @@ export function parseTTMLTime(text: string, ctx: TTMLTimeContext = {}): number |
     } else if (match[5]) {
       let frames = +match[5];
       if (match[6]) frames += +match[6] / (ctx.subFrameRate || 1);
-      if (ctx.dropMode === 'dropNTSC') return dropFrameToSeconds(h, m, s, frames, ctx);
+      if (ctx.dropMode === 'dropNTSC' || ctx.dropMode === 'dropPAL') {
+        return dropFrameToSeconds(h, m, s, frames, ctx);
+      }
       seconds += frames / frameRate;
     }
     return seconds;
@@ -174,22 +194,34 @@ export function parseTTMLTime(text: string, ctx: TTMLTimeContext = {}): number |
 }
 
 /**
- * Converts an NTSC drop-frame timecode to seconds. The timecode counts nominal frames (30 per
- * second) but skips frame numbers 0 and 1 at the start of every minute except every tenth, so
- * the label stays in step with the real 30000/1001 fps clock. The frame number is recovered by
- * subtracting the skipped frames, then divided by the effective frame rate.
+ * Converts a drop-frame timecode to seconds. The timecode counts nominal frames (30 per second)
+ * but skips frame numbers at the start of some minutes so the label stays in step with the real
+ * 30000/1001 fps clock. The frame number is recovered by subtracting the skipped frames, then
+ * divided by the effective frame rate.
+ *
+ * TTML1 §6.2.3 defines the two rules:
+ *
+ * - `dropNTSC`: "If the second of a time expression is 00 and the minute of the time expression
+ *   is not 00, 10, 20, 30, 40, or 50, then frame codes 00 and 01 are dropped during that second".
+ * - `dropPAL`: "If the second of a time expression is 00 and the minute of the time expression
+ *   is even but not 00, 20, or 40, then frame codes 00 through 03 are dropped during that second"
+ *   (the M/PAL system, e.g. `01:09:59:29` is followed by `01:10:00:04`).
  *
  * @see {@link https://www.w3.org/TR/ttml1/#parameter-attribute-dropMode}
  */
 function dropFrameToSeconds(h: number, m: number, s: number, frames: number, ctx: TTMLTimeContext) {
   const nominal = Math.round(ctx.frameRate || DEFAULT_FRAME_RATE),
-    // Two frames per minute at 30 fps, four at 60 fps.
-    dropped = 2 * Math.max(1, Math.round(nominal / 30)),
+    // Frames dropped per dropping minute at 30 fps, doubled at 60 fps.
+    scale = Math.max(1, Math.round(nominal / 30)),
+    // Drops happen at the start of a minute, so every dropping minute up to and including the
+    // current one (minute 0 never drops) has already been skipped.
     totalMinutes = h * 60 + m,
-    frameNumber =
-      (h * 3600 + m * 60 + s) * nominal +
-      frames -
-      dropped * (totalMinutes - Math.floor(totalMinutes / 10)),
+    droppedMinutes =
+      ctx.dropMode === 'dropPAL'
+        ? Math.floor(totalMinutes / 2) - Math.floor(totalMinutes / 20)
+        : totalMinutes - Math.floor(totalMinutes / 10),
+    perMinute = ctx.dropMode === 'dropPAL' ? 4 : 2,
+    frameNumber = (h * 3600 + m * 60 + s) * nominal + frames - perMinute * scale * droppedMinutes,
     effectiveRate = nominal * (ctx.frameRateMultiplier || 1000 / 1001);
   return frameNumber / effectiveRate;
 }
@@ -382,12 +414,26 @@ function textContent(el: XMLElement): string {
   return text;
 }
 
+/** Whether any element in the tree has the given attribute value (namespace prefixes stripped). */
+function hasAttr(el: XMLElement, name: string, value: string): boolean {
+  if (el.attrs[name]?.trim() === value) return true;
+  for (const child of el.children) {
+    if (typeof child !== 'string' && hasAttr(child, name, value)) return true;
+  }
+  return false;
+}
+
+function isSeq(el: XMLElement) {
+  return el.attrs.timeContainer?.trim() === 'seq';
+}
+
 // -------------------------------------------------------------------------------------------
 // Parser
 // -------------------------------------------------------------------------------------------
 
 type TTMLStyle = Record<string, string>;
 
+/** A region's content box as percentages of the root container (padding already applied). */
 interface RegionBox {
   x: number;
   y: number;
@@ -397,7 +443,11 @@ interface RegionBox {
 }
 
 interface TTMLRegion extends RegionBox {
+  id: string;
   style: TTMLStyle;
+  /** Region timing (`begin`/`end` on the region), in document time. */
+  begin: number;
+  end: number | undefined;
   /** `<set>` animations declared on the region, in document time. */
   anims: TTMLAnimation[];
 }
@@ -417,16 +467,39 @@ interface ContainerContext {
   lang: string;
   preserve: boolean;
   region: string | undefined;
+  /** `<set>` animations declared on ancestor containers (`body`, `div`), in document time. */
+  anims: TTMLAnimation[];
+}
+
+/** Per-paragraph collector for `cue.spans` entries, keyed by their serialized style. */
+interface SpanStyles {
+  keys: Map<string, string>;
+  styles: Record<string, CueSpanStyle>;
 }
 
 interface InlineContext {
   begin: number;
   style: TTMLStyle;
+  /** Resolved style of the paragraph; spans whose style differs from it get a `cue.spans` entry. */
+  pStyle: TTMLStyle;
   lang: string;
   baseLang: string;
   preserve: boolean;
   inRuby: boolean;
   timestamp: number | undefined;
+  /** Region the content renders into (`''` when unresolved). */
+  region: string;
+  /** Interval being collected: spans that ended by `at` or begin at/after `until` are omitted. */
+  at: number;
+  until: number;
+  /** The enclosing `tts:ruby="text"` span, so adjacent ruby texts serialize as separate `<rt>`. */
+  rt: XMLElement | undefined;
+  /**
+   * The first pass over a paragraph: span timing errors are reported and nothing is hidden, so
+   * content a `<set>` reveals later still counts as content.
+   */
+  probe: boolean;
+  spans: SpanStyles;
 }
 
 interface TextRun {
@@ -435,6 +508,9 @@ interface TextRun {
   preserve: boolean;
   br: boolean;
   timestamp: number | undefined;
+  region: string;
+  spanKey: string | undefined;
+  rt: XMLElement | undefined;
 }
 
 interface Timing {
@@ -510,6 +586,10 @@ export class TTMLParser implements CaptionsParser {
 
     const body = findChild(tt, 'body');
 
+    // IMSC `itts:forcedDisplay`: forced cues get the `forced` class (see `_buildTextCue`); the
+    // flag lets hosts know up front that filtering by that class is meaningful.
+    if (hasAttr(tt, 'forcedDisplay', 'true')) this._metadata.HasForcedCues = 'true';
+
     // With `ttp:timeBase="clock"` times are times of day. Cues are shifted so the earliest
     // paragraph starts at 0 and the wall-clock reference is exposed as `ClockStart`, so a
     // consumer that knows the media's wall-clock start can re-offset with `shiftVTTCues`.
@@ -533,6 +613,7 @@ export class TTMLParser implements CaptionsParser {
         lang: tt.attrs.lang || '',
         preserve: tt.attrs.space === 'preserve',
         region: undefined,
+        anims: [],
       });
     }
   }
@@ -563,6 +644,14 @@ export class TTMLParser implements CaptionsParser {
     this._time = time;
 
     if (attrs.lang) this._metadata.Language = attrs.lang;
+
+    // IMSC 1 `ittp:aspectRatio` / TTML2 `ttp:displayAspectRatio`: the root container's aspect
+    // ratio. Positions are percentages so no maths changes; hosts can letterbox the overlay.
+    const aspect = attrs.displayAspectRatio ?? attrs.aspectRatio;
+    if (aspect) {
+      const [w, h] = aspect.trim().split(WHITESPACE_RE).map(toPositive);
+      if (w && h) this._metadata.AspectRatio = `${w}:${h}`;
+    }
 
     if (attrs.cellResolution) {
       const [columns, rows] = attrs.cellResolution.trim().split(WHITESPACE_RE).map(toPositive);
@@ -669,30 +758,188 @@ export class TTMLParser implements CaptionsParser {
       else if (child.name === 'set') this._collectAnimation(child, el, { begin, end }, anims);
     }
 
-    this._regions[id] = { style, anims, ...this._regionBox(style) };
+    this._regions[id] = { id, style, begin, end, anims, ...this._regionBox(style) };
     this._regionIds.push(id);
   }
 
-  /** Resolves the region box (percentages of the root container) from region styles. */
+  /**
+   * Resolves the region content box (percentages of the root container) from region styles:
+   * `tts:origin`/`tts:position` and `tts:extent` give the region area, `tts:padding` insets it.
+   */
   protected _regionBox(style: TTMLStyle): RegionBox {
     const origin = this._parseCoords(style.origin),
-      extent = this._parseCoords(style.extent),
-      x = origin?.[0] ?? 0,
+      extent = this._parseCoords(style.extent);
+
+    let x = origin?.[0] ?? 0,
       y = origin?.[1] ?? 0;
 
-    return {
-      x,
-      y,
-      w: extent?.[0] ?? 100 - x,
-      h: extent?.[1] ?? 100 - y,
-      displayAlign: style.displayAlign || 'before',
+    let w = extent?.[0] ?? 100 - x,
+      h = extent?.[1] ?? 100 - y;
+
+    // TTML2 `tts:position` places the region area within the root container like a CSS
+    // `background-position`; it takes precedence over `tts:origin`.
+    if (style.position) {
+      const position = this._parsePosition(style.position, w, h);
+      if (position) [x, y] = position;
+    }
+
+    const padding = this._parsePadding(style.padding, w, h, style.writingMode?.trim() ?? '');
+    if (padding) {
+      const [top, right, bottom, left] = padding;
+      x += left;
+      y += top;
+      w = Math.max(0, w - left - right);
+      h = Math.max(0, h - top - bottom);
+    }
+
+    return { x, y, w, h, displayAlign: style.displayAlign || 'before' };
+  }
+
+  /**
+   * Parses `tts:position` (`[left|center|right|top|bottom|<length>]{1,2}` or keyword/offset pairs)
+   * into the region origin. Percentages and keywords resolve against the free space left by the
+   * region extent, so `center` centres the box and `right 10%` leaves a 10% margin on the right.
+   */
+  protected _parsePosition(value: string, w: number, h: number): [number, number] | null {
+    const tokens = value.trim().split(WHITESPACE_RE);
+    if (!tokens.length || tokens.length > 4) return null;
+
+    type Component = { keyword?: string; offset?: string; length?: string };
+
+    let xs: Component | undefined, ys: Component | undefined;
+
+    const isH = (t: string) => t in H_KEYWORDS,
+      isV = (t: string) => t in V_KEYWORDS,
+      component = (t: string): Component => (isH(t) || isV(t) ? { keyword: t } : { length: t });
+
+    if (tokens.length === 1) {
+      const t = tokens[0];
+      if (isV(t) && t !== 'center') ys = { keyword: t };
+      else xs = component(t);
+    } else if (tokens.length === 2) {
+      const [a, b] = tokens;
+      // `top left` / `center left`: the vertical component may come first.
+      if ((isV(a) && a !== 'center') || (isH(b) && b !== 'center')) {
+        ys = component(a);
+        xs = component(b);
+      } else {
+        xs = component(a);
+        ys = component(b);
+      }
+    } else {
+      for (let i = 0; i < tokens.length;) {
+        const keyword = tokens[i++];
+        if (!isH(keyword) && !isV(keyword)) return null;
+        const offset = i < tokens.length && LENGTH_RE.test(tokens[i]) ? tokens[i++] : undefined;
+        const comp: Component = { keyword, offset };
+        if (keyword === 'center') {
+          if (xs) ys = comp;
+          else xs = comp;
+        } else if (isH(keyword)) xs = comp;
+        else ys = comp;
+      }
+    }
+
+    const x = this._resolvePosition(xs, w, this._rootWidth, this._cellColumns, H_KEYWORDS),
+      y = this._resolvePosition(ys, h, this._rootHeight, this._cellRows, V_KEYWORDS);
+
+    return x === null || y === null ? null : [x, y];
+  }
+
+  protected _resolvePosition(
+    comp: { keyword?: string; offset?: string; length?: string } | undefined,
+    size: number,
+    rootSize: number,
+    cells: number,
+    keywords: Record<string, number>,
+  ): number | null {
+    const free = 100 - size;
+    if (!comp) return free / 2;
+
+    const length = (text: string): number | null => {
+      const match = LENGTH_RE.exec(text);
+      if (!match) return null;
+      if (match[2] === '%') return (parseFloat(match[1]) / 100) * free;
+      return this._parseLength(text, rootSize, cells);
     };
+
+    if (comp.length !== undefined) return length(comp.length);
+
+    const fraction = keywords[comp.keyword!];
+    if (fraction === undefined) return null;
+
+    const offset = comp.offset !== undefined ? length(comp.offset) : 0;
+    if (offset === null) return null;
+
+    // Offsets move away from the named edge; `center` takes none.
+    if (fraction === 0.5) return free / 2;
+    return fraction === 0 ? offset : free - offset;
+  }
+
+  /**
+   * Parses `tts:padding` (1-4 lengths in `before end after start` order for the region's writing
+   * mode) into physical `[top, right, bottom, left]` insets as percentages of the root container.
+   * Percentages are relative to the region dimension along the padded side (TTML1 §8.2.10).
+   */
+  protected _parsePadding(
+    value: string | undefined,
+    w: number,
+    h: number,
+    writingMode: string,
+  ): [number, number, number, number] | null {
+    if (!value) return null;
+
+    const parts = value.trim().split(WHITESPACE_RE);
+    if (!parts.length || parts.length > 4) return null;
+
+    const [before, end, after, start] =
+      parts.length === 1
+        ? [parts[0], parts[0], parts[0], parts[0]]
+        : parts.length === 2
+          ? [parts[0], parts[1], parts[0], parts[1]]
+          : parts.length === 3
+            ? [parts[0], parts[1], parts[2], parts[1]]
+            : parts;
+
+    let top: string, right: string, bottom: string, left: string;
+    if (writingMode === 'tbrl' || writingMode === 'tb') {
+      [right, left, top, bottom] = [before, after, start, end];
+    } else if (writingMode === 'tblr') {
+      [left, right, top, bottom] = [before, after, start, end];
+    } else if (writingMode === 'rltb' || writingMode === 'rl') {
+      [top, bottom, right, left] = [before, after, start, end];
+    } else {
+      [top, bottom, left, right] = [before, after, start, end];
+    }
+
+    const resolve = (text: string, size: number, rootSize: number, cells: number) => {
+      const match = LENGTH_RE.exec(text);
+      if (!match) return null;
+      const length =
+        match[2] === '%'
+          ? (parseFloat(match[1]) / 100) * size
+          : this._parseLength(text, rootSize, cells);
+      return length === null ? null : Math.max(0, length);
+    };
+
+    const t = resolve(top, h, this._rootHeight, this._cellRows),
+      r = resolve(right, w, this._rootWidth, this._cellColumns),
+      b = resolve(bottom, h, this._rootHeight, this._cellRows),
+      l = resolve(left, w, this._rootWidth, this._cellColumns);
+
+    return t === null || r === null || b === null || l === null ? null : [t, r, b, l];
+  }
+
+  /** Resolves the id of the region a content element renders into (`''` when none applies). */
+  protected _regionId(el: XMLElement, ctx: ContainerContext): string {
+    return (
+      el.attrs.region ?? ctx.region ?? (this._regionIds.length === 1 ? this._regionIds[0] : '')
+    );
   }
 
   /** Resolves the region a content element renders into, if any. */
   protected _findRegion(el: XMLElement, ctx: ContainerContext): TTMLRegion | undefined {
-    const id =
-      el.attrs.region ?? ctx.region ?? (this._regionIds.length === 1 ? this._regionIds[0] : '');
+    const id = this._regionId(el, ctx);
     return id ? this._regions[id] : undefined;
   }
 
@@ -725,6 +972,23 @@ export class TTMLParser implements CaptionsParser {
     return ref.startsWith('data:image/') ? ref : null;
   }
 
+  /**
+   * Resolves an IMSC 1.1 / TTML2 `<image>` child of a `div`: either embedded base64 content or a
+   * `src` reference (`#id` or a data URL; external sources are not fetched).
+   */
+  protected _resolveImageElement(div: XMLElement): string | null {
+    const image = findChild(div, 'image');
+    if (!image) return null;
+
+    const data = textContent(image).replace(ALL_WHITESPACE_RE, '');
+    if (data && (image.attrs.encoding ?? 'base64').trim().toLowerCase() === 'base64') {
+      const type = image.attrs.type?.trim();
+      return `data:${type && type.includes('/') ? type : 'image/png'};base64,${data}`;
+    }
+
+    return this._resolveImage(image.attrs.src, image.line);
+  }
+
   protected _parseCoords(value: string | undefined): [number, number] | null {
     if (!value) return null;
     const parts = value.trim().split(WHITESPACE_RE);
@@ -736,7 +1000,7 @@ export class TTMLParser implements CaptionsParser {
 
   /**
    * Parses a TTML length into a percentage of the root container. Cell units (`c`) are resolved
-   * against `ttp:cellResolution` on the given axis.
+   * against `ttp:cellResolution` on the given axis; `rw`/`rh` (TTML2) are already percentages.
    */
   protected _parseLength(value: string, rootSize: number, cells: number): number | null {
     const match = LENGTH_RE.exec(value);
@@ -744,6 +1008,8 @@ export class TTMLParser implements CaptionsParser {
     const num = parseFloat(match[1]);
     switch (match[2]) {
       case '%':
+      case 'rw':
+      case 'rh':
         return num;
       case 'px':
         return (num / rootSize) * 100;
@@ -834,25 +1100,107 @@ export class TTMLParser implements CaptionsParser {
     return timing;
   }
 
+  /** Element timing without error reporting, for look-ahead passes over already parsed nodes. */
+  protected _silentTiming(el: XMLElement, parentBegin: number) {
+    const beginOffset = el.attrs.begin ? parseTTMLTime(el.attrs.begin, this._time) : null,
+      begin = parentBegin + (beginOffset || 0);
+
+    let end: number | undefined;
+    if (el.attrs.end !== undefined) {
+      const offset = parseTTMLTime(el.attrs.end, this._time);
+      if (offset !== null) end = parentBegin + offset;
+    }
+    if (el.attrs.dur !== undefined) {
+      const dur = parseTTMLTime(el.attrs.dur, this._time);
+      if (dur !== null) end = end === undefined ? begin + dur : Math.min(end, begin + dur);
+    }
+
+    return { begin, end, ownBegin: beginOffset !== null };
+  }
+
   /**
-   * Resolves the end time of a cue-producing element, inferring it from the next paragraph or
-   * falling back to the default duration. Returns `undefined` (after reporting) when the
-   * resulting interval is empty.
+   * The SMIL implicit end of an element (TTML1 §10.4): a `par` container ends with its last
+   * child, a `seq` container when its children have run in sequence. Text is indefinite in a
+   * `par` and zero-length in a `seq` container. Returns `undefined` for an indefinite duration.
+   *
+   * Inter-element whitespace and `br` are ignored: the spec makes a `br` indefinite too, but the
+   * paragraph then only ever shows content while its timed spans are active, which is exactly
+   * the interval this yields.
+   */
+  protected _implicitEnd(el: XMLElement, begin: number, seq: boolean): number | undefined {
+    let end = begin,
+      cursor = begin;
+
+    for (const node of el.children) {
+      if (typeof node === 'string') {
+        if (!node.trim()) continue;
+        if (!seq) return undefined;
+        continue;
+      }
+
+      switch (node.name) {
+        case 'metadata':
+        case 'set':
+        case 'animation':
+        case 'br':
+          continue;
+      }
+
+      const timing = this._silentTiming(node, seq ? cursor : begin),
+        childEnd = timing.end ?? this._implicitEnd(node, timing.begin, isSeq(node));
+      if (childEnd === undefined) return undefined;
+
+      cursor = childEnd;
+      end = seq ? childEnd : Math.max(end, childEnd);
+    }
+
+    return end;
+  }
+
+  /**
+   * The active end of an element that produced no cue (for `seq` containers): its explicit end,
+   * otherwise its implicit end clipped by the parent.
+   */
+  protected _activeEnd(el: XMLElement, timing: Timing, seq: boolean): number | undefined {
+    if (timing.explicit) return timing.end;
+    const implicit = this._implicitEnd(el, timing.begin, seq);
+    if (timing.end === undefined) return implicit;
+    return implicit === undefined ? timing.end : Math.min(timing.end, implicit);
+  }
+
+  /**
+   * Resolves the end time of a cue-producing element: its explicit end, the implicit end of its
+   * timed children, the next paragraph's begin, the region end, or the default duration (which
+   * is reported). The result may not be after `timing.begin`; an inverted explicit interval is
+   * reported here.
    */
   protected _resolveEnd(
     el: XMLElement,
     timing: Timing,
     ctx: ContainerContext,
-    next?: XMLElement,
-  ): number | undefined {
-    let { begin, end } = timing;
+    next: XMLElement | undefined,
+    region: TTMLRegion | undefined,
+    seq: boolean,
+  ): number {
+    const { begin } = timing,
+      own = el.attrs.end !== undefined || el.attrs.dur !== undefined;
+    let { end } = timing;
 
-    if (end === undefined && el.attrs.end === undefined && el.attrs.dur === undefined && next) {
+    if (!own) {
+      // `<p><span begin=".." end=".."/></p>`: the paragraph ends with its last timed child.
+      const implicit = this._implicitEnd(el, begin, seq);
+      if (implicit !== undefined && (end === undefined || implicit < end)) end = implicit;
+    }
+
+    if (end === undefined && !own && next) {
       // Common in live EBU-TT-D and auto-generated files: a paragraph without `end`/`dur` runs
       // until the next paragraph begins. The sibling reports its own timing errors when parsed.
       const nextBegin = next.attrs.begin ? parseTTMLTime(next.attrs.begin, this._time) : null;
       if (nextBegin !== null && ctx.begin + nextBegin > begin) end = ctx.begin + nextBegin;
     }
+
+    // A timed region bounds everything shown in it.
+    if (end === undefined && region?.end !== undefined) end = region.end;
 
     if (end === undefined) {
       end = begin + DEFAULT_DURATION;
@@ -866,17 +1214,14 @@ export class TTMLParser implements CaptionsParser {
       );
     }
 
-    if (end <= begin) {
-      if (timing.explicit) {
-        this._handleError(
-          this._buildError(
-            ParseErrorCode.BadTimestamp,
-            `cue end time \`${end}\` is not greater than start time \`${begin}\` on line ${el.line}`,
-            el.line,
-          ),
-        );
-      }
-      return;
+    if (end <= begin && timing.explicit) {
+      this._handleError(
+        this._buildError(
+          ParseErrorCode.BadTimestamp,
+          `cue end time \`${end}\` is not greater than start time \`${begin}\` on line ${el.line}`,
+          el.line,
+        ),
+      );
     }
 
     return end;
@@ -924,119 +1269,199 @@ export class TTMLParser implements CaptionsParser {
     return { time, expr: expr || formatTimestamp(time) };
   }
 
-  protected _walkContainer(el: XMLElement, ctx: ContainerContext) {
+  /**
+   * Walks a `body`/`div` container. In a `seq` time container each child begins where the
+   * previous one ended. Returns the container's active end (for a parent `seq`), `undefined`
+   * when indefinite.
+   */
+  protected _walkContainer(el: XMLElement, ctx: ContainerContext): number | undefined {
     const timing = this._resolveTiming(el, ctx),
       ownStyle = this._elementStyle(el),
-      child: ContainerContext = {
-        begin: timing.begin,
-        end: timing.end,
-        style: { ...ctx.style, ...ownStyle },
-        lang: el.attrs.lang ?? ctx.lang,
-        preserve: el.attrs.space ? el.attrs.space === 'preserve' : ctx.preserve,
-        region: el.attrs.region ?? ctx.region,
-      };
+      seq = isSeq(el),
+      anims = ctx.anims.slice();
 
-    // IMSC image profile / SMPTE-TT: a `div` may paint an embedded image over its region.
-    if (el.name === 'div' && ownStyle.backgroundImage && !timing.badBegin) {
-      const image = this._resolveImage(ownStyle.backgroundImage, el.line);
+    // `<set>` on a container applies to every paragraph within its interval.
+    for (const node of el.children) {
+      if (typeof node !== 'string' && node.name === 'set') {
+        this._collectAnimation(node, el, timing, anims);
+      }
+    }
+
+    const child: ContainerContext = {
+      begin: timing.begin,
+      end: timing.end,
+      style: { ...ctx.style, ...ownStyle },
+      lang: el.attrs.lang ?? ctx.lang,
+      preserve: el.attrs.space ? el.attrs.space === 'preserve' : ctx.preserve,
+      region: el.attrs.region ?? ctx.region,
+      anims,
+    };
+
+    // IMSC image profile / SMPTE-TT: a `div` may paint an embedded image over its region, either
+    // as `smpte:backgroundImage` or (IMSC 1.1) an `<image>` child.
+    if (el.name === 'div' && !timing.badBegin) {
+      const image =
+        this._resolveImage(ownStyle.backgroundImage, el.line) ?? this._resolveImageElement(el);
       if (image) {
-        const end = this._resolveEnd(el, timing, ctx);
-        if (end !== undefined) {
-          this._emitImageCue(el, timing.begin, end, image, this._findRegion(el, ctx));
-        }
+        const region = this._findRegion(el, ctx),
+          end = this._resolveEnd(el, timing, ctx, undefined, region, seq);
+        this._emitImageCue(el, timing.begin, end, image, region, isForced(child.style));
       }
     }
 
     const nodes = el.children;
 
+    let cursor = timing.begin,
+      implicit = timing.begin,
+      indefinite = false;
+
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       if (typeof node === 'string') continue;
+
       switch (node.name) {
-        case 'p':
-          this._parseParagraph(node, child, nextParagraph(nodes, i + 1));
-          break;
         case 'metadata':
         case 'set':
         case 'animation':
-          break;
-        default:
-          this._walkContainer(node, child);
+        case 'image':
+          continue;
       }
+
+      // An indefinite child of a `seq` container: later siblings never begin.
+      if (seq && !Number.isFinite(cursor)) break;
+
+      const parent = seq ? { ...child, begin: cursor } : child,
+        end =
+          node.name === 'p'
+            ? this._parseParagraph(node, parent, seq ? undefined : nextParagraph(nodes, i + 1), seq)
+            : this._walkContainer(node, parent);
+
+      if (end === undefined) indefinite = true;
+      else implicit = seq ? end : Math.max(implicit, end);
+      if (seq) cursor = end ?? Infinity;
     }
+
+    if (timing.explicit || indefinite) return timing.end;
+    return timing.end === undefined ? implicit : Math.min(timing.end, implicit);
   }
 
-  protected _parseParagraph(el: XMLElement, ctx: ContainerContext, next?: XMLElement) {
+  /**
+   * Parses a paragraph into one or more cues. Returns the paragraph's active end (for a parent
+   * `seq` container), `undefined` when indefinite or skipped.
+   */
+  protected _parseParagraph(
+    el: XMLElement,
+    ctx: ContainerContext,
+    next: XMLElement | undefined,
+    seq: boolean,
+  ): number | undefined {
     const timing = this._resolveTiming(el, ctx);
     if (timing.badBegin) return;
 
-    const region = this._findRegion(el, ctx),
-      ownStyle = this._elementStyle(el);
+    const regionId = this._regionId(el, ctx),
+      region: TTMLRegion | undefined = this._regions[regionId],
+      ownStyle = this._elementStyle(el),
+      pSeq = isSeq(el);
 
-    const style: TTMLStyle = {
-      ...inheritedStyle(ctx.style),
+    const resolveStyle = (base: TTMLStyle): TTMLStyle => ({
+      ...inheritedStyle(base),
       ...(region ? inheritedStyle(region.style) : {}),
       ...ownStyle,
-    };
+    });
 
-    const lang = el.attrs.lang ?? ctx.lang,
-      inline: InlineContext = {
-        begin: timing.begin,
-        style,
-        lang,
-        baseLang: lang,
-        preserve: el.attrs.space ? el.attrs.space === 'preserve' : ctx.preserve,
-        inRuby: false,
-        timestamp: undefined,
-      },
-      runs: TextRun[] = [];
+    const style = resolveStyle(ctx.style),
+      lang = el.attrs.lang ?? ctx.lang,
+      preserve = el.attrs.space ? el.attrs.space === 'preserve' : ctx.preserve;
 
-    this._activeSets.clear();
-    this._collectRuns(el, inline, runs);
-    normalizeRuns(runs);
+    const inline = (
+      sliceStyle: TTMLStyle,
+      at: number,
+      until: number,
+      probe: boolean,
+    ): InlineContext => ({
+      begin: timing.begin,
+      style: sliceStyle,
+      pStyle: sliceStyle,
+      lang,
+      baseLang: lang,
+      preserve,
+      inRuby: false,
+      timestamp: undefined,
+      region: regionId,
+      at,
+      until,
+      rt: undefined,
+      probe,
+      spans: { keys: new Map(), styles: {} },
+    });
+
+    // First pass: is there anything to show at all? Span timing errors are reported once, here.
+    const content: TextRun[] = [];
+    this._collectRuns(el, inline(style, -Infinity, Infinity, true), content);
+    normalizeRuns(content);
 
     const image = this._resolveImage(ownStyle.backgroundImage, el.line);
-    if (!runs.length && !image) return;
+    if (!content.length && !image) return this._activeEnd(el, timing, pSeq);
 
     const begin = timing.begin,
-      end = this._resolveEnd(el, timing, ctx, next);
-    if (end === undefined) return;
+      end = this._resolveEnd(el, timing, ctx, seq ? undefined : next, region, pSeq);
+    if (end <= begin) return begin;
 
-    if (image) this._emitImageCue(el, begin, end, image, region);
-    if (!runs.length) return;
-
-    // `<set>` animations on the paragraph, its spans, or its region split the paragraph into
-    // consecutive cues, one per interval over which the active styles are constant.
-    const anims: TTMLAnimation[] = [];
-    this._collectAnimations(el, begin, end, anims);
-    const regionAnims = region?.anims ?? [];
-
-    if (!anims.length && !regionAnims.length) {
-      this._emit(this._buildTextCue(el, begin, end, runs, style, region));
-      return;
+    // A timed region only shows content while it is active.
+    let cueBegin = begin,
+      cueEnd = end;
+    if (region) {
+      if (region.begin > cueBegin) cueBegin = region.begin;
+      if (region.end !== undefined && region.end < cueEnd) cueEnd = region.end;
     }
+    if (cueEnd <= cueBegin) return end;
 
-    const bounds = new Set<number>([begin, end]);
-    for (const anim of anims.concat(regionAnims)) {
-      if (anim.begin > begin && anim.begin < end) bounds.add(anim.begin);
-      if (anim.end !== undefined && anim.end > begin && anim.end < end) bounds.add(anim.end);
+    if (image) this._emitImageCue(el, cueBegin, cueEnd, image, region, isForced(style));
+    if (!content.length) return end;
+
+    // `<set>` animations on the paragraph, its spans, its containers or its region, and spans
+    // that end before the paragraph does, split the paragraph into consecutive cues, one per
+    // interval over which the rendered content is constant.
+    const anims: TTMLAnimation[] = [],
+      spanEnds: number[] = [],
+      bounds = new Set<number>([cueBegin, cueEnd]),
+      addBound = (time: number) => {
+        if (time > cueBegin && time < cueEnd) bounds.add(time);
+      };
+
+    this._collectAnimations(el, begin, end, anims, spanEnds);
+
+    const regionAnims = region?.anims ?? [],
+      containerAnims = ctx.anims;
+
+    for (const anim of [...containerAnims, ...anims, ...regionAnims]) {
+      addBound(anim.begin);
+      if (anim.end !== undefined) addBound(anim.end);
     }
+    for (const time of spanEnds) addBound(time);
 
     const times = [...bounds].sort((a, b) => a - b);
     // Keep the first `MAX_SLICES - 1` boundaries and the paragraph end; later animations are
     // folded into the last slice (which renders the styles active at its start).
     if (times.length > MAX_SLICES + 1) times.splice(MAX_SLICES, times.length - MAX_SLICES - 1);
 
-    let prev: VTTCue | undefined,
-      prevKey = '';
+    // Pending cue per region: consecutive slices that render identically are coalesced.
+    const pending = new Map<string, { cue: VTTCue; key: string }>(),
+      hasRegions = this._regionIds.length > 0;
 
     for (let i = 0; i < times.length - 1; i++) {
       const sliceBegin = times[i],
         sliceEnd = times[i + 1];
 
+      let containerStyle: TTMLStyle | undefined;
+      for (const anim of containerAnims) {
+        if (!isActive(anim, sliceBegin)) continue;
+        containerStyle = { ...(containerStyle ?? ctx.style), ...anim.style };
+      }
+
       this._activeSets.clear();
       for (const anim of anims) {
-        if (anim.begin > sliceBegin || (anim.end !== undefined && anim.end <= sliceBegin)) continue;
+        if (!isActive(anim, sliceBegin)) continue;
         const current = this._activeSets.get(anim.target);
         this._activeSets.set(anim.target, current ? { ...current, ...anim.style } : anim.style);
       }
@@ -1045,8 +1470,7 @@ export class TTMLParser implements CaptionsParser {
       if (region && regionAnims.length) {
         let regionStyle: TTMLStyle | undefined;
         for (const anim of regionAnims) {
-          if (anim.begin > sliceBegin || (anim.end !== undefined && anim.end <= sliceBegin))
-            continue;
+          if (!isActive(anim, sliceBegin)) continue;
           regionStyle = { ...(regionStyle ?? region.style), ...anim.style };
         }
         if (regionStyle) {
@@ -1055,42 +1479,81 @@ export class TTMLParser implements CaptionsParser {
       }
 
       const overrides = this._activeSets.get(el),
-        sliceStyle = overrides ? { ...style, ...overrides } : style,
-        sliceRuns: TextRun[] = [];
+        base = containerStyle ? resolveStyle(containerStyle) : style,
+        sliceStyle = overrides ? { ...base, ...overrides } : base,
+        sliceCtx = inline(sliceStyle, sliceBegin, sliceEnd, false),
+        runs: TextRun[] = [];
 
-      this._collectRuns(el, { ...inline, style: sliceStyle }, sliceRuns);
-      normalizeRuns(sliceRuns);
+      this._collectRuns(el, sliceCtx, runs);
+      normalizeRuns(runs);
 
-      if (!sliceRuns.length) {
-        // Hidden for this interval: flush the previous cue, nothing to coalesce with.
-        if (prev) this._emit(prev);
-        prev = undefined;
-        continue;
+      // Spans with their own `region` render into that region (TTML1 §9.3.2); with declared
+      // regions, content that resolves to none is not shown.
+      const groups = new Map<string, TextRun[]>();
+      for (const run of runs) {
+        let group = groups.get(run.region);
+        if (!group) groups.set(run.region, (group = []));
+        group.push(run);
+      }
+      if (groups.size > 1 && hasRegions) groups.delete('');
+
+      const seen = new Set<string>();
+
+      for (const [id, groupRuns] of groups) {
+        if (groups.size > 1) normalizeRuns(groupRuns);
+        if (!groupRuns.length) continue;
+
+        // Content that only begins later in the slice (all runs timed) starts the cue then.
+        const start = leadTimestamp(groupRuns, sliceBegin) ?? sliceBegin;
+        if (start >= sliceEnd) continue;
+
+        const cue = this._buildTextCue(
+            el,
+            start,
+            sliceEnd,
+            groupRuns,
+            sliceStyle,
+            id === regionId ? sliceRegion : this._regions[id],
+            sliceCtx.spans.styles,
+          ),
+          key = cueRenderKey(cue),
+          prev = pending.get(id);
+
+        seen.add(id);
+
+        if (prev && prev.key === key && prev.cue.endTime === start) {
+          // Coalesce: the animation did not change what is rendered.
+          prev.cue.endTime = sliceEnd;
+          continue;
+        }
+
+        if (prev) this._emit(prev.cue);
+        pending.set(id, { cue, key });
       }
 
-      const cue = this._buildTextCue(el, sliceBegin, sliceEnd, sliceRuns, sliceStyle, sliceRegion),
-        key = cueRenderKey(cue);
-
-      if (prev && prevKey === key) {
-        // Coalesce: the animation did not change what is rendered.
-        prev.endTime = sliceEnd;
-        continue;
+      // Hidden for this interval: flush, nothing to coalesce with.
+      for (const [id, prev] of pending) {
+        if (seen.has(id)) continue;
+        this._emit(prev.cue);
+        pending.delete(id);
       }
-
-      if (prev) this._emit(prev);
-      prev = cue;
-      prevKey = key;
     }
 
-    if (prev) this._emit(prev);
+    for (const prev of pending.values()) this._emit(prev.cue);
+
+    return end;
   }
 
-  /** Collects `<set>` animations on a paragraph and its descendant spans in document time. */
+  /**
+   * Collects `<set>` animations on a paragraph and its descendant spans in document time, plus
+   * the end times of spans with `end`/`dur` (the paragraph is sliced there so they disappear).
+   */
   protected _collectAnimations(
     el: XMLElement,
     begin: number,
     end: number | undefined,
     out: TTMLAnimation[],
+    spanEnds: number[],
   ) {
     for (const node of el.children) {
       if (typeof node === 'string') continue;
@@ -1104,9 +1567,10 @@ export class TTMLParser implements CaptionsParser {
           break;
         default: {
           // Mirrors `_collectRuns`: a timed span shifts the origin of its own animations. Errors
-          // in the expression are reported when the runs are collected.
-          const offset = node.attrs.begin ? parseTTMLTime(node.attrs.begin, this._time) : null;
-          this._collectAnimations(node, begin + (offset || 0), end, out);
+          // in the expressions are reported when the runs are collected.
+          const timing = this._silentTiming(node, begin);
+          if (timing.end !== undefined) spanEnds.push(timing.end);
+          this._collectAnimations(node, timing.begin, timing.end ?? end, out, spanEnds);
         }
       }
     }
@@ -1142,7 +1606,14 @@ export class TTMLParser implements CaptionsParser {
     end: number,
     url: string,
     region: TTMLRegion | undefined,
+    forced: boolean,
   ) {
+    if (region) {
+      if (region.begin > begin) begin = region.begin;
+      if (region.end !== undefined && region.end < end) end = region.end;
+    }
+    if (end <= begin) return;
+
     const cue = new VTTCue(begin, end, '');
 
     if (el.attrs.id) cue.id = el.attrs.id;
@@ -1152,6 +1623,7 @@ export class TTMLParser implements CaptionsParser {
       : { left: 0, top: 0, width: 100, height: 100 };
 
     cue.textStyle = { backgroundImage: `url(${url})`, backgroundColor: 'transparent' };
+    if (forced) cue.textStyle.className = 'forced';
 
     this._emit(cue);
   }
@@ -1163,6 +1635,7 @@ export class TTMLParser implements CaptionsParser {
     runs: TextRun[],
     style: TTMLStyle,
     region: TTMLRegion | undefined,
+    spans: Record<string, CueSpanStyle>,
   ) {
     const cue = new VTTCue(begin, end, serializeRuns(runs, begin));
 
@@ -1218,30 +1691,67 @@ export class TTMLParser implements CaptionsParser {
       cue.align = style.textAlign as VTTCue['align'];
     }
 
-    const fontSize = toCSSFontSize(style.fontSize, this._cellRows, this._rootHeight);
-    if (fontSize) cue.textStyle = { ...cue.textStyle, fontSize };
+    const rows = this._cellRows,
+      rootHeight = this._rootHeight,
+      textStyle: CueTextStyle = {};
+
+    const fontSize = toCSSFontSize(style.fontSize, rows, rootHeight, false);
+    if (fontSize) textStyle.fontSize = fontSize;
+
+    const lineHeight = toCSSLineHeight(style.lineHeight, rows, rootHeight);
+    if (lineHeight) textStyle.lineHeight = lineHeight;
+
+    const textStroke = style.textOutline
+      ? toCSSTextStroke(style.textOutline, rows, rootHeight)
+      : null;
+    if (textStroke && textStroke !== '0') textStyle.textStroke = textStroke;
+
+    const textShadow = style.textShadow
+      ? toCSSTextShadow(style.textShadow, rows, rootHeight)
+      : null;
+    if (textShadow && textShadow !== 'none') textStyle.textShadow = textShadow;
 
     // `tts:opacity` is not inherited, so it only applies from the paragraph or its region.
     const opacity = toOpacity(style.opacity ?? region?.style.opacity);
-    if (opacity !== null) cue.textStyle = { ...cue.textStyle, opacity };
+    if (opacity !== null) textStyle.opacity = opacity;
+
+    // Hosts that only want forced narrative subtitles filter cues by this class.
+    if (isForced(style)) textStyle.className = 'forced';
+
+    if (Object.keys(textStyle).length) cue.textStyle = textStyle;
+
+    let used: Record<string, CueSpanStyle> | undefined;
+    for (const run of runs) {
+      if (run.spanKey && spans[run.spanKey]) (used ??= {})[run.spanKey] = spans[run.spanKey];
+    }
+    if (used) cue.spans = used;
 
     return cue;
   }
 
   protected _collectRuns(el: XMLElement, ctx: InlineContext, runs: TextRun[]) {
-    const tags = buildTags(ctx),
-      // `tts:visibility="hidden"` content is not rendered (a descendant may turn it back on).
-      hidden = ctx.style.visibility?.trim() === 'hidden';
+    // `tts:display="none"` removes the subtree; `tts:visibility="hidden"` content is not
+    // rendered (a descendant may turn it back on).
+    if (!ctx.probe && ctx.style.display?.trim() === 'none') return;
+
+    const spanKey = this._spanKey(ctx),
+      tags = buildTags(ctx, spanKey),
+      hidden = !ctx.probe && ctx.style.visibility?.trim() === 'hidden',
+      // Text directly inside ruby containers is only inter-element whitespace.
+      rubyContainer = RUBY_CONTAINERS.has(ctx.style.ruby ?? '');
 
     for (const node of el.children) {
       if (typeof node === 'string') {
-        if (hidden) continue;
+        if (hidden || rubyContainer) continue;
         runs.push({
           text: node,
           tags,
           preserve: ctx.preserve,
           br: false,
           timestamp: ctx.timestamp,
+          region: ctx.region,
+          spanKey,
+          rt: ctx.rt,
         });
         continue;
       }
@@ -1249,7 +1759,16 @@ export class TTMLParser implements CaptionsParser {
       switch (node.name) {
         case 'br':
           if (hidden) break;
-          runs.push({ text: '\n', tags, preserve: true, br: true, timestamp: undefined });
+          runs.push({
+            text: '\n',
+            tags,
+            preserve: true,
+            br: true,
+            timestamp: undefined,
+            region: ctx.region,
+            spanKey,
+            rt: ctx.rt,
+          });
           break;
         case 'metadata':
         case 'set':
@@ -1264,26 +1783,100 @@ export class TTMLParser implements CaptionsParser {
           const sets = this._activeSets.get(node);
           if (sets) Object.assign(style, sets);
 
+          if (ctx.probe) {
+            this._parseTime(node.attrs.begin, node.line);
+            this._parseTime(node.attrs.end, node.line);
+            this._parseTime(node.attrs.dur, node.line);
+          }
+
+          const timing = this._silentTiming(node, ctx.begin);
+          // Already finished, or not started, within the interval being collected.
+          if (timing.end !== undefined && timing.end <= ctx.at) break;
+          if (timing.begin >= ctx.until) break;
+
           const child: InlineContext = {
-            begin: ctx.begin,
+            ...ctx,
+            begin: timing.begin,
             style,
             lang: node.attrs.lang ?? ctx.lang,
-            baseLang: ctx.baseLang,
             preserve: node.attrs.space ? node.attrs.space === 'preserve' : ctx.preserve,
             inRuby: ctx.inRuby || style.ruby === 'container',
-            timestamp: ctx.timestamp,
+            timestamp: timing.ownBegin ? timing.begin : ctx.timestamp,
+            region: node.attrs.region ?? ctx.region,
+            rt: style.ruby === 'text' ? node : ctx.rt,
           };
-
-          const begin = this._parseTime(node.attrs.begin, node.line);
-          if (typeof begin === 'number') {
-            child.begin = ctx.begin + begin;
-            child.timestamp = child.begin;
-          }
 
           this._collectRuns(node, child, runs);
         }
       }
     }
+  }
+
+  /**
+   * Registers a `cue.spans` entry for a span whose resolved typography differs from the
+   * paragraph's, returning its key. Exact WebVTT palette colours keep using `<c.COLOR>` classes.
+   */
+  protected _spanKey(ctx: InlineContext): string | undefined {
+    const s = ctx.style,
+      p = ctx.pStyle;
+    if (s === p) return;
+
+    const rows = this._cellRows,
+      rootHeight = this._rootHeight,
+      span: CueSpanStyle = {};
+
+    if (s.fontSize !== p.fontSize) {
+      // Relative to the paragraph font size, which the cue element carries.
+      const value = toCSSFontSize(s.fontSize, rows, rootHeight, true);
+      if (value) span.fontSize = value;
+    }
+
+    if (s.fontFamily !== p.fontFamily) {
+      const value = toCSSFontFamily(s.fontFamily);
+      if (value) span.fontFamily = value;
+    }
+
+    if (s.textOutline !== p.textOutline) {
+      const value = toCSSTextStroke(s.textOutline ?? 'none', rows, rootHeight);
+      if (value) span.textStroke = value;
+    }
+
+    if (s.color !== p.color && !toVTTColor(s.color, true)) {
+      const value = toCSSColor(s.color);
+      if (value) span.color = value;
+    }
+
+    // A transparent span background needs no style: the paragraph's palette class is simply not
+    // applied to the span (non-palette paragraph backgrounds are not rendered at all).
+    if (
+      s.backgroundColor !== p.backgroundColor &&
+      !toVTTColor(s.backgroundColor, true) &&
+      !isTransparent(s.backgroundColor)
+    ) {
+      const value = toCSSColor(s.backgroundColor);
+      if (value) span.backgroundColor = value;
+    }
+
+    if (s.opacity !== p.opacity) {
+      const num = parseFloat(s.opacity ?? '1');
+      if (num >= 0) span.opacity = String(Math.min(1, num));
+    }
+
+    if (s.textShadow !== p.textShadow) {
+      const value = toCSSTextShadow(s.textShadow ?? 'none', rows, rootHeight);
+      if (value) span.textShadow = value;
+    }
+
+    const json = JSON.stringify(span);
+    if (json === '{}') return;
+
+    let key = ctx.spans.keys.get(json);
+    if (!key) {
+      key = String(ctx.spans.keys.size + 1);
+      ctx.spans.keys.set(json, key);
+      ctx.spans.styles[key] = span;
+    }
+    return key;
   }
 
   protected _buildError(code: ParseError['code'], reason: string, line: number) {
@@ -1326,6 +1919,14 @@ function round(num: number, precision = 5) {
   return Math.round(num * factor) / factor;
 }
 
+function isActive(anim: TTMLAnimation, time: number) {
+  return anim.begin <= time && (anim.end === undefined || anim.end > time);
+}
+
+function isForced(style: TTMLStyle) {
+  return style.forcedDisplay?.trim() === 'true';
+}
+
 /** Returns the next `p` element sibling starting at `from`, if any. */
 function nextParagraph(nodes: (XMLElement | string)[], from: number): XMLElement | undefined {
   for (let i = from; i < nodes.length; i++) {
@@ -1335,37 +1936,157 @@ function nextParagraph(nodes: (XMLElement | string)[], from: number): XMLElement
 }
 
 /**
- * Converts a TTML `tts:fontSize` into a CSS value relative to the overlay. Two-value font sizes
- * use the second (vertical) value. Returns `null` for unsupported units.
+ * When every run of a cue is timed and begins after the slice, the cue can simply start with the
+ * first of them instead of showing an empty box until then.
+ */
+function leadTimestamp(runs: TextRun[], begin: number): number | undefined {
+  let min: number | undefined;
+  for (const run of runs) {
+    if (run.br) continue;
+    if (run.timestamp === undefined || run.timestamp <= begin) return;
+    if (min === undefined || run.timestamp < min) min = run.timestamp;
+  }
+  return min;
+}
+
+/**
+ * Converts a TTML length into a CSS value relative to the overlay.
  *
- * - `%`: relative to the default font size (5% of the overlay height).
+ * - `%`: relative to the default font size (5% of the overlay height), or when `relative` to the
+ *   inherited font size as `em` (span font sizes, outlines, shadows).
  * - `c`: cell units, one cell being `1 / rows` of the overlay height.
  * - `px`: relative to the root container height (`tts:extent` on `<tt>`, default 1080).
+ * - `rw` / `rh` (TTML2): percentages of the overlay width / height.
  * - `em`: passed through, relative to the inherited font size.
  */
-function toCSSFontSize(value: string | undefined, rows: number, rootHeight: number) {
-  if (!value) return null;
-
-  const parts = value.trim().split(WHITESPACE_RE),
-    match = LENGTH_RE.exec(parts[parts.length - 1]);
-
+function toCSSLength(value: string, rows: number, rootHeight: number, relative: boolean) {
+  const match = LENGTH_RE.exec(value);
   if (!match) return null;
 
   const num = parseFloat(match[1]);
-  if (!(num > 0)) return null;
 
   switch (match[2]) {
     case '%':
-      return `calc(var(--overlay-height) * ${BASE_FONT_SIZE} * ${round(num / 100)})`;
+      return relative
+        ? `${round(num / 100)}em`
+        : `calc(var(--overlay-height) * ${BASE_FONT_SIZE} * ${round(num / 100)})`;
     case 'c':
       return `calc(var(--overlay-height) * ${round(num / rows)})`;
     case 'px':
       return `calc(var(--overlay-height) * ${round(num / rootHeight)})`;
+    case 'rh':
+      return `calc(var(--overlay-height) * ${round(num / 100)})`;
+    case 'rw':
+      return `calc(var(--overlay-width) * ${round(num / 100)})`;
     case 'em':
       return `${num}em`;
     default:
       return null;
   }
+}
+
+/**
+ * Converts a TTML `tts:fontSize` into a CSS value. Two-value font sizes use the second
+ * (vertical) value. Returns `null` for unsupported units.
+ */
+function toCSSFontSize(
+  value: string | undefined,
+  rows: number,
+  rootHeight: number,
+  relative: boolean,
+) {
+  if (!value) return null;
+
+  const parts = value.trim().split(WHITESPACE_RE),
+    size = parts[parts.length - 1];
+
+  if (!(parseFloat(size) > 0)) return null;
+  return toCSSLength(size, rows, rootHeight, relative);
+}
+
+/** Converts `tts:lineHeight` to CSS: `normal`, a unitless multiple for `%`, or a scaled length. */
+function toCSSLineHeight(value: string | undefined, rows: number, rootHeight: number) {
+  if (!value) return null;
+
+  const text = value.trim();
+  if (text === 'normal') return text;
+
+  const match = LENGTH_RE.exec(text);
+  if (!match || !(parseFloat(match[1]) >= 0)) return null;
+  if (match[2] === '%') return String(round(parseFloat(match[1]) / 100));
+  return toCSSLength(text, rows, rootHeight, true);
+}
+
+/**
+ * Converts `tts:textOutline` (`none | <color>? <length> <length>?`) to a CSS text stroke
+ * (`<width> <color>`); the blur radius has no CSS equivalent. `none` yields `0`.
+ */
+function toCSSTextStroke(value: string, rows: number, rootHeight: number) {
+  const text = value.trim();
+  if (!text) return null;
+  if (text === 'none') return '0';
+
+  const parts = text.split(WHITESPACE_RE);
+  let color: string | null = null,
+    i = 0;
+
+  if (!LENGTH_RE.test(parts[0])) {
+    color = toCSSColor(parts[0]);
+    if (!color) return null;
+    i = 1;
+  }
+
+  if (!parts[i] || !(parseFloat(parts[i]) >= 0)) return null;
+  const width = toCSSLength(parts[i], rows, rootHeight, true);
+  if (!width) return null;
+
+  return color ? `${width} ${color}` : width;
+}
+
+/** Converts `tts:textShadow` (`none | [<length>{2,3} <color>?]#`) to CSS `text-shadow`. */
+function toCSSTextShadow(value: string, rows: number, rootHeight: number) {
+  const text = value.trim();
+  if (!text) return null;
+  if (text === 'none') return 'none';
+
+  const shadows: string[] = [];
+
+  for (const part of text.split(',')) {
+    const lengths: string[] = [];
+    let color: string | null = null;
+
+    for (const token of part.trim().split(WHITESPACE_RE)) {
+      if (LENGTH_RE.test(token)) {
+        const length = toCSSLength(token, rows, rootHeight, true);
+        if (!length) return null;
+        lengths.push(length);
+      } else {
+        color = toCSSColor(token);
+        if (!color) return null;
+      }
+    }
+
+    if (lengths.length < 2 || lengths.length > 3) return null;
+    shadows.push(color ? `${lengths.join(' ')} ${color}` : lengths.join(' '));
+  }
+
+  return shadows.join(', ');
+}
+
+/** Maps a TTML `tts:fontFamily` list to CSS, translating generic family names. */
+function toCSSFontFamily(value: string | undefined) {
+  if (!value) return null;
+
+  const families: string[] = [];
+  for (const part of value.split(',')) {
+    const name = part.trim().replace(QUOTES_RE, '').trim();
+    if (!name) continue;
+    const generic = FONT_FAMILIES[name];
+    if (generic === '') continue; // `default`: leave the host font alone
+    families.push(generic ?? (WHITESPACE_RE.test(name) ? `"${name}"` : name));
+  }
+
+  return families.length ? families.join(', ') : null;
 }
 
 /** Converts `tts:opacity` to a CSS value, or `null` when absent, invalid, or fully opaque. */
@@ -1384,6 +2105,7 @@ function cueRenderKey(cue: VTTCue) {
   return JSON.stringify([
     cue.text,
     cue.textStyle,
+    cue.spans,
     cue.vertical,
     cue.snapToLines,
     cue.line,
@@ -1404,8 +2126,31 @@ function inheritedStyle(style: TTMLStyle): TTMLStyle {
   return result;
 }
 
-/** Maps a TTML colour to one of the WebVTT colour names, or `null` if not supported. */
-function toVTTColor(value: string | undefined): string | null {
+/**
+ * The alpha of a TTML `rgba()` component: TTML uses `0-255`, but CSS-style fractions are common
+ * in the wild and are recognised by their decimal point.
+ */
+function rgbaAlpha(text: string) {
+  const num = parseFloat(text);
+  return text.includes('.') && num <= 1 ? num : Math.min(255, num) / 255;
+}
+
+/** Whether a TTML colour is fully transparent. */
+function isTransparent(value: string | undefined) {
+  if (!value) return false;
+  const color = value.trim().toLowerCase();
+  if (color === 'transparent') return true;
+  const hex = HEX_COLOR_RE.exec(color);
+  if (hex) return hex[2] === '00';
+  const rgb = RGB_COLOR_RE.exec(color);
+  return !!rgb && rgb[4] !== undefined && rgbaAlpha(rgb[4]) === 0;
+}
+
+/**
+ * Maps a TTML colour to one of the WebVTT colour names, or `null` if not supported. With
+ * `exact`, translucent colours do not match either.
+ */
+function toVTTColor(value: string | undefined, exact = false): string | null {
   if (!value) return null;
 
   const color = value.trim().toLowerCase();
@@ -1414,11 +2159,16 @@ function toVTTColor(value: string | undefined): string | null {
   let match = HEX_COLOR_RE.exec(color);
   if (match) {
     if (match[2] === '00') return null; // fully transparent
+    if (exact && match[2] && match[2] !== 'ff') return null;
     return COLOR_NAMES[match[1]] ?? null;
   }
 
   match = RGB_COLOR_RE.exec(color);
   if (match) {
+    if (match[4] !== undefined) {
+      const alpha = rgbaAlpha(match[4]);
+      if (alpha === 0 || (exact && alpha < 1)) return null;
+    }
     const hex = [match[1], match[2], match[3]]
       .map((n) => Math.min(255, +n).toString(16).padStart(2, '0'))
       .join('');
@@ -1428,21 +2178,43 @@ function toVTTColor(value: string | undefined): string | null {
   return null;
 }
 
+/** Converts a TTML colour (named, `#rrggbb[aa]`, `rgb()`, `rgba()`) to CSS. */
+function toCSSColor(value: string | undefined): string | null {
+  if (!value) return null;
+
+  const color = value.trim().toLowerCase();
+  if (COLOR_NAME_RE.test(color) || HEX_COLOR_RE.test(color)) return color;
+
+  const match = RGB_COLOR_RE.exec(color);
+  if (!match) return null;
+
+  const [r, g, b] = [match[1], match[2], match[3]].map((n) => Math.min(255, +n));
+  if (match[4] === undefined) return `rgb(${r}, ${g}, ${b})`;
+  return `rgba(${r}, ${g}, ${b}, ${round(rgbaAlpha(match[4]), 3)})`;
+}
+
 /** Builds the ordered list of WebVTT tags that apply to text within the given context. */
-function buildTags(ctx: InlineContext): string[] {
-  const { style } = ctx,
+function buildTags(ctx: InlineContext, spanKey: string | undefined): string[] {
+  const { style, pStyle } = ctx,
     tags: string[] = [];
 
   if (ctx.lang && ctx.lang !== ctx.baseLang) tags.push('lang ' + ctx.lang);
   if (ctx.inRuby) tags.push('ruby');
   if (ctx.inRuby && style.ruby === 'text') tags.push('rt');
 
-  const classes: string[] = [],
-    color = toVTTColor(style.color),
-    bgColor = toVTTColor(style.backgroundColor);
+  // A span colour that differs from the paragraph's only maps to a palette class when it is
+  // exactly that colour; otherwise `_spanKey` carries it as a span style.
+  const inSpan = style !== pStyle,
+    classes: string[] = [],
+    color = toVTTColor(style.color, inSpan && style.color !== pStyle.color),
+    bgColor = toVTTColor(
+      style.backgroundColor,
+      inSpan && style.backgroundColor !== pStyle.backgroundColor,
+    );
 
   if (color) classes.push(color);
   if (bgColor) classes.push('bg_' + bgColor);
+  if (spanKey) classes.push('s-' + spanKey);
   if (classes.length) tags.push('c.' + classes.join('.'));
 
   if (style.fontWeight === 'bold') tags.push('b');
@@ -1534,7 +2306,8 @@ function closingTag(tag: string) {
 /** Serializes text runs into WebVTT cue text. */
 function serializeRuns(runs: TextRun[], cueStart: number) {
   let text = '',
-    lastTimestamp: number | undefined;
+    lastTimestamp: number | undefined,
+    lastRt: XMLElement | undefined;
 
   const open: string[] = [];
 
@@ -1548,6 +2321,13 @@ function serializeRuns(runs: TextRun[], cueStart: number) {
     while (common < open.length && common < run.tags.length && open[common] === run.tags[common]) {
       common++;
     }
+
+    // Consecutive ruby texts share tags but must not merge into one annotation.
+    if (run.rt && lastRt && run.rt !== lastRt) {
+      const rt = run.tags.indexOf('rt');
+      if (rt >= 0 && rt < common) common = rt;
+    }
+    lastRt = run.rt;
 
     while (open.length > common) text += `</${closingTag(open.pop()!)}>`;
 

@@ -24,11 +24,12 @@ test('GOOD: cell units resolve against ttp:cellResolution', async () => {
   expect(errors).toHaveLength(0);
   expect(cues).toHaveLength(1);
 
-  // 4/40 = 10%, 18/24 = 75%, 32/40 = 80%, 3/24 = 12.5%
+  // 4/40 = 10%, 18/24 = 75%, 32/40 = 80%, 3/24 = 12.5%, then the padding insets the box by
+  // 0.5/40 = 1.25% on the sides and 1/24 = 4.1667% on the top and bottom.
   expect(cues[0].snapToLines).toBe(false);
-  expect(cues[0].position).toBe(10);
-  expect(cues[0].size).toBe(80);
-  expect(cues[0].line).toBe(87.5);
+  expect(cues[0].position).toBeCloseTo(11.25);
+  expect(cues[0].size).toBeCloseTo(77.5);
+  expect(cues[0].line).toBeCloseTo(87.5 - 100 / 24);
   expect(cues[0].lineAlign).toBe('end');
   expect(cues[0].vertical).toBe('');
   expect(cues[0].textStyle).toEqual({ fontSize: 'calc(var(--overlay-height) * 0.04167)' });
