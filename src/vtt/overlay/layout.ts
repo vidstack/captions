@@ -16,8 +16,11 @@ export interface CueLayoutInput {
   vertical: '' | 'rl' | 'lr';
   /** Explicitly positioned cues are never moved, but everything else avoids them. */
   fixed: boolean;
-  /** Set when an explicit top/bottom position was supplied via styles. */
-  positionOverride: false | 'top' | 'bottom';
+  /**
+   * Set when the box already has an explicit position along its block axis (from `layout`, raw
+   * styles, or a previous layout pass): it keeps that position instead of being snapped.
+   */
+  positionOverride: false | 'top' | 'bottom' | 'left' | 'right';
 }
 
 export interface RegionLayoutInput {
@@ -51,7 +54,14 @@ export function layoutItem(container: Box, item: LayoutInput, placed: Box[]): Bo
   let axis: DirectionalAxis[];
 
   if (item.positionOverride) {
-    axis = [item.positionOverride === 'top' ? '+y' : '-y', '+x', '-x'];
+    axis =
+      item.positionOverride === 'top'
+        ? ['+y', '+x', '-x']
+        : item.positionOverride === 'bottom'
+          ? ['-y', '+x', '-x']
+          : item.positionOverride === 'left'
+            ? ['+x', '+y', '-y']
+            : ['-x', '+y', '-y'];
   } else if (item.snapToLines) {
     axis = snapToLine(container, item, box);
   } else {

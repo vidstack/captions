@@ -11,7 +11,7 @@ import {
 } from './box';
 import type { CueLayoutInput } from './layout';
 
-const BOX_SIDES_STYLE = ['top', 'bottom'] as const;
+const BLOCK_SIDES = { horizontal: ['top', 'bottom'], vertical: ['left', 'right'] } as const;
 
 /** Measurements that only change when the cue's content or the overlay size changes. */
 export interface CueMeasureCache {
@@ -22,7 +22,7 @@ export interface CueMeasureCache {
    * scale), as container fractions. Collisions are computed on this one.
    */
   visualBox: { top: number; left: number; right: number; bottom: number };
-  positionOverride: false | 'top' | 'bottom';
+  positionOverride: false | 'top' | 'bottom' | 'left' | 'right';
   lineHeight: number;
 }
 
@@ -87,13 +87,13 @@ function createMeasureCache(
     layout = createBox(displayEl),
     cueEl = displayEl.firstElementChild ?? displayEl;
 
-  // Explicit top/bottom positions (via `layout` or raw `--cue-*` styles) turn off line snapping
-  // for horizontal cues; vertical cues use top as their position along the line axis.
+  // An explicit position along the block axis (from `layout`, raw `--cue-*` styles, or the
+  // previous layout pass after a resize) turns off line snapping: the box keeps its place instead
+  // of having the line offset applied again. Horizontal cues are positioned by top/bottom;
+  // vertical cues by left/right (their top is the position along the line axis).
   let positionOverride: CueMeasureCache['positionOverride'] = false;
-  if (isHorizontal) {
-    for (const side of BOX_SIDES_STYLE) {
-      if (displayEl.style.getPropertyValue(`--cue-${side}`).trim()) positionOverride = side;
-    }
+  for (const side of BLOCK_SIDES[isHorizontal ? 'horizontal' : 'vertical']) {
+    if (displayEl.style.getPropertyValue(`--cue-${side}`).trim()) positionOverride = side;
   }
 
   // Painted box relative to the offset parent, corrected for any ancestor scaling. Only needed

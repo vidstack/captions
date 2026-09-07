@@ -226,3 +226,34 @@ test('cue text uses balanced wrapping', async () => {
   expect(style.textWrapStyle ?? style.getPropertyValue('text-wrap')).toContain('balance');
   expect(rect(box).height).toBeGreaterThan(parseFloat(style.lineHeight) * 1.5);
 });
+
+test('re-layout after a resize keeps percentage and vertical positions instead of re-applying them', async () => {
+  const percent = cue(0, 10, 'Percent', { snapToLines: false, line: 30, lineAlign: 'center' }),
+    vertical = cue(0, 10, '縦書き', {
+      vertical: 'rl',
+      snapToLines: false,
+      line: 60,
+      lineAlign: 'end',
+    }),
+    snapped = cue(0, 10, 'Line two', { line: 2 });
+  fixture.renderer.changeTrack({ cues: [percent, vertical, snapped] });
+  fixture.renderer.currentTime = 1;
+  await nextFrame();
+  const before = cueDisplays(fixture.overlay).map((el) => rect(el));
+
+  // The initial ResizeObserver callback (debounced) and a real resize both re-measure.
+  await sleep(150);
+  fixture.viewport.style.width = `${VIEWPORT_WIDTH + 80}px`;
+  await sleep(150);
+  const after = cueDisplays(fixture.overlay).map((el) => rect(el)),
+    frame = rect(fixture.viewport);
+
+  // Percentage line: still centred on 30% of the height.
+  expect(
+    Math.abs((after[0].top + after[0].height / 2 - frame.top) / frame.height - 0.3),
+  ).toBeLessThan(0.02);
+  // Vertical: right edge still at 60% of the (new) width, not pushed to the edge.
+  expect(Math.abs((after[1].right - frame.left) / frame.width - 0.6)).toBeLessThan(0.03);
+  // Snapped: same line as before.
+  expect(Math.abs(after[2].top - before[2].top)).toBeLessThan(2);
+});
