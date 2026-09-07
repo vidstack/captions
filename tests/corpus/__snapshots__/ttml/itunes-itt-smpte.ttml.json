@@ -1,0 +1,150 @@
+{
+  "cueCount": 8,
+  "errors": [],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 2.5025,
+      "endTime": 5.1051,
+      "text": "<c.white>[PENSIVE MUSIC PLAYING]</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 100,
+      "lineAlign": "end",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "center",
+      "textStyle": {
+        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 5.138466666666667,
+      "endTime": 8.008000000000001,
+      "text": "<c.white><i>MAN (over radio):</i> All units, stand by.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 0,
+      "lineAlign": "start",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "center",
+      "textStyle": {
+        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 8.041366666666667,
+      "endTime": 11.678333333333333,
+      "text": "<c.white>WOMAN: We don't have\nmuch time.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 100,
+      "lineAlign": "end",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "center",
+      "textStyle": {
+        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 11.7117,
+      "endTime": 14.981633333333333,
+      "text": "<c.white>Then we'd better <b>move</b>.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 100,
+      "lineAlign": "end",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "center",
+      "textStyle": {
+        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 59.99326666666667,
+      "endTime": 62.12873333333334,
+      "text": "<c.white>One minute mark:\ndrop-frame timecode boundary.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 100,
+      "lineAlign": "end",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "center",
+      "textStyle": {
+        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 599.9326666666667,
+      "endTime": 600.3330666666667,
+      "text": "<c.white>Ten minute mark: no frames dropped here.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 100,
+      "lineAlign": "end",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "center",
+      "textStyle": {
+        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 3599.9964,
+      "endTime": 3602.9994,
+      "text": "<c.white>One hour in.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 100,
+      "lineAlign": "end",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "center",
+      "textStyle": {
+        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 3603.0327666666667,
+      "endTime": 3606.0024,
+      "text": "<c.white><b><i>[SIREN WAILING]</i></b></c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 100,
+      "lineAlign": "end",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "center",
+      "textStyle": {
+        "fontSize": "calc(var(--overlay-height) * 0.05 * 1)"
+      }
+    }
+  ]
+}

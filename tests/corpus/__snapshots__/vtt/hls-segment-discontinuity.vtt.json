@@ -1,0 +1,36 @@
+{
+  "cueCount": 2,
+  "errors": [],
+  "cues": [
+    {
+      "id": "1",
+      "startTime": 202.4,
+      "endTime": 204.1,
+      "text": "Live captions continue here.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": 50,
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "2",
+      "startTime": 204.1,
+      "endTime": 206.9,
+      "text": "The PTS wrapped, but the\nsegment keeps its local clock.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": 50,
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    }
+  ]
+}

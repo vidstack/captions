@@ -1,0 +1,26 @@
+0:00:00.000,0:00:03.000
+A valid first cue.
+
+0:00:03.000 , 0:00:05.000
+Spaces around the comma.
+
+0:00:05.000,0:00:04.000
+End before start.
+
+00:00:06,000 --> 00:00:07,000
+SRT timing in an SBV file.
+
+0:00:08.00,0:00:09.00
+Two-digit milliseconds.
+
+0:00:09.000,0:00:10.000
+
+0:00:10.000,0:00:11.000
+Previous cue had no text.
+0:00:11.000,0:00:12.000
+No blank line before this timing line.
+
+Text without a timing line at all.
+
+0:00:13.000,0:00:14.000
+Recovered.

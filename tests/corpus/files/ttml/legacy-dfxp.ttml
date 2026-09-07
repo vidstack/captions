@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tt xml:lang="en" xmlns="http://www.w3.org/2006/10/ttaf1" xmlns:tts="http://www.w3.org/2006/10/ttaf1#styling" xmlns:ttp="http://www.w3.org/2006/10/ttaf1#parameter" ttp:tickRate="10000000">
+  <head>
+    <styling>
+      <style id="s0" tts:backgroundColor="black" tts:fontStyle="normal" tts:fontSize="16" tts:fontFamily="Arial" tts:color="white"/>
+      <style id="s1" style="s0" tts:color="yellow"/>
+    </styling>
+    <layout>
+      <region id="r0" tts:origin="0px 0px" tts:extent="640px 480px"/>
+    </layout>
+  </head>
+  <body style="s0" region="r0">
+    <div xml:lang="en">
+      <p begin="10000000t" end="35000000t">Tick-based timing (10 MHz clock).</p>
+      <p begin="35000000t" end="60000000t" style="s1">Old DFXP namespace from 2006.</p>
+      <p begin="6.5s" end="9s">Seconds with a unit suffix.</p>
+      <p begin="9s" dur="2500ms">Milliseconds duration.</p>
+      <p begin="00:00:12.000" end="00:00:14.500">Clock time with<br/>a line break.</p>
+      <p begin="14.5s" end="17s"><span tts:color="#00FF00">Green span</span> in a paragraph.</p>
+      <p begin="17s" end="20s">&lt;html&gt; &amp; entities &#169; &#x263A;</p>
+      <p begin="20s" end="23s" tts:textAlign="left">Left aligned via an inline attribute.</p>
+      <p begin="23s" end="26s">
+        Whitespace-collapsed
+        multi-line source text.
+      </p>
+    </div>
+  </body>
+</tt>

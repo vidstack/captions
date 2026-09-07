@@ -1,0 +1,81 @@
+{
+  "cueCount": 5,
+  "errors": [],
+  "cues": [
+    {
+      "id": "1",
+      "startTime": 0,
+      "endTime": 1,
+      "text": "CRLF cue.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "2",
+      "startTime": 1,
+      "endTime": 2,
+      "text": "LF cue.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "3",
+      "startTime": 2,
+      "endTime": 3,
+      "text": "Bare CR cue.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "4",
+      "startTime": 3,
+      "endTime": 4,
+      "text": "Mixed within\none cue.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "5",
+      "startTime": 4,
+      "endTime": 5,
+      "text": "No trailing newline",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    }
+  ]
+}

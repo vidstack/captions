@@ -1,0 +1,56 @@
+WEBVTT - Styled with regions
+
+STYLE
+::cue {
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+STYLE
+::cue(.speaker) { color: yellow; font-weight: bold; }
+::cue(v[voice="Narrator"]) { font-style: italic; }
+::cue(b) { color: peachpuff; }
+
+REGION
+id:fred
+width:40%
+lines:3
+regionanchor:0%,100%
+viewportanchor:10%,90%
+scroll:up
+
+REGION
+id:bill
+width:40%
+lines:3
+regionanchor:100%,100%
+viewportanchor:90%,90%
+scroll:up
+
+NOTE
+Two speakers, one region each, plus a narrator using the default position.
+
+1
+00:00:00.000 --> 00:00:03.000 region:fred align:left
+<v Fred>Hi, my name is Fred.
+
+2
+00:00:02.500 --> 00:00:05.000 region:bill align:right
+<v Bill>Hi, I'm Bill.
+
+3
+00:00:05.000 --> 00:00:08.000 region:fred align:left
+<v Fred>Would you like to get a <b>coffee</b>?
+
+4
+00:00:07.500 --> 00:00:10.000 region:bill align:right
+<v Bill>Sure! I've only had <i>one</i> today.
+
+5
+00:00:10.000 --> 00:00:13.000 line:0
+<v Narrator>They did not get coffee.
+
+6
+00:00:13.000 --> 00:00:15.000
+<c.speaker>Fred:</c> Wait, what?

@@ -1,0 +1,86 @@
+{
+  "cueCount": 5,
+  "errors": [
+    "cue end timestamp `0:00:04.000` is not greater than start `0:00:05.000` on line 7",
+    "expected cue timing line `H:MM:SS.mmm,H:MM:SS.mmm` on line 10",
+    "expected cue timing line `H:MM:SS.mmm,H:MM:SS.mmm` on line 13",
+    "expected cue timing line `H:MM:SS.mmm,H:MM:SS.mmm` on line 23"
+  ],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 0,
+      "endTime": 3,
+      "text": "A valid first cue.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 3,
+      "endTime": 5,
+      "text": "Spaces around the comma.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 9,
+      "endTime": 10,
+      "text": "",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 10,
+      "endTime": 11,
+      "text": "Previous cue had no text.\n0:00:11.000,0:00:12.000\nNo blank line before this timing line.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 13,
+      "endTime": 14,
+      "text": "Recovered.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    }
+  ]
+}

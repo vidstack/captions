@@ -1,0 +1,12 @@
+WEBVTT
+X-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000
+
+00:00:00.000 --> 00:00:02.500 line:-2
+- Did you get the report?
+
+00:00:02.500 --> 00:00:04.800 line:-2
+- Not yet. The server's been down
+all morning.
+
+00:00:05.100 --> 00:00:06.000 line:-2
+(phone ringing)

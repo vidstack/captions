@@ -1,0 +1,33 @@
+WEBVTT
+
+1
+00:00:01.000 --> 00:00:00.500
+End before start.
+
+2
+00:00:02.000 -> 00:00:03.000
+Single dash arrow.
+
+3
+00:00:03.000 --> 00:00:04.000 line:abc position:200% size:-5 vertical:diagonal
+Bogus settings but a valid timing line.
+
+4
+1:00:04.000 --> 00:00:05.000
+Hour with one digit.
+
+5
+00:00:05.000 --> 00:00:06.000
+Cue text with --> arrow inside
+and an <unclosed tag
+
+00:00:06.000 --> 00:00:07,000
+Comma milliseconds on the end time.
+
+00:00:07.000 --> 00:00:08.000
+Cue with no blank line before the next one
+00:00:08.000 --> 00:00:09.000
+Timing line swallowed as text.
+
+00:99:10.000 --> 00:00:11.000
+Ninety-nine minutes.

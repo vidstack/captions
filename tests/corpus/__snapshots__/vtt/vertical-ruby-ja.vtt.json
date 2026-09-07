@@ -1,0 +1,66 @@
+{
+  "cueCount": 4,
+  "errors": [],
+  "cues": [
+    {
+      "id": "1",
+      "startTime": 1,
+      "endTime": 4,
+      "text": "<ruby>東京<rt>とうきょう</rt></ruby>へ行きました。",
+      "region": null,
+      "vertical": "rl",
+      "snapToLines": false,
+      "line": 10,
+      "lineAlign": "start",
+      "position": 90,
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "2",
+      "startTime": 4,
+      "endTime": 7,
+      "text": "<ruby>新幹線<rt>しんかんせん</rt></ruby>はとても<b>速い</b>です。",
+      "region": null,
+      "vertical": "rl",
+      "snapToLines": false,
+      "line": 10,
+      "lineAlign": "start",
+      "position": 90,
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "3",
+      "startTime": 7,
+      "endTime": 10,
+      "text": "<lang en>Bullet train</lang>と言います。",
+      "region": null,
+      "vertical": "lr",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "start",
+      "position": 10,
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "4",
+      "startTime": 10,
+      "endTime": 13,
+      "text": "<ruby>漢字<rt>かんじ</rt></ruby>と<ruby>仮名<rt>かな</rt></ruby>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": 0,
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 80,
+      "align": "center"
+    }
+  ]
+}

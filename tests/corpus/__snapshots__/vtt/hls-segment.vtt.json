@@ -1,0 +1,51 @@
+{
+  "cueCount": 3,
+  "errors": [],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 0,
+      "endTime": 2.5,
+      "text": "- Did you get the report?",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": -2,
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 2.5,
+      "endTime": 4.8,
+      "text": "- Not yet. The server's been down\nall morning.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": -2,
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 5.1,
+      "endTime": 6,
+      "text": "(phone ringing)",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": -2,
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    }
+  ]
+}

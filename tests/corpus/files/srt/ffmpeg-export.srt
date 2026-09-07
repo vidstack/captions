@@ -1,0 +1,41 @@
+1
+00:00:01,000 --> 00:00:03,500
+<font color="#ffff00">- Where are we going?</font>
+<font color="#00ffff">- Somewhere quiet.</font>
+
+2
+00:00:03,600 --> 00:00:06,000
+{\an8}[thunder rumbling]
+
+3
+00:00:06,100 --> 00:00:09,250
+<i>Previously on</i> <b>The Show</b>
+
+4
+00:00:09,300 --> 00:00:12,000
+<font face="Arial" size="24" color="red">Warning:</font> do not open the door.
+
+5
+00:00:12,000 --> 00:00:14,000
+{\an2}{\i1}Whispered.{\i0}
+
+6
+00:00:14,050 --> 00:00:16,900
+<font color=green>Green without quotes</font> and <u>underlined</u>.
+
+7
+00:00:17,000 --> 00:00:19,000
+{\an5}Centred on screen
+
+8
+00:00:19,000 --> 00:00:22,000
+<font color="#FFA500">Line one</font>
+<font color="#FFA500">Line two</font>
+
+9
+00:00:22,000 --> 00:00:25,000
+{\pos(640,50)}Positioned tag kept out of the text.
+
+10
+00:00:25,000 --> 00:00:28,000
+He said <s>"never"</s> "always".

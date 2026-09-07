@@ -1,0 +1,40 @@
+one
+00:00:01,000 --> 00:00:04,000
+Index is not a number.
+
+2
+00:00:03,000 --> 00:00:02,000
+Ends before it starts.
+
+3
+00:00:05,000 --> 00:00:08,000
+<b>Unclosed bold
+<i>and unclosed italic
+
+4
+00:00:08,000 --> 00:00:10,000 X1:100 X2:500 Y1:400 Y2:450
+Extended coordinates.
+
+5
+00:00:10,000 --> 00:00:12,000
+Cue with a --> arrow in the text.
+
+6
+00:00:12,000 --> 00:00:14,000
+</font>Stray closing font tag.
+
+7
+00:00:14,000 --> --> 00:00:16,000
+Double arrow.
+
+8
+00:00:16,000
+No end time.
+
+9
+--> 00:00:18,000
+No start time.
+
+10
+00:00:18,000 --> 00:00:20,000
+Recovered after several broken blocks.

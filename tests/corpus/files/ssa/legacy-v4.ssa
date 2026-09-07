@@ -1,0 +1,35 @@
+[Script Info]
+; This is a Sub Station Alpha v4 script.
+; For Sub Station Alpha info and downloads,
+; go to http://www.eswat.demon.co.uk/
+Title: Legacy SSA sample
+Original Script: someone
+ScriptType: v4.00
+Collisions: Normal
+PlayResY: 480
+PlayDepth: 0
+Timer: 100.0000
+
+[V4 Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, TertiaryColour, BackColour, Bold, Italic, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, AlphaLevel, Encoding
+Style: Default,Arial,20,16777215,65535,65535,-2147483640,-1,0,1,2,2,2,30,30,20,0,1
+Style: Top,Arial,20,16777215,65535,65535,-2147483640,0,0,1,2,2,6,30,30,20,0,1
+Style: Italic,Arial,20,65535,65535,65535,-2147483640,0,-1,1,2,2,2,30,30,20,0,1
+Style: Boxed,Arial,18,16777215,65535,65535,-2147483640,0,0,3,0,0,2,30,30,20,0,1
+
+[Events]
+Format: Marked, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: Marked=0,0:00:01.00,0:00:04.00,Default,,0000,0000,0000,,Legacy SSA dialogue on the bottom.
+Dialogue: Marked=0,0:00:04.00,0:00:07.00,Top,,0000,0000,0000,,Alignment 6 is top-centre in SSA v4.
+Dialogue: Marked=1,0:00:07.00,0:00:10.00,Italic,Narrator,0000,0000,0000,,Marked line with a name.
+Dialogue: Marked=0,0:00:10.00,0:00:13.00,Default,,0000,0000,0000,,Two lines\Nwith a hard break and a\nsoft break.
+Dialogue: Marked=0,0:00:13.00,0:00:16.00,Default,,0000,0000,0000,,{\a6}Old-style \a alignment override.
+Dialogue: Marked=0,0:00:16.00,0:00:19.00,Default,,0000,0000,0000,,{\a10}Middle via \a10.
+Dialogue: Marked=0,0:00:19.00,0:00:23.00,Boxed,,0000,0000,0000,,BorderStyle 3 puts a box behind the text.
+Dialogue: Marked=0,0:00:23.00,0:00:28.00,Default,,0000,0000,0000,!Effect,Effect field with a bang.
+Dialogue: Marked=0,0:00:28.00,0:00:34.00,Default,,0000,0000,0000,Banner;30,Banner scrolling across the bottom of the screen.
+Dialogue: Marked=0,0:00:34.00,0:00:40.00,Default,,0000,0000,0000,Scroll up;480;0;25,Scrolling credits\Nline two
+Dialogue: Marked=0,0:00:40.00,0:00:43.00,Default,,0000,0000,0000,,{\c&HFF00&}Green {\c&HFF&}red {\c}default.
+Dialogue: Marked=0,0:00:43.00,0:00:46.00,Default,,0060,0060,0040,,Per-line margins.
+Comment: Marked=0,0:00:46.00,0:00:47.00,Default,,0000,0000,0000,,A comment line.
+Dialogue: Marked=0,0:00:47.00,0:00:50.00,Default,,0000,0000,0000,,{\b1\i1\u1}All three{\b0\i0\u0} off.

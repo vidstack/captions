@@ -1,0 +1,36 @@
+[Script Info]
+Title: Deliberately broken
+ScriptType: v4.00+
+PlayResX: not-a-number
+PlayResY: 720
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, Bold, Alignment
+Style: Default,Arial,48,&H00FFFFFF,-1,2
+Style: Missing,Arial
+Style: NoName
+Style:
+
+[Events]
+Format: Layer, Start, End, Style, Text
+Dialogue: 0,0:00:01.00,0:00:03.00,Default,Short format line still works.
+Dialogue: 0,0:00:03.00,0:00:02.00,Default,End before start.
+Dialogue: 0,abc,0:00:05.00,Default,Bad start time.
+Dialogue: 0,0:00:05.00,def,Default,Bad end time.
+Dialogue: 0,0:00:06.00,0:00:07.00,Nope,Unknown style name.
+Dialogue: 0,0:00:08.00,0:00:09.00,Default,{\pos(a,b)\move(1,2)\fad(x)\t(\c)}Bad tag arguments.
+Dialogue: 0,0:00:09.00,0:00:10.00,Default,{\p1}m 0 0 l bogus path data{\p0}
+Dialogue: 0,0:00:10.00,0:00:11.00,Default,{\p1}m 0 0 l 100 0 l 100 100
+Dialogue: 0,0:00:11.00,0:00:12.00,Default,{\k}{\kf-5}{\ko99999999999}Odd karaoke durations.
+Dialogue: 0,0:00:12.00,0:00:13.00,Default,{\clip(1,2,3)}{\iclip(m 0 0)}Bad clips.
+Dialogue: 0,0:00:13.00,0:00:14.00,Default,{\c&HZZZZZZ&\1a&HGG&\fs-10\fscx0}Garbage values.
+Dialogue: 0,0:00:14.00,0:00:15.00,Default,{{{{}}}}{\\\\}Brace soup.
+Dialogue: 0,99:99:99.99,99:99:99.99,Default,Out of range times.
+Garbage line that is not a known event type
+Dialogue: 0,0:00:15.00,0:00:16.00,Default,Recovered.
+
+[Unknown Section]
+Key: Value
+
+[Events]
+Dialogue: 0,0:00:16.00,0:00:17.00,Default,Second events section without a Format line.

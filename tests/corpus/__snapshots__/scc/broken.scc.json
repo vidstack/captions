@@ -1,0 +1,60 @@
+{
+  "cueCount": 3,
+  "errors": [
+    "missing `Scenarist_SCC V1.0` file header",
+    "invalid SCC timecode on line 1",
+    "SCC timecode `00:00:03:75` is invalid on line 7",
+    "malformed hex word `942` on line 9",
+    "malformed hex word `zzzz` on line 9",
+    "invalid SCC timecode on line 11",
+    "malformed hex word `ff` on line 21",
+    "malformed hex word `fffff` on line 21"
+  ],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 2.002002002002002,
+      "endTime": 6.0060060060060065,
+      "text": "First caption.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 93.33333333333333,
+      "lineAlign": "start",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "left"
+    },
+    {
+      "id": "",
+      "startTime": 6.0060060060060065,
+      "endTime": 7.007007007007007,
+      "text": "Bad words in between.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 93.33333333333333,
+      "lineAlign": "start",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "left"
+    },
+    {
+      "id": "",
+      "startTime": 11.077744411077745,
+      "endTime": 11.478144811478145,
+      "text": "Roll-up after garbage.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 93.33333333333333,
+      "lineAlign": "start",
+      "position": 0,
+      "positionAlign": "line-left",
+      "size": 100,
+      "align": "left"
+    }
+  ]
+}

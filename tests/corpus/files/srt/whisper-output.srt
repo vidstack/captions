@@ -1,0 +1,39 @@
+1
+00:00:00,000 --> 00:00:04,560
+ Hello everyone and welcome back to the channel.
+
+2
+00:00:04,560 --> 00:00:08,720
+ Today we're going to be looking at something a little bit different.
+
+3
+00:00:08,720 --> 00:00:13,200
+ If you've been following along, you know that we usually cover hardware,
+
+4
+00:00:13,200 --> 00:00:16,400
+ but today it's all about software.
+
+5
+00:00:16,400 --> 00:00:19,480
+ Specifically, subtitle formats.
+
+6
+00:00:19,480 --> 00:00:23,720
+ Now I know what you're thinking, that sounds incredibly boring.
+
+7
+00:00:23,720 --> 00:00:25,680
+ And you're right, it kind of is.
+
+8
+00:00:25,680 --> 00:00:29,040
+ But stick with me because there's some interesting history here.
+
+9
+00:00:29,040 --> 00:00:29,040
+ 
+
+10
+00:00:29,040 --> 00:00:33,000
+ Let's go.

@@ -1,0 +1,45 @@
+1
+00:00:00,500  -->  00:00:02,000
+Extra spaces around the arrow.
+
+2
+00:00:02,000 --> 00:00:04,000   
+Trailing spaces on the timing line.   
+
+3
+00:00:04,000 --> 00:00:06,000
+ Leading space on the text line.
+	Tab-indented second line.
+
+
+4
+00:00:06,000 --> 00:00:08,000
+Two blank lines before this cue.
+5
+00:00:08,000 --> 00:00:10,000
+No blank line before the previous index.
+
+6
+00:00:10,000 --> 00:00:12,000
+
+
+
+7
+00:00:12,000 --> 00:00:14,000
+Cue six had an empty text body.
+
+ 8
+00:00:14,000 --> 00:00:16,000
+Index with a leading space.
+
+9
+00:00:16.000 --> 00:00:18.000
+Dots instead of commas.
+
+10
+00:00:18,00 --> 00:00:20,0
+Truncated milliseconds.
+
+11
+00:20,500 --> 00:22,000
+Minutes and seconds only.
