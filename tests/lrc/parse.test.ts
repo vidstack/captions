@@ -191,3 +191,9 @@ test('BAD: errors are not collected when disabled', async () => {
   const { errors } = await parseText('[00:xx.00]Broken', { type: 'lrc', errors: false });
   expect(errors).toHaveLength(0);
 });
+
+test('GOOD: repeated lines shift their word timings to each repeat', async () => {
+  const { cues } = await parseText('[00:10.00][00:20.00]<00:10.00>a <00:10.50>b', { type: 'lrc' });
+  expect(cues[0].text).toBe('a <00:00:10.500>b');
+  expect(cues[1].text).toBe('a <00:00:20.500>b');
+});

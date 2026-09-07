@@ -116,6 +116,7 @@ const DIGIT_RE = /[0-9]/,
   ]),
   HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
   SPAN_KEY_RE = /^s-(.+)$/,
+  MAX_DEPTH = 64,
   BLOCK_TYPES = /*#__PURE__*/ new Set(Object.keys(TAG_NAME));
 
 const enum Mode {
@@ -276,8 +277,13 @@ function tokenize(cue: VTTCue): VTTNode[] {
   }
 
   function addNode() {
-    // `<rt>` is only meaningful directly inside `<ruby>`; elsewhere it is an unknown tag.
-    if (BLOCK_TYPES.has(buffer) && (buffer !== 'rt' || node?.type === 'ruby')) {
+    // `<rt>` is only meaningful directly inside `<ruby>`; elsewhere it is an unknown tag. Nesting
+    // is capped so hostile input can not overflow the renderer's recursion.
+    if (
+      BLOCK_TYPES.has(buffer) &&
+      (buffer !== 'rt' || node?.type === 'ruby') &&
+      stack.length < MAX_DEPTH
+    ) {
       const parent = node;
       node = createBlockNode(buffer);
       if (parent) {

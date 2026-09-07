@@ -19,6 +19,8 @@ const LEADING_TAG_RE = /^\[([^\]]*)\]/,
 interface LRCLine {
   time: number;
   parts: (string | number)[];
+  /** Offset of this repeat from the first time tag on the line, added to word timings. */
+  shift: number;
 }
 
 export class LRCParser implements CaptionsParser {
@@ -78,7 +80,8 @@ export class LRCParser implements CaptionsParser {
     }
 
     const parts = this._parseText(text);
-    for (const time of times) this._lines.push({ time, parts });
+    // Repeated lines (`[t1][t2]text`) reuse the same word timings shifted to each repeat.
+    for (const time of times) this._lines.push({ time, parts, shift: time - times[0] });
   }
 
   done() {
@@ -101,7 +104,7 @@ export class LRCParser implements CaptionsParser {
     let boundaryIndex = 0;
 
     for (let i = 0; i < lines.length; i++) {
-      const { time, parts } = lines[i];
+      const { time, parts, shift } = lines[i];
 
       let end = -1;
 
@@ -127,7 +130,7 @@ export class LRCParser implements CaptionsParser {
         if (length !== null && length > end) end = length;
       }
 
-      const cue = new VTTCue(time, end, this._buildText(parts, time, offset));
+      const cue = new VTTCue(time, end, this._buildText(parts, time, offset, shift));
       cues.push(cue);
       this._init.onCue?.(cue);
     }
@@ -160,7 +163,7 @@ export class LRCParser implements CaptionsParser {
     return parts;
   }
 
-  protected _buildText(parts: (string | number)[], startTime: number, offset: number) {
+  protected _buildText(parts: (string | number)[], startTime: number, offset: number, shift = 0) {
     let text = '';
 
     for (let i = 0; i < parts.length; i++) {
@@ -168,7 +171,7 @@ export class LRCParser implements CaptionsParser {
       if (typeof part === 'string') {
         text += part;
       } else {
-        const time = this._applyOffset(part, offset);
+        const time = this._applyOffset(part + shift, offset);
         // Strip a leading inline tag that matches the line time as it's redundant.
         if (i === 0 && time === startTime) continue;
         text += `<${formatTimestamp(time)}>`;

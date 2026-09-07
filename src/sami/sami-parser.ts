@@ -9,8 +9,9 @@ const TAG_RE = /<(\/?)([a-zA-Z][\w:-]*)\s*([^>]*)>/y,
   CLASS_RULE_RE = /\.([\w-]+)\s*\{([^}]*)\}/g,
   // The bare `P { ... }` rule that applies to every paragraph.
   P_RULE_RE = /(?:^|[\s,}>])p\s*\{([^}]*)\}/i,
-  DECL_RE = /([\w-]+)\s*:\s*([^;]+)/g,
-  MARKUP_RE = /<[^>]*>/g,
+  // Lookbehind keeps the scan linear on long runs of word characters.
+  DECL_RE = /(?<![\w-])([\w-]+)\s*:\s*([^;]+)/g,
+  MARKUP_RE = /<[^<>]*>/g,
   // HTML whitespace (`&nbsp;` decodes to U+00A0 and is deliberately preserved).
   WS_RE = /[ \t\n\r\f]+/g,
   TRAILING_SPACE_RE = / ((?:<\/[a-z]+>)*)$/,

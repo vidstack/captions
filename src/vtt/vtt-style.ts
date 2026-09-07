@@ -1,4 +1,4 @@
-const RULE_RE = /([^{}]+)\{([^{}]*)\}/g,
+const RULE_RE = /(?<![^{}])([^{}]+)\{([^{}]*)\}/g,
   CUE_SELECTOR_RE = /::cue(?:\(([^)]*)\))?/g,
   REGION_SELECTOR_RE = /::cue-region(?:\(([^)]*)\))?/g,
   URL_RE = /url\s*\(|expression\s*\(|@import/i,

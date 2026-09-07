@@ -9,7 +9,7 @@ const MILLISECOND_SEP_RE = /,/g,
   COORDS_RE = /^[XY][12]:-?\d+$/i,
   // Common SSA/ASS override tags that survive SRT conversions (e.g., `{\an8}` for top placement).
   ALIGN_TAG_RE = /\{\\an?([1-9])\}/,
-  OVERRIDE_TAG_RE = /\{\\[^}]*\}/g,
+  OVERRIDE_TAG_RE = /\{\\[^{}]*\}/g,
   FONT_OPEN_RE = /<font\b([^>]*)>/gi,
   FONT_CLOSE_RE = /<\/font\s*>/gi,
   FONT_COLOR_RE = /color\s*=\s*["']?\s*([#\w]+)/i,

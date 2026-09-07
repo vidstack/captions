@@ -17,7 +17,7 @@ const FORMAT_START_RE = /^Format:[\s\t]*/,
   DIALOGUE_START_RE = /^Dialogue:[\s\t]*/,
   COMMENT_START_RE = /^Comment:/,
   FONT_NAME_RE = /^fontname:[\s\t]*(.+)$/i,
-  FORMAT_SPLIT_RE = /[\s\t]*,[\s\t]*/,
+  FORMAT_SPLIT_RE = /(?<![\s\t])[\s\t]*,[\s\t]*/,
   SECTION_RE = /^\[(.*)\]$/,
   SCRIPT_INFO_SECTION_RE = /^\[Script Info\]$/i,
   STYLES_SECTION_RE = /^\[.*Styles\]$/i,
@@ -450,7 +450,7 @@ export class SSAParser implements CaptionsParser {
   protected _parseDialogue(values: string[], lineCount: number) {
     const fields = this._buildFields(values);
 
-    const timestamp = this._parseTimestamp(fields.Start, fields.End, lineCount);
+    const timestamp = this._parseTimestamp(fields.Start ?? '', fields.End ?? '', lineCount);
     if (!timestamp) return;
 
     const cue = new VTTCue(timestamp[0], timestamp[1], ''),
@@ -897,7 +897,8 @@ export class SSAParser implements CaptionsParser {
                   delay: round(start - cue.startTime),
                   duration: syllable / 100,
                 };
-          karaokeTime += syllable / 100;
+          // Negative durations appear in broken files; never move the karaoke clock backwards.
+          karaokeTime += Math.max(0, syllable) / 100;
           break;
         }
         case 'p': {
@@ -992,9 +993,12 @@ export class SSAParser implements CaptionsParser {
       }
     };
 
+    // Only scan up to the last `}`: a `{` with no closing brace after it is plain text, and
+    // stopping there keeps `[^}]*` from rescanning to the end of the line at every such `{`.
+    const overrides = text.slice(0, text.lastIndexOf('}') + 1);
     OVERRIDE_BLOCK_RE.lastIndex = 0;
 
-    while ((match = OVERRIDE_BLOCK_RE.exec(text))) {
+    while ((match = OVERRIDE_BLOCK_RE.exec(overrides))) {
       appendText(text.slice(lastIndex, match.index));
       lastIndex = match.index + match[0].length;
       for (const tag of parseOverrideTags(match[1])) applyTag(tag.name, tag.arg);

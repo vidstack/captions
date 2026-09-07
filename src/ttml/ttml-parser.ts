@@ -7,10 +7,10 @@ const CLOCK_TIME_RE = /^(\d+):(\d{1,2}):(\d{1,2})(?:[.,](\d+)|:(\d+)(?:[.,](\d+)
   OFFSET_TIME_RE = /^(\d+(?:\.\d+)?|\.\d+)(h|m|s|ms|f|t)$/,
   ENTITY_RE = /&(#[xX][0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g,
   WHITESPACE_RE = /\s+/,
-  TRAILING_SPACES_RE = / +$/,
-  LENGTH_RE = /^(-?\d*\.?\d+)(%|px|c|em|rw|rh)?$/,
+  TRAILING_SPACES_RE = /(?<! ) +$/,
+  LENGTH_RE = /^(-?(?:\d*\.)?\d+)(%|px|c|em|rw|rh)?$/,
   HEX_COLOR_RE = /^#([0-9a-f]{6})([0-9a-f]{2})?$/,
-  RGB_COLOR_RE = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?\)$/,
+  RGB_COLOR_RE = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*((?:\d*\.)?\d+)\s*)?\)$/,
   COLOR_NAME_RE = /^[a-z]+$/,
   UNDERLINE_RE = /(^|\s)underline(\s|$)/,
   TAG_NAME_END_RE = /[ .]/,
@@ -272,6 +272,8 @@ function decodeEntities(text: string) {
  * A small tolerant XML parser. Namespace prefixes are stripped from element and attribute
  * names, `xmlns` declarations are dropped, comments/processing instructions/doctypes are ignored.
  */
+const MAX_XML_DEPTH = 256;
+
 function parseXML(text: string): XMLElement {
   const root: XMLElement = { name: '', attrs: {}, children: [], line: 1 },
     stack: XMLElement[] = [root],
@@ -392,7 +394,9 @@ function parseXML(text: string): XMLElement {
       }
 
       stack[stack.length - 1].children.push(el);
-      if (!selfClosing) stack.push(el);
+      // Beyond the depth cap, elements are treated as self-closing so hostile nesting can not
+      // overflow the recursive walkers; their content still parses as siblings.
+      if (!selfClosing && stack.length < MAX_XML_DEPTH) stack.push(el);
       advance(j);
     }
   }
