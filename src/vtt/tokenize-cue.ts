@@ -134,6 +134,18 @@ const enum Mode {
  * @see {@link https://www.w3.org/TR/webvtt1/#cue-text-parsing-rules}
  */
 export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
+  // Rendering re-tokenizes a cue every time its element is (re)created; cache on the cue and
+  // invalidate when the text or span table changes.
+  const cached = TOKEN_CACHE.get(cue);
+  if (cached && cached.text === cue.text && cached.spans === cue.spans) return cached.tokens;
+  const tokens = tokenize(cue);
+  TOKEN_CACHE.set(cue, { text: cue.text, spans: cue.spans, tokens });
+  return tokens;
+}
+
+const TOKEN_CACHE = new WeakMap<VTTCue, { text: string; spans: unknown; tokens: VTTNode[] }>();
+
+function tokenize(cue: VTTCue): VTTNode[] {
   let buffer = '',
     mode: Mode = Mode.Data,
     result: VTTNode[] = [],

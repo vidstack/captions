@@ -322,3 +322,15 @@ test('html entities', () => {
     ]
   `);
 });
+
+test('tokens are cached per cue and invalidated when text or spans change', () => {
+  const cue = new VTTCue(0, 1, '<b>a</b>');
+  const first = tokenizeVTTCue(cue);
+  expect(tokenizeVTTCue(cue)).toBe(first);
+  cue.text = '<i>b</i>';
+  const second = tokenizeVTTCue(cue);
+  expect(second).not.toBe(first);
+  expect((second[0] as { tagName: string }).tagName).toBe('i');
+  cue.spans = { x: { color: 'red' } };
+  expect(tokenizeVTTCue(cue)).not.toBe(second);
+});
