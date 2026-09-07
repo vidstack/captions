@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Modifications Copyright (c) 2017, Pierre-Anthony Lemieux (pal@palemieux.com)-->
+<tt xml:lang="en" xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" 
+xmlns:ttp="http://www.w3.org/ns/ttml#parameter" ttp:profile="http://www.w3.org/ns/ttml/profile/imsc1/text"
+xmlns:tts="http://www.w3.org/ns/ttml#styling"
+xmlns:itts="http://www.w3.org/ns/ttml/profile/imsc1#styling">
+	<head>
+		<layout>
+            <region xml:id="area1" tts:origin="20% 10%" tts:extent="60% 20%" tts:backgroundColor="black" tts:textAlign="center" tts:displayAlign="center" tts:color="white"/>
+            <region xml:id="area2" tts:origin="20% 70%" tts:extent="60% 20%" tts:backgroundColor="green" tts:textAlign="center" tts:displayAlign="center" tts:color="white" itts:forcedDisplay="true"/>
+		</layout>
+	</head>
+	<body tts:lineHeight="100%">
+		<div>			
+            <p region="area1" begin="1s" end="9s">Hidden if displayForcedOnlyMode is true.</p>
+            <p region="area2" begin="1s" end="9s">This text should be displayed in all circumstances.</p>
+		</div>
+	</body>
+</tt>

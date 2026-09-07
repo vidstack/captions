@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt:tt xmlns:tt="http://www.w3.org/ns/ttml" 
+    xmlns:ebutts="urn:ebu:tt:style" 
+    xmlns:ttp="http://www.w3.org/ns/ttml#parameter" 
+    xmlns="http://www.w3.org/ns/ttml" 
+    xmlns:tts="http://www.w3.org/ns/ttml#styling" 
+    ttp:profile="http://www.w3.org/ns/ttml/profile/imsc1/text"
+    xml:lang="en">
+    <body>
+        <div>
+            <p tts:backgroundColor="black" tts:color="yellow">
+        Hello, I am Mork from Ork 😀
+            </p>
+        </div>
+    </body>
+</tt:tt>

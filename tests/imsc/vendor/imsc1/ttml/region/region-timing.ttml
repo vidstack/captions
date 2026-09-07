@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt ttp:cellResolution="60 20" xml:lang="en"
+	xmlns="http://www.w3.org/ns/ttml"
+	xmlns:ttp="http://www.w3.org/ns/ttml#parameter" 
+	xmlns:tts="http://www.w3.org/ns/ttml#styling">
+  <head>
+    <layout>
+      <region xml:id="r1" begin="0s" end="10s" tts:backgroundColor="red" tts:color="white" tts:origin="5% 5%" tts:extent="80% 20%" tts:displayAlign="after" tts:showBackground="whenActive"/>
+      <region xml:id="r2" begin="10s" end="20s" tts:backgroundColor="green" tts:color="white" tts:origin="5% 25%" tts:extent="80% 40%" tts:displayAlign="after" tts:showBackground="whenActive"/>
+    </layout>
+  </head>
+ <body>
+   <div region="r1">
+     <p>This text should only appear during the interval [0s,10s)</p>
+   </div>
+   <div region="r2">
+     <p begin="5s" end="15s">This text should only appear during the interval [10s,15s)</p>
+     <p begin="12s" end="18s">This text should only appear during the interval [12s,18s)</p>
+     <p begin="10s" end="20s">This text should only appear during the interval [10s,20s)</p>
+     <p begin="16s" end="25s">This text should only appear during the interval [16s,20s)</p>
+   </div>
+ </body>
+</tt>
