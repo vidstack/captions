@@ -26,9 +26,9 @@ jobs:
           path: coverage
           if-no-files-found: ignore
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
-      # Screenshot baselines are recorded per platform; until Linux baselines are committed
-      # (see record-baselines.yml) the visual suite is skipped here.
-      - run: pnpm vp test --run --project browser --exclude tests/browser/visual.test.ts
+      # Includes the visual suite: its Linux Chromium baselines are committed (re-record them with
+      # record-baselines.yml after an intentional rendering change).
+      - run: pnpm vp test --run --project browser
         env:
           BROWSERS: chromium,firefox,webkit
       - run: pnpm build

@@ -1,8 +1,9 @@
 /**
  * Visual regression: renders representative scenarios in Chromium and compares against committed
  * screenshots. Baselines are stored per browser and platform under `__screenshots__`, so the first
- * run on a new platform records them instead of failing. Font rendering varies slightly between
- * Chromium builds, hence the small mismatch allowance.
+ * local run on a new platform records them instead of failing (CI fails on a missing baseline;
+ * `record-baselines.yml` records the Linux ones). Font rendering varies slightly between Chromium
+ * builds, hence the small mismatch allowance.
  */
 import { parseText, VTTRegion } from 'media-captions';
 import { page, server } from 'vitest/browser';

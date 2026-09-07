@@ -9,8 +9,6 @@ name: Record visual baselines
 # stay untouched.
 on:
   workflow_dispatch:
-  # Temporary: record on this pull request once, then remove.
-  pull_request:
 
 jobs:
   record:
