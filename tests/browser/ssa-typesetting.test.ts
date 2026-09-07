@@ -1,6 +1,14 @@
 import { parseText } from 'media-captions';
 
-import { createFixture, cueBoxes, cueDisplays, nextFrame, rect, type Fixture } from './helpers';
+import {
+  createFixture,
+  cue,
+  cueBoxes,
+  cueDisplays,
+  nextFrame,
+  rect,
+  type Fixture,
+} from './helpers';
 
 let fixture: Fixture;
 
@@ -95,4 +103,22 @@ test('\\move carries the cue between its start and end positions', async () => {
   expect(displays[1].hasAttribute('data-fixed')).toBe(true);
   expect(moving.left).toBeGreaterThan(start + 1);
   expect(moving.left).toBeLessThan(end - 1);
+});
+
+test('transformed text is not clipped by the cue box', async () => {
+  const rotated = cue(0, 10, 'Rotated <c.s-r>and scaled</c> text');
+  // Transforms only apply to inline-block spans, which is what the SSA parser emits.
+  rotated.spans = { r: { display: 'inline-block', transform: 'rotate(15deg) scale(3)' } };
+  fixture.renderer.changeTrack({ cues: [rotated] });
+  fixture.renderer.currentTime = 1;
+  await nextFrame();
+  const display = cueDisplays(fixture.overlay)[0],
+    span = display.querySelector<HTMLElement>('[data-span="r"]')!,
+    containment = getComputedStyle(display).contain;
+  expect(containment).not.toMatch(/paint|content|strict/);
+  expect(getComputedStyle(fixture.overlay.querySelector('[data-part="cue"]')!).overflow).toBe(
+    'visible',
+  );
+  // The span genuinely extends beyond the display box, so it would be clipped under paint containment.
+  expect(rect(span).height).toBeGreaterThan(rect(display).height * 1.5);
 });

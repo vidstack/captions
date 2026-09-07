@@ -79,7 +79,9 @@
     position: absolute;
     direction: ltr;
     overflow: visible;
-    contain: content;
+    /* Layout containment only: paint containment would clip rotated, scaled, or animated text
+       (SSA \frz, \fscx, \t) to the box. */
+    contain: layout style;
     top: var(--cue-top);
     left: var(--cue-left);
     right: var(--cue-right);
