@@ -52,6 +52,8 @@ export interface MeasuredCue {
   style: ResolvedCueStyle;
   /** The region this cue renders in, when it applies. */
   region: VTTRegion | null;
+  /** Writing direction: `''` horizontal, `'rl'`/`'lr'` vertical columns. */
+  vertical: '' | 'rl' | 'lr';
 }
 
 /** Whether a region applies to a cue (the WebVTT rule the DOM regions feature uses). */
@@ -64,7 +66,8 @@ export function regionOf(cue: VTTCue): VTTRegion | null {
 /**
  * MEASURE phase without a DOM: resolves the cue's presentation, flows its text, and produces the
  * same `CueLayoutInput` the DOM measurer would, so the pure layout engine positions both alike.
- * Vertical cues are laid out horizontally (a known limitation of the canvas writer).
+ * Vertical cues (`vertical: 'rl' | 'lr'`) flow into columns; the layout engine then snaps them
+ * along the x axis like the DOM's `writing-mode`.
  */
 export function measureCue(
   cue: VTTCue,
@@ -75,7 +78,10 @@ export function measureCue(
   const { container } = theme,
     text = cue.textStyle,
     layout = cue.layout,
+    vertical = region ? '' : cue.vertical,
     env: LengthEnv = { width: container.width, height: container.height, em: theme.fontSize };
+
+  if (vertical) return measureVerticalCue(cue, theme, measurer, env, vertical);
 
   const fontSize = lengthToPx(text?.fontSize, env) || theme.fontSize,
     fontEnv = { ...env, em: fontSize },
@@ -259,6 +265,7 @@ export function measureCue(
     textBox,
     style,
     region,
+    vertical: '',
     input: {
       kind: 'cue',
       box: { ...box },
@@ -269,6 +276,145 @@ export function measureCue(
       vertical: '',
       fixed,
       positionOverride,
+    },
+  };
+}
+
+/**
+ * Vertical writing: WebVTT `position`/`size` run along the height and `line` along the width.
+ * Columns are `lineHeight` wide and read right-to-left (`rl`) or left-to-right (`lr`); the padding
+ * axes swap like the stylesheet's `[data-vertical]` rule.
+ */
+function measureVerticalCue(
+  cue: VTTCue,
+  theme: CanvasTheme,
+  measurer: TextMeasurer,
+  env: LengthEnv,
+  vertical: 'rl' | 'lr',
+): MeasuredCue {
+  const { container } = theme,
+    text = cue.textStyle,
+    fontSize = lengthToPx(text?.fontSize, env) || theme.fontSize,
+    fontEnv = { ...env, em: fontSize },
+    lineHeight =
+      text?.lineHeight === undefined
+        ? theme.lineHeight
+        : text.lineHeight === 'normal'
+          ? fontSize * 1.2
+          : (lengthToPx(text.lineHeight, fontEnv) ?? fontSize * 1.2),
+    // Padding axes swap: the stylesheet's x padding runs along the column.
+    padAlong = lengthToPx(text?.padding?.x, fontEnv) ?? theme.paddingX,
+    padAcross = lengthToPx(text?.padding?.y, fontEnv) ?? theme.paddingY;
+
+  const style: ResolvedCueStyle = {
+    fontSize,
+    lineHeight,
+    paddingX: padAcross,
+    paddingY: padAlong,
+    color: text?.color ?? theme.color,
+    backgroundColor: text?.backgroundColor ?? theme.backgroundColor,
+    textAlign: resolveAlign(text?.textAlign ?? cue.align, theme.dir),
+    stroke:
+      text?.stroke !== undefined
+        ? (strokePx(text.stroke, fontEnv) ?? null)
+        : themeStroke(theme, fontSize),
+    shadow:
+      text?.shadow !== undefined
+        ? (shadowPx(text.shadow, fontEnv) ?? null)
+        : themeShadow(theme, fontSize),
+    outline: strokePx(text?.outline, fontEnv) ?? null,
+    opacity: text?.opacity ?? 1,
+    transform: text?.transform,
+    imageURL: null,
+    imageFit: 'contain',
+    clip: cue.layout?.clip,
+  };
+
+  // https://www.w3.org/TR/webvtt1/#processing-cue-settings, along the height.
+  const position = computeCuePosition(cue, theme.dir),
+    alignment = computeCuePositionAlignment(cue, theme.dir);
+  let maxSize = position;
+  if (alignment === 'line-left') maxSize = 100 - position;
+  else if (alignment === 'center' && position <= 50) maxSize = position * 2;
+  else if (alignment === 'center' && position > 50) maxSize = (100 - position) * 2;
+  const size = cue.size < maxSize ? cue.size : maxSize,
+    height = (size / 100) * container.height,
+    top =
+      ((position - (alignment === 'line-right' ? size : alignment === 'center' ? size / 2 : 0)) /
+        100) *
+      container.height;
+
+  const base: RunStyle = {
+    bold: (text?.fontWeight ?? 400) >= 600,
+    italic: text?.italic ?? false,
+    underline: false,
+    strike: false,
+    color: style.color,
+    bgColor: null,
+    fontFamily: text?.fontFamily ?? theme.fontFamily,
+    fontSize,
+    letterSpacing: lengthToPx(text?.letterSpacing, fontEnv) ?? 0,
+    opacity: 1,
+    stroke: undefined,
+    shadow: undefined,
+  };
+
+  const flow = flowCue(tokenizeVTTCue(cue), base, {
+    maxWidth: text?.wrap === 'nowrap' ? null : Math.max(0, height - 2 * padAlong),
+    lineHeight,
+    measurer,
+    env: fontEnv,
+    classColors: theme.classColors,
+    balance: true,
+    vertical: true,
+  });
+
+  const hasText = flow.lines.some((line) => line.runs.length),
+    columns = hasText ? flow.lines.length : 0,
+    textWidth = columns * lineHeight + (hasText ? 2 * padAcross : 0),
+    textHeight = hasText ? flow.width + 2 * padAlong : 0,
+    displayWidth = textWidth,
+    displayHeight = Math.max(height, textHeight);
+
+  const textBox = {
+    left: 0,
+    top:
+      style.textAlign === 'left'
+        ? 0
+        : style.textAlign === 'right'
+          ? displayHeight - textHeight
+          : (displayHeight - textHeight) / 2,
+    width: textWidth,
+    height: textHeight,
+  };
+
+  const box: Box = {
+    left: 0,
+    top,
+    width: displayWidth,
+    height: displayHeight,
+    right: displayWidth,
+    bottom: top + displayHeight,
+  };
+
+  return {
+    cue,
+    flow,
+    box,
+    textBox,
+    style,
+    region: null,
+    vertical,
+    input: {
+      kind: 'cue',
+      box: { ...box },
+      lineHeight: theme.lineStep === 'box' ? displayWidth : lineHeight,
+      snapToLines: cue.snapToLines,
+      line: computeCueLine(cue),
+      lineAlign: cue.lineAlign,
+      vertical,
+      fixed: !!cue.layout?.fixed,
+      positionOverride: false,
     },
   };
 }

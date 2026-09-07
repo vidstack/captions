@@ -51,7 +51,10 @@ export interface RunStyle {
 export interface Run {
   text: string;
   style: RunStyle;
+  /** Advance along the line: horizontal width, or the column advance for vertical text. */
   width: number;
+  /** Vertical text: glyphs stand upright (CJK) rather than rotated sideways (Latin). */
+  upright?: boolean;
 }
 
 export interface Line {
@@ -77,12 +80,19 @@ export interface FlowOptions {
   classColors: Record<string, string>;
   /** Even out line lengths like `text-wrap: balance` (applied to 2 to 6 lines). */
   balance?: boolean;
+  /**
+   * Vertical writing: lines are columns, advances run down the column. CJK glyphs stand upright
+   * one em each; other scripts are rotated sideways and advance by their horizontal width
+   * (`text-orientation: mixed`).
+   */
+  vertical?: boolean;
 }
 
 interface Segment {
   text: string;
   style: RunStyle;
   width: number;
+  upright?: boolean;
   /** Whitespace: collapsible at line edges and a break opportunity. */
   space: boolean;
   /** Forced line break. */
@@ -242,10 +252,42 @@ function applySpan(style: RunStyle, span: CueSpanStyle, env: LengthEnv, spanKey?
   }
 }
 
-const WORD_RE = /(\n)|(\s+)|(\S+)/g;
+const WORD_RE = /(\n)|(\s+)|(\S+)/g,
+  // Vertical text: a line break, whitespace, one upright (CJK / fullwidth) glyph, or a run of
+  // anything else, which is drawn sideways.
+  UPRIGHT =
+    '\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}\\u3000-\\u303F\\uFF00-\\uFFEF',
+  VERTICAL_RE = new RegExp(`(\\n)|(\\s+)|([${UPRIGHT}])|([^\\s${UPRIGHT}]+)`, 'gu');
 
 function pushText(text: string, style: RunStyle, options: FlowOptions, out: Segment[]) {
   const font = fontString(style);
+  if (options.vertical) {
+    for (const match of text.matchAll(VERTICAL_RE)) {
+      if (match[1]) {
+        out.push({ text: '', style, width: 0, space: false, br: true });
+      } else if (match[2]) {
+        const spaces = match[2].replace(/\n/g, '');
+        if (spaces) {
+          out.push({
+            text: spaces,
+            style,
+            width: options.measurer.measureText(spaces, font, style.letterSpacing),
+            space: true,
+          });
+        }
+      } else if (match[3]) {
+        out.push({ text: match[3], style, width: style.fontSize, space: false, upright: true });
+      } else {
+        out.push({
+          text: match[4],
+          style,
+          width: options.measurer.measureText(match[4], font, style.letterSpacing),
+          space: false,
+        });
+      }
+    }
+    return;
+  }
   for (const match of text.matchAll(WORD_RE)) {
     if (match[1]) {
       out.push({ text: '', style, width: 0, space: false, br: true });
@@ -326,11 +368,18 @@ function mergeRuns(segments: Segment[]): Line {
   const runs: Run[] = [];
   for (const segment of segments) {
     const last = runs[runs.length - 1];
-    if (last && last.style === segment.style && !segment.style.drawing) {
+    if (
+      last &&
+      last.style === segment.style &&
+      !!last.upright === !!segment.upright &&
+      !segment.style.drawing
+    ) {
       last.text += segment.text;
       last.width += segment.width;
     } else {
-      runs.push({ text: segment.text, style: segment.style, width: segment.width });
+      const run: Run = { text: segment.text, style: segment.style, width: segment.width };
+      if (segment.upright) run.upright = true;
+      runs.push(run);
     }
   }
   return { runs, width: runs.reduce((sum, run) => sum + run.width, 0) };

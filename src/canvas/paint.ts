@@ -178,11 +178,16 @@ function paintCueContent(
     );
   }
 
-  const contentWidth = textBox.width - 2 * style.paddingX;
-
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   ctx.lineJoin = 'round';
+
+  if (cue.vertical) {
+    paintColumns(ctx, cue, options, inner);
+    return;
+  }
+
+  const contentWidth = textBox.width - 2 * style.paddingX;
 
   flow.lines.forEach((line, index) => {
     const y = textBox.top + style.paddingY + index * flow.lineHeight,
@@ -350,6 +355,102 @@ function paintRun(
   }
 
   ctx.restore();
+}
+
+/**
+ * Vertical writing: each line is a column `lineHeight` wide, read right-to-left (`rl`) or
+ * left-to-right (`lr`). Upright runs stack one glyph per em; sideways runs are rotated a quarter
+ * turn clockwise and read downwards.
+ */
+function paintColumns(
+  ctx: PaintContext,
+  cue: MeasuredCue,
+  options: PaintOptions,
+  inner: CueKeyframe,
+) {
+  const { style, textBox, flow } = cue,
+    { theme } = options,
+    // Padding axes are swapped for vertical text (see `measureVerticalCue`).
+    padAlong = style.paddingY,
+    padAcross = style.paddingX,
+    contentHeight = textBox.height - 2 * padAlong;
+
+  flow.lines.forEach((column, index) => {
+    const x =
+        cue.vertical === 'rl'
+          ? textBox.left + textBox.width - padAcross - (index + 1) * flow.lineHeight
+          : textBox.left + padAcross + index * flow.lineHeight,
+      cx = x + flow.lineHeight / 2,
+      slack = contentHeight - column.width;
+    let y =
+      textBox.top +
+      padAlong +
+      (style.textAlign === 'center' ? slack / 2 : style.textAlign === 'right' ? slack : 0);
+
+    for (const run of column.runs) {
+      const span = run.style.spanKey ? sampleTarget(cue, { span: run.style.spanKey }, options) : {},
+        fill = resolveFill(run, cue, theme, {
+          color: span.color ?? (run.style.color === style.color ? inner.color : undefined),
+          time: options.time,
+        }),
+        stroke = run.style.stroke === undefined ? cue.style.stroke : run.style.stroke,
+        shadow = run.style.shadow === undefined ? cue.style.shadow : run.style.shadow;
+
+      ctx.save();
+      ctx.globalAlpha *= run.style.opacity * (span.opacity ?? 1);
+      if (run.style.bgColor && !NO_COLOR.has(run.style.bgColor)) {
+        ctx.fillStyle = run.style.bgColor;
+        ctx.fillRect(x, y, flow.lineHeight, run.width);
+      }
+      ctx.font = fontString(run.style);
+      if (shadow) {
+        ctx.shadowOffsetX = shadow.x;
+        ctx.shadowOffsetY = shadow.y;
+        ctx.shadowBlur = shadow.blur;
+        ctx.shadowColor = shadow.color;
+      }
+      const draw = (text: string, tx: number, ty: number) => {
+        if (stroke && stroke.width > 0) {
+          ctx.lineWidth = stroke.width;
+          ctx.strokeStyle = stroke.color === 'currentColor' ? fill : stroke.color;
+          ctx.strokeText(text, tx, ty);
+          ctx.shadowColor = 'transparent';
+        }
+        ctx.fillStyle = fill;
+        ctx.fillText(text, tx, ty);
+      };
+
+      if (run.upright) {
+        ctx.textAlign = 'center';
+        for (const glyph of run.text) {
+          draw(glyph, cx, y + run.style.fontSize / 2);
+          y += run.style.fontSize;
+        }
+      } else {
+        ctx.textAlign = 'left';
+        ctx.translate(cx, y);
+        ctx.rotate(Math.PI / 2);
+        draw(run.text, 0, 0);
+        y += run.width;
+      }
+      ctx.restore();
+    }
+  });
+}
+
+/** The fill colour of a run after animation overrides and timed-text colouring. */
+function resolveFill(
+  run: Run,
+  cue: MeasuredCue,
+  theme: CanvasTheme,
+  over: { color?: string; time: number },
+): string {
+  let fill = over.color ?? run.style.color;
+  if (run.style.timestamp !== undefined) {
+    const timed = theme.timedColors[over.time >= run.style.timestamp ? 'past' : 'future'];
+    if (timed) fill = timed;
+  }
+  return fill;
 }
 
 /** Samples every animation aimed at a target and merges the frames (later ones win). */

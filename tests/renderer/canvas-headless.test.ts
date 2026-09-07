@@ -168,6 +168,41 @@ describe('text flow', () => {
   });
 });
 
+describe('vertical writing', () => {
+  test('flows CJK upright one em per glyph and Latin sideways by its width', () => {
+    const tokens = tokenizeVTTCue(new VTTCue(0, 1, '縦書き abc'));
+    const flow = flowCue(tokens, base, {
+      maxWidth: 1000,
+      lineHeight: 28.8,
+      measurer,
+      env,
+      classColors: {},
+      vertical: true,
+    });
+    const runs = flow.lines[0].runs;
+    // Same-styled sideways segments merge, upright ones stay a separate run.
+    expect(runs.map((r) => [r.text, r.upright ?? false, r.width])).toEqual([
+      ['縦書き', true, 72], // 3 glyphs x 24px em
+      [' abc', false, 48],
+    ]);
+    expect(flow.width).toBe(120);
+  });
+
+  test('wraps into columns and measures a vertical cue along the height', () => {
+    const cue = new VTTCue(0, 1, '一二三四五六七八');
+    cue.vertical = 'rl';
+    cue.size = 30; // 30% of the height: 144px, minus 2 * 14.4px padding = 115px = 4 glyphs
+    const m = measureCue(cue, theme, measurer);
+    expect(m.vertical).toBe('rl');
+    expect(m.flow.lines).toHaveLength(2);
+    expect(m.box.height).toBeCloseTo(0.3 * theme.container.height);
+    expect(m.box.width).toBeCloseTo(2 * theme.lineHeight + 2 * theme.paddingY);
+    // Position defaults to the centre of the height.
+    expect(m.box.top).toBeCloseTo(0.35 * theme.container.height);
+    expect(m.input).toMatchObject({ vertical: 'rl', lineHeight: theme.lineHeight, line: -1 });
+  });
+});
+
 describe('headless cue measurement', () => {
   test('a default cue fills the container width and hugs its text vertically', () => {
     const m = measureCue(new VTTCue(0, 1, 'Hello world'), theme, measurer);

@@ -233,3 +233,41 @@ test('the renderer follows a live track and clears when reset', () => {
   expect(renderer.track).not.toBe(track);
   renderer.destroy();
 });
+
+test('vertical cues flow into columns that match the DOM box', async () => {
+  const c = cue(0, 10, '縦書きのキャプション', { vertical: 'rl' });
+  fixture.renderer.changeTrack({ cues: [c] });
+  fixture.renderer.currentTime = 1;
+  await nextFrame();
+  const frame = rect(fixture.viewport),
+    dom = rect(cueDisplays(fixture.overlay)[0]);
+
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  expect(target.item.vertical).toBe('rl');
+  // One column: width is a line height plus padding, height is the WebVTT size (100%).
+  expect(Math.abs(target.box.width - dom.width)).toBeLessThan(3);
+  expect(Math.abs(target.box.height - dom.height)).toBeLessThan(3);
+  expect(Math.abs(theme.container.left + target.box.left - (dom.left - frame.left))).toBeLessThan(
+    3,
+  );
+
+  // Glyphs are stacked: paint is found in several distinct rows of the column.
+  paintCaptions(ctx, [c], 1, {});
+  const x = theme.container.left + target.box.left,
+    top = theme.container.top + target.box.top + target.item.textBox.top,
+    rows = 6,
+    step = target.item.textBox.height / rows;
+  let painted = 0;
+  for (let i = 0; i < rows; i++) {
+    if (
+      some(x, top + i * step, target.box.width, step, ([r, g, b]) => r > 200 && g > 200 && b > 200)
+    )
+      painted++;
+  }
+  expect(painted).toBeGreaterThanOrEqual(4);
+});
