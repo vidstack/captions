@@ -848,3 +848,20 @@ pre {
 .gallery-grid .stage-label {
   font-size: 10px;
 }
+
+/* --- Canvas view tools --------------------------------------------------------------------- */
+
+.stage-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px auto 0;
+  width: min(var(--stage-width, 960px), 100%);
+}
+
+.stage-tools .hint {
+  font-size: 11px;
+  color: var(--dim);
+}

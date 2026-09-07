@@ -33,6 +33,7 @@ import { Inspector } from './ui/inspector';
 import { LiveCaptionFeeder } from './ui/live-cea';
 import { FakeMediaElement, FRAME_DURATION } from './ui/media';
 import { OptionsPanel } from './ui/options';
+import { CaptionsCompositor } from './ui/pip';
 import { SourcesPanel } from './ui/sources';
 import { Stage } from './ui/stage';
 import {
@@ -74,6 +75,8 @@ let sample: Sample = findSample(state.format),
   canvasRenderer: CanvasCaptionsRenderer | null = null,
   canvasEl: HTMLCanvasElement | null = null,
   canvasObserver: ResizeObserver | null = null,
+  compositor: CaptionsCompositor | null = null,
+  canvasTools: HTMLElement | null = null,
   gallery: Gallery | null = null,
   loadId = 0,
   lastPersist = 0,
@@ -486,9 +489,53 @@ function ensureCanvasView() {
   canvasObserver.observe(canvasStage.el);
   fit();
   attachCanvasTrack();
+
+  // Picture-in-picture and fullscreen show video pixels only: composite the mock frame and the
+  // captions canvas into a captured stream, the same way a player would with its <video>.
+  if (CaptionsCompositor.supported) {
+    compositor = new CaptionsCompositor(canvasEl, drawMockFrame);
+    const report = (error: unknown) =>
+      inspector.addRuntimeError('Canvas compositor', describeError(error));
+    canvasTools = h(
+      'div',
+      { class: 'stage-tools' },
+      button('Picture-in-picture', () => compositor?.enterPictureInPicture().catch(report)),
+      button('Fullscreen video', () => compositor?.enterFullscreen().catch(report)),
+      h(
+        'span',
+        { class: 'hint' },
+        'canvas.captureStream() into a <video>: how captions reach PiP and iOS fullscreen',
+      ),
+    );
+    canvasView.append(canvasTools);
+  }
+}
+
+/** The stage's mock video, drawn into the compositor: the same gradient and orbit as `Stage`. */
+function drawMockFrame(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const time = media.currentTime,
+    gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#3a4766');
+  gradient.addColorStop(1, '#141a2b');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  const angle = time * 0.6,
+    ox = (50 + Math.cos(angle) * 30) / 100,
+    oy = (50 + Math.sin(angle * 0.8) * 26) / 100,
+    radius = Math.min(width, height) * 0.22,
+    orb = ctx.createRadialGradient(ox * width, oy * height, 0, ox * width, oy * height, radius);
+  orb.addColorStop(0, 'rgba(255, 214, 120, 0.9)');
+  orb.addColorStop(0.6, 'rgba(232, 120, 96, 0.55)');
+  orb.addColorStop(1, 'rgba(232, 120, 96, 0)');
+  ctx.fillStyle = orb;
+  ctx.fillRect(0, 0, width, height);
 }
 
 function destroyCanvasView() {
+  compositor?.stop();
+  compositor = null;
+  canvasTools?.remove();
+  canvasTools = null;
   canvasObserver?.disconnect();
   canvasObserver = null;
   canvasRenderer?.destroy();
