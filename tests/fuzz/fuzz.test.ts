@@ -41,7 +41,9 @@ const CORPUS = fileURLToPath(new URL('../corpus/files/', import.meta.url));
 
 /** Inputs generated per strategy per format. */
 const N = 300;
-const PARSE_BUDGET_MS = 2000;
+// Throughput regressions worth catching are orders of magnitude, so the budget is loose on CI
+// runners, which are several times slower than a developer machine and run under V8 coverage.
+const PARSE_BUDGET_MS = process.env.CI ? 8000 : 2000;
 const RENDER_RATIO = 20;
 const RENDER_FLOOR = 512;
 /** Generous per-test timeout; the per-input budget is what actually matters. */
