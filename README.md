@@ -1144,11 +1144,15 @@ and inline styling, regions (`tts:origin`, `tts:extent`, `tts:displayAlign`, `tt
 percentages, pixels, or cells (`ttp:cellResolution`) mapped to cue positioning, `tts:fontSize`
 mapped to a scaled cue font size, vertical writing modes (`tbrl`, `tblr`), italics, bold,
 underline, colours, `xml:lang`, ruby, `<br/>`, `xml:space`, and timed spans mapped to WebVTT
-timestamp tags, `<set>` animations (paragraphs are split into styled slices), `tts:visibility`
-and `tts:opacity`, SMPTE-TT / IMSC image cues (rendered as background images in the region box),
-wall-clock time bases (made relative to the earliest cue, with `ClockStart` metadata so you can
-re-offset with `shiftVTTCues`), and `ttp:dropMode="dropNTSC"`. Not supported: `<set>` on `body`
-or `div`, `dropPAL` (treated as non-drop), and external image URLs (never fetched).
+timestamp tags, `<set>` animations on paragraphs, spans, regions, and containers (paragraphs are
+split into styled slices), `seq` time containers, span and region timing, `tts:visibility`,
+`tts:display`, `tts:opacity`, `tts:position`, `tts:padding`, `tts:lineHeight`, `tts:textOutline`,
+`tts:textShadow`, span-level typography and colours (via `cue.spans`), `itts:forcedDisplay` (a
+`forced` class plus `HasForcedCues` metadata), SMPTE-TT / IMSC image cues, wall-clock time bases
+(made relative to the earliest cue, with `ClockStart` metadata so you can re-offset with
+`shiftVTTCues`), and `ttp:dropMode` `dropNTSC` and `dropPAL`. 62 documents from the W3C IMSC test
+suite parse under `tests/imsc`. Not supported: `rubyPosition`, `tts:showBackground`, bidi
+overrides, and external image URLs (never fetched).
 
 ## SCC (CEA-608)
 
@@ -1350,9 +1354,9 @@ them and opens a pull request.
 
 Parsing is covered by the vendored web-platform-tests WebVTT suites under `tests/wpt` (118
 tests; the handful of intentional real-world tolerances are listed in
-`tests/wpt/KNOWN_DIVERGENCES.md` and tracked with `test.fails`), by hand-written conformance
-suites under `tests/conformance` (WebVTT file structure, cue text, SSA/ASS), and by per-format
-suites. Rendering is measured in Chromium under
+`tests/wpt/KNOWN_DIVERGENCES.md` and tracked with `test.fails`), by the W3C IMSC test documents
+under `tests/imsc`, by hand-written conformance suites under `tests/conformance` (WebVTT file
+structure, cue text, SSA/ASS incl. typesetting), and by per-format suites. Rendering is measured in Chromium under
 `tests/browser` (stacking, line snapping, percentage lines, position/size/align, vertical text,
 RTL, regions, resize, SSA layout, transforms). `tests/browser/visual.test.ts` adds screenshot
 comparisons with a small pixel tolerance; baselines live in `tests/browser/__screenshots__` per
