@@ -192,6 +192,22 @@ describe('text flow', () => {
   });
 });
 
+describe('line boxes', () => {
+  test('a larger inline span grows its line like the browser line box', () => {
+    const c = new VTTCue(0, 1, 'small <c.s-0>BIG</c> small\nnext line');
+    c.spans = { '0': { fontSize: { unit: 'em', value: 2 } } };
+    const flow = flowCue(tokenizeVTTCue(c), base, {
+      maxWidth: 1000,
+      lineHeight: 28.8,
+      measurer,
+      env,
+      classColors: {},
+    });
+    expect(flow.lines.map((line) => line.height)).toEqual([57.6, 28.8]);
+    expect(flow.height).toBe(86.4);
+  });
+});
+
 describe('ruby', () => {
   test('flows the annotation over its base and reserves a band above the line', () => {
     const tokens = tokenizeVTTCue(new VTTCue(0, 1, 'a <ruby>漢字<rt>kanji</rt></ruby> b'));

@@ -76,6 +76,11 @@ export interface Line {
   runs: Run[];
   width: number;
   /**
+   * Line box height: the line height, grown for the largest run like the browser grows a line box
+   * around a larger inline span (`line-height` is a factor, so a `\fs` span scales it).
+   */
+  height: number;
+  /**
    * Height of the ruby annotation band drawn above the line (beside the column for vertical text),
    * 0 without `<ruby>`. Chromium lets annotations overflow the line box rather than grow it (with
    * the default half-size annotations the box grows by about a pixel), so this does not add to
@@ -191,12 +196,12 @@ export function flowCue(tokens: VTTNode[], base: RunStyle, options: FlowOptions)
     lines = best;
   }
 
-  const merged = lines.map(mergeRuns),
+  const merged = lines.map((line) => mergeRuns(line, options.lineHeight, base.fontSize)),
     width = Math.max(0, ...merged.map((line) => line.width));
   return {
     lines: merged,
     width,
-    height: merged.length * options.lineHeight,
+    height: merged.reduce((sum, line) => sum + line.height, 0),
     lineHeight: options.lineHeight,
   };
 }
@@ -328,12 +333,14 @@ function applySpan(style: RunStyle, span: CueSpanStyle, env: LengthEnv, spanKey?
   }
 }
 
-const WORD_RE = /(\n)|(\s+)|(\S+)/g,
+// A line break, a run of other whitespace, or a word. Newlines are matched on their own so
+// `a \n b` breaks the line (`white-space: pre-line`) instead of collapsing into one space.
+const WORD_RE = /(\n)|([^\S\n]+)|(\S+)/g,
   // Vertical text: a line break, whitespace, one upright (CJK / fullwidth) glyph, or a run of
   // anything else, which is drawn sideways.
   UPRIGHT =
     '\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}\\u3000-\\u303F\\uFF00-\\uFFEF',
-  VERTICAL_RE = new RegExp(`(\\n)|(\\s+)|([${UPRIGHT}])|([^\\s${UPRIGHT}]+)`, 'gu');
+  VERTICAL_RE = new RegExp(`(\\n)|([^\\S\\n]+)|([${UPRIGHT}])|([^\\s${UPRIGHT}]+)`, 'gu');
 
 function pushText(text: string, style: RunStyle, options: FlowOptions, out: Segment[]) {
   const font = fontString(style);
@@ -342,15 +349,12 @@ function pushText(text: string, style: RunStyle, options: FlowOptions, out: Segm
       if (match[1]) {
         out.push({ text: '', style, width: 0, space: false, br: true });
       } else if (match[2]) {
-        const spaces = match[2].replace(/\n/g, '');
-        if (spaces) {
-          out.push({
-            text: spaces,
-            style,
-            width: options.measurer.measureText(spaces, font, style.letterSpacing),
-            space: true,
-          });
-        }
+        out.push({
+          text: match[2],
+          style,
+          width: options.measurer.measureText(match[2], font, style.letterSpacing),
+          space: true,
+        });
       } else if (match[3]) {
         out.push({ text: match[3], style, width: style.fontSize, space: false, upright: true });
       } else {
@@ -446,9 +450,10 @@ function splitToFit(segment: Segment, maxWidth: number): Segment[] {
   return pieces;
 }
 
-function mergeRuns(segments: Segment[]): Line {
+function mergeRuns(segments: Segment[], lineHeight: number, baseFontSize: number): Line {
   const runs: Run[] = [];
-  let rubyHeight = 0;
+  let rubyHeight = 0,
+    height = lineHeight;
   for (const segment of segments) {
     const last = runs[runs.length - 1];
     if (
@@ -469,8 +474,11 @@ function mergeRuns(segments: Segment[]): Line {
         run.baseWidth = segment.baseWidth;
         rubyHeight = Math.max(rubyHeight, segment.ruby.style.fontSize);
       }
+      if (!segment.style.drawing && baseFontSize > 0) {
+        height = Math.max(height, (segment.style.fontSize / baseFontSize) * lineHeight);
+      }
       runs.push(run);
     }
   }
-  return { runs, width: runs.reduce((sum, run) => sum + run.width, 0), rubyHeight };
+  return { runs, width: runs.reduce((sum, run) => sum + run.width, 0), height, rubyHeight };
 }

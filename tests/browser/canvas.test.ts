@@ -357,3 +357,82 @@ test('cue opacity composites the cue as one group, like CSS opacity', () => {
   expect(maxAlpha).toBeGreaterThan(100);
   expect(maxAlpha).toBeLessThan(140);
 });
+
+test('scrolling regions slide new rows in over 0.433s, like the DOM transition', () => {
+  const region = new VTTRegion();
+  Object.assign(region, {
+    id: 'r',
+    width: 60,
+    lines: 3,
+    scroll: 'up',
+    regionAnchorX: 0,
+    regionAnchorY: 100,
+    viewportAnchorX: 20,
+    viewportAnchorY: 90,
+  });
+  const cues = [cue(0, 10, 'one'), cue(2, 10, 'two')];
+  for (const c of cues) c.region = region;
+
+  const { theme, targets } = layoutCaptions(cues, canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'region') throw new Error('expected a region');
+  const { box } = target,
+    left = theme.container.left + box.left,
+    top = theme.container.top + box.top,
+    rowHeight = target.item.rowHeights[0];
+
+  // 50ms after the second row arrived the region (anchored at its bottom) still sits about a row
+  // lower than its final box, so the top of the final box is empty.
+  paintCaptions(ctx, cues, 2.05, {});
+  expect(clear(left, top + 2, box.width, rowHeight * 0.6)).toBe(true);
+
+  // Once the transition is over both rows fill the box.
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  paintCaptions(ctx, cues, 3, {});
+  expect(some(left, top + 4, box.width, rowHeight - 6, ([, , , a]) => a > 150)).toBe(true);
+});
+
+test('runs re-measure when a span animation changes the font size', () => {
+  const c = cue(0, 10, '<c.s-0>Wide</c> tail');
+  c.spans = { '0': {} };
+  c.animations = [
+    {
+      target: { span: '0' },
+      duration: 1,
+      fill: 'both',
+      keyframes: [{ fontSize: { unit: 'em', value: 1 } }, { fontSize: { unit: 'em', value: 3 } }],
+    },
+  ];
+  const { targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+
+  const painted = () => {
+    const data = ctx.getImageData(0, 0, WIDTH, HEIGHT).data;
+    let minX = WIDTH,
+      maxX = 0;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 40) {
+        const x = (i >> 2) % WIDTH;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+      }
+    }
+    return maxX - minX;
+  };
+
+  paintCaptions(ctx, [c], 0, {});
+  const before = painted();
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  paintCaptions(ctx, [c], 5, {});
+  // "Wide" is three times larger at the end and "tail" moved over to make room, so the painted
+  // width grew well beyond the measured (static) flow width.
+  expect(painted()).toBeGreaterThan(before * 1.5);
+  expect(painted()).toBeGreaterThan(target.item.flow.width + 2 * target.item.style.paddingX);
+});

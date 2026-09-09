@@ -1,8 +1,9 @@
 import type { Box } from '../vtt/overlay/box';
 import type { CueAnimation, CueKeyframe } from '../vtt/vtt-cue';
-import { sampleAnimation } from './animate';
+import { ease, sampleAnimation } from './animate';
 import { fontString, shadowPx, type Run, type RunStyle } from './flow';
 import type { MeasuredCue, MeasuredRegion } from './measure';
+import type { TextMeasurer } from './text-measurer';
 import type { CanvasTheme } from './theme';
 import {
   clipToPolygon,
@@ -50,7 +51,12 @@ export interface PaintOptions {
   time: number;
   theme: CanvasTheme;
   images: ImageCache;
+  /** Re-measures runs whose span animation changes the font size or letter spacing. */
+  measurer?: TextMeasurer;
 }
+
+/** The DOM's `transition: top 0.433s` on `scroll: up` regions (see regions.css). */
+const REGION_SCROLL_DURATION = 0.433;
 
 const NO_COLOR = new Set(['transparent', 'none', 'rgba(0,0,0,0)', 'rgba(0, 0, 0, 0)']);
 
@@ -112,9 +118,31 @@ export function paintRegion(
   box: Box,
   options: PaintOptions,
 ) {
-  const { container } = options.theme;
+  const { container, reducedMotion } = options.theme,
+    { region: spec, rows } = region;
+
+  // `scroll: up`: the DOM grows the region as rows arrive and transitions its `top` (CSS `ease`),
+  // so within 0.433s of a new row the box still sits where the old height put it.
+  let shift = 0;
+  if (spec.scroll === 'up' && !reducedMotion) {
+    const since = options.time - REGION_SCROLL_DURATION,
+      entering = rows.filter((row) => row.start > since && row.start <= options.time);
+    if (entering.length) {
+      const newest = Math.max(...entering.map((row) => row.start)),
+        previousHeight = rows
+          .filter((row) => row.start <= since)
+          .slice(-spec.lines)
+          .reduce((sum, row) => sum + row.height, 0),
+        progress = ease((options.time - newest) / REGION_SCROLL_DURATION, 'ease');
+      shift = (box.height - previousHeight) * (1 - progress);
+    }
+  }
+
   ctx.save();
-  ctx.translate(container.left + box.left, container.top + box.top);
+  ctx.translate(
+    container.left + box.left,
+    container.top + box.top + (spec.regionAnchorY / 100) * shift,
+  );
   ctx.beginPath();
   ctx.rect(0, 0, box.width, box.height);
   ctx.clip();
@@ -197,21 +225,33 @@ function paintCueContent(
   let y = textBox.top + style.paddingY;
 
   for (const line of flow.lines) {
+    // Runs whose span animation changes the font size or letter spacing are re-measured so the
+    // line reflows around them as the DOM's would.
+    const runs = line.runs.map((run) => {
+        const span = run.style.spanKey
+          ? sampleTarget(cue, { span: run.style.spanKey }, options)
+          : {};
+        return { run, span, width: animatedRunWidth(run, span, options) ?? run.width };
+      }),
+      lineWidth = runs.reduce((sum, entry) => sum + entry.width, 0),
+      slack = contentWidth - lineWidth,
+      // Runs share the line's baseline, so smaller ones sit lower than the line's centre.
+      lineFontSize = Math.max(...line.runs.map((run) => run.style.fontSize));
     // Ruby annotations sit in a band above the line, overflowing it as in the browser.
-    const slack = contentWidth - line.width;
     let x =
       textBox.left +
       style.paddingX +
       (style.textAlign === 'center' ? slack / 2 : style.textAlign === 'right' ? slack : 0);
 
-    for (const run of line.runs) {
-      const span = run.style.spanKey ? sampleTarget(cue, { span: run.style.spanKey }, options) : {},
+    for (const { run: measured, span, width } of runs) {
+      const run = width === measured.width ? measured : { ...measured, width },
         over: RunOverrides = {
           color: span.color ?? (run.style.color === style.color ? inner.color : undefined),
           strokeColor: inner.strokeColor ?? span.strokeColor,
           alpha: span.opacity ?? 1,
           frame: span,
           time: options.time,
+          lineFontSize,
         };
       if (run.ruby) {
         const { ruby } = run,
@@ -224,25 +264,37 @@ function paintCueContent(
           line.rubyHeight,
           cue,
           theme,
-          over,
+          { ...over, lineFontSize: undefined },
         );
         paintRun(
           ctx,
           { text: run.text, style: run.style, width: baseWidth },
           x + (run.width - baseWidth) / 2,
           y,
-          flow.lineHeight,
+          line.height,
           cue,
           theme,
           over,
         );
       } else {
-        paintRun(ctx, run, x, y, flow.lineHeight, cue, theme, over);
+        paintRun(ctx, run, x, y, line.height, cue, theme, over);
       }
       x += run.width;
     }
-    y += flow.lineHeight;
+    y += line.height;
   }
+}
+
+/** The advance of a run at its animated font size / letter spacing, or null when unchanged. */
+function animatedRunWidth(run: Run, span: CueKeyframe, options: PaintOptions): number | null {
+  if (!options.measurer || run.ruby || run.style.drawing) return null;
+  if (span.fontSize === undefined && span.letterSpacing === undefined) return null;
+  const { container } = options.theme,
+    { style } = run,
+    env: LengthEnv = { width: container.width, height: container.height, em: style.fontSize },
+    fontSize = lengthToPx(span.fontSize, env) ?? style.fontSize,
+    letterSpacing = lengthToPx(span.letterSpacing, env) ?? style.letterSpacing;
+  return options.measurer.measureText(run.text, fontString({ ...style, fontSize }), letterSpacing);
 }
 
 interface RunOverrides {
@@ -253,7 +305,15 @@ interface RunOverrides {
   frame: CueKeyframe;
   /** Media time, for timed text. */
   time: number;
+  /** Largest font on the line; runs align to its baseline instead of the line's centre. */
+  lineFontSize?: number;
 }
+
+/**
+ * Distance from the middle of the em square to the baseline, as a fraction of the font size
+ * (canvas `textBaseline: 'middle'`; typical fonts put the baseline about 0.3em below it).
+ */
+const BASELINE_FROM_MIDDLE = 0.3;
 
 function paintRun(
   ctx: PaintContext,
@@ -329,7 +389,10 @@ function paintRunContent(
   if ('letterSpacing' in ctx) {
     ctx.letterSpacing = `${lengthToPx(over.frame.letterSpacing, env) ?? style.letterSpacing}px`;
   }
-  const middle = y + lineHeight / 2,
+  const middle =
+      y +
+      lineHeight / 2 +
+      (over.lineFontSize !== undefined ? (over.lineFontSize - fontSize) * BASELINE_FROM_MIDDLE : 0),
     stroke =
       over.frame.strokeWidth !== undefined
         ? {
@@ -423,14 +486,16 @@ function paintColumns(
     padAcross = style.paddingX,
     contentHeight = textBox.height - 2 * padAlong;
 
-  flow.lines.forEach((column, index) => {
-    const x =
-        cue.vertical === 'rl'
-          ? textBox.left + textBox.width - padAcross - (index + 1) * flow.lineHeight
-          : textBox.left + padAcross + index * flow.lineHeight,
-      cx = x + flow.lineHeight / 2,
-      rubyCx = x + flow.lineHeight + column.rubyHeight / 2,
+  // The edge the next column is laid against: the right edge for `rl`, the left for `lr`.
+  let edge =
+    cue.vertical === 'rl' ? textBox.left + textBox.width - padAcross : textBox.left + padAcross;
+
+  for (const column of flow.lines) {
+    const x = cue.vertical === 'rl' ? edge - column.height : edge,
+      cx = x + column.height / 2,
+      rubyCx = x + column.height + column.rubyHeight / 2,
       slack = contentHeight - column.width;
+    edge = cue.vertical === 'rl' ? x : edge + column.height;
     let y =
       textBox.top +
       padAlong +
@@ -447,7 +512,7 @@ function paintColumns(
       withGroupAlpha(ctx, run.style.opacity * (span.opacity ?? 1), (layer) => {
         if (run.style.bgColor && !NO_COLOR.has(run.style.bgColor)) {
           layer.fillStyle = run.style.bgColor;
-          layer.fillRect(x, top, flow.lineHeight, run.width);
+          layer.fillRect(x, top, column.height, run.width);
         }
 
         if (run.ruby) {
@@ -468,7 +533,7 @@ function paintColumns(
       });
       y += run.width;
     }
-  });
+  }
 }
 
 /** Draws one vertical run (or ruby annotation) centred on column `cx`, starting at `y`. */

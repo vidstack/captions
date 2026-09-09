@@ -112,7 +112,7 @@ export function paintCaptions(
     measurer = options.measurer ?? canvasTextMeasurer(ctx),
     images = options.images ?? new ImageCache(() => {}),
     { theme, targets } = layoutCaptions(cues, measurer, { ...options, width, height }),
-    paint = { time: currentTime, theme, images };
+    paint = { time: currentTime, theme, images, measurer };
   for (const target of targets) {
     if (target.kind === 'region') paintRegion(ctx, target.item, target.box, paint);
     else paintCue(ctx, target.item, target.box, paint);

@@ -45,7 +45,8 @@ const PROBE_BUDGETS = {
   },
   'canvas renderer (CanvasCaptionsRenderer)': {
     code: `export { CanvasCaptionsRenderer } from './dist/prod-canvas.js';`,
-    limit: 13_000,
+    // Raised from 13 KB for group opacity layers, region scroll, and per-line box heights.
+    limit: 13_500,
   },
   'everything in the main entry': {
     code: `export * from './dist/prod.js';`,

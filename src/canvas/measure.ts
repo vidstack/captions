@@ -428,6 +428,8 @@ export interface MeasuredRegion {
   visible: MeasuredCue[];
   /** Height of each visible cue as stacked (1px gap like the stylesheet). */
   rowHeights: number[];
+  /** Every active cue of the region in cue order, scrolled out or not, for the scroll transition. */
+  rows: { start: number; height: number }[];
 }
 
 /** Region geometry from its anchors and the cues it currently holds. */
@@ -444,8 +446,9 @@ export function measureRegion(
     left = (region.viewportAnchorX / 100) * container.width - (region.regionAnchorX / 100) * width,
     top = (region.viewportAnchorY / 100) * container.height - (region.regionAnchorY / 100) * height;
 
-  const box: Box = { left, top, width, height, right: left + width, bottom: top + height };
-  return { region, box, input: { kind: 'region', box: { ...box } }, visible, rowHeights };
+  const box: Box = { left, top, width, height, right: left + width, bottom: top + height },
+    rows = cues.map((cue) => ({ start: cue.cue.startTime, height: cue.box.height + 1 }));
+  return { region, box, input: { kind: 'region', box: { ...box } }, visible, rowHeights, rows };
 }
 
 function resolveAlign(
