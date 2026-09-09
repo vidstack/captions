@@ -1664,7 +1664,9 @@ tolerances and the bugs the suite found), by the W3C IMSC test documents
 under `tests/imsc`, by hand-written conformance suites under `tests/conformance` (WebVTT file
 structure, cue text, SSA/ASS incl. typesetting), and by per-format suites. Rendering is measured in Chromium, Firefox, and WebKit under
 `tests/browser` (stacking, line snapping, percentage lines, position/size/align, vertical text,
-RTL, regions, resize, SSA layout, transforms). `tests/browser/visual.test.ts` adds screenshot
+RTL, regions, resize, SSA layout, transforms). `tests/browser/parity.test.ts` sweeps every playground
+sample through the DOM and canvas writers over time and compares text position and opacity, so
+the two writers cannot drift apart. `tests/browser/visual.test.ts` adds screenshot
 comparisons with a small pixel tolerance; baselines live in `tests/browser/__screenshots__` per
 browser and platform, so the first run on a new platform records them and later runs compare.
 
