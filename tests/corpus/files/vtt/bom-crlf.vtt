@@ -1,0 +1,19 @@
+﻿WEBVTT
+Kind: captions
+Language: en-GB
+
+1
+00:00:00.500 --> 00:00:02.000
+Saved from Windows Notepad.
+
+2
+00:00:02.000 --> 00:00:04.500
+Carriage return and line feed
+on every line.
+
+NOTE
+Even this note.
+
+3
+00:00:04.500 --> 00:00:06.000 align:left
+<b>Bold</b> and <i>italic</i>.

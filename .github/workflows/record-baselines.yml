@@ -1,0 +1,30 @@
+name: Record visual baselines
+
+# Records the Chromium screenshot baselines on Linux (the CI platform) and uploads them as an
+# artifact. Trigger manually after an intentional rendering change, then:
+#
+#   gh run download <run-id> -n visual-baselines -D tests/browser/__screenshots__
+#
+# and commit the result. Baselines are per browser and platform, so the macOS ones recorded locally
+# stay untouched.
+on:
+  workflow_dispatch:
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm vp test --run --project browser tests/browser/visual.test.ts --update
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: tests/browser/__screenshots__/visual.test.ts/*-linux.png
+          if-no-files-found: error

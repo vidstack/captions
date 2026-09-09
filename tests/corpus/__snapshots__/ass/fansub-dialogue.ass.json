@@ -1,0 +1,1432 @@
+{
+  "cueCount": 23,
+  "errors": [],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 3.12,
+      "endTime": 5.47,
+      "text": "<v Yui>Good morning!",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 5.47,
+      "endTime": 8.9,
+      "text": "<v Rin>Mm... it's too early for that.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 8.9,
+      "endTime": 12.33,
+      "text": "<v Yui>It's already seven-thirty.\nYou'll be late again.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 12.33,
+      "endTime": 14,
+      "text": "<v Rin><i>Late</i> is a matter of perspective.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 14.5,
+      "endTime": 17.8,
+      "text": "<v Radio><i>...temperatures reaching a high of 32 degrees...</i>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "top": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      },
+      "layer": 1
+    },
+    {
+      "id": "",
+      "startTime": 14.5,
+      "endTime": 17.8,
+      "text": "<v Yui>Did you hear that? It's going to be hot.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 18,
+      "endTime": 21.2,
+      "text": "<v Rin>\"Promise me you'll come back.\"",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,232,200,1)",
+        "fontWeight": 700,
+        "italic": true,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      },
+      "animations": [
+        {
+          "target": "display",
+          "duration": 3.1999999999999993,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "opacity": 0
+            },
+            {
+              "offset": 0.125,
+              "opacity": 1
+            },
+            {
+              "offset": 0.875,
+              "opacity": 1
+            },
+            {
+              "offset": 1,
+              "opacity": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 21.2,
+      "endTime": 23,
+      "text": "<v Rin>...",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 23,
+      "endTime": 26.75,
+      "text": "<v Yui>Rin? <c.s-0>Hello?</c> Earth to Rin.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      },
+      "spans": {
+        "0": {
+          "fontSize": {
+            "unit": "vh",
+            "value": 5
+          }
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 26.75,
+      "endTime": 29.1,
+      "text": "<v Rin>Sorry.I was thinking about something.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 29.1,
+      "endTime": 31,
+      "text": "<v Yui>About&nbsp;what?",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 31,
+      "endTime": 34.9,
+      "text": "<v Rin><b>Nothing.</b> Let's go.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 35,
+      "endTime": 38,
+      "text": "<c.#202020><c.s-0>Sakuragaoka High School</c></c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "left": 50,
+        "top": 8.333,
+        "translate": {
+          "x": -0.5
+        },
+        "fixed": true
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 7.2222
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        }
+      },
+      "spans": {
+        "0": {
+          "fontSize": {
+            "unit": "vh",
+            "value": 5.5556
+          },
+          "stroke": null
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 38.1,
+      "endTime": 41.6,
+      "text": "And so the day began, like any other.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "top": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "italic": true,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 41.6,
+      "endTime": 44,
+      "text": "<v Rin>Text on an opaque box.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.5556
+        },
+        "color": "rgba(255,255,255,1)",
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "rgba(0,0,0,0.373)"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 44,
+      "endTime": 47,
+      "text": "<v Yui><u>Underlined</u> and <c.s-0>struck</c>.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      },
+      "spans": {
+        "0": {
+          "strike": true
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 47,
+      "endTime": 50,
+      "text": "<v Rin>Mixed <c.#ff0000>red</c> and <c.#0000ff>blue</c> words.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 50,
+      "endTime": 53,
+      "text": "<v Yui>Line with a  and a lone \\ backslash.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 53,
+      "endTime": 56,
+      "text": "<v Rin>Left-middle switch mid-line is ignored.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "right": 9.375,
+        "top": 50,
+        "translate": {
+          "y": -0.5
+        }
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "right",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 56,
+      "endTime": 59,
+      "text": "<c.s-0>Squashed and rotated.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      },
+      "spans": {
+        "0": {
+          "transform": {
+            "scaleX": 1.2,
+            "scaleY": 0.8,
+            "rotateY": -20,
+            "origin": [
+              50,
+              100
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 59,
+      "endTime": 62,
+      "text": "<c.s-0>Half transparent </c>then solid.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 5.556
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      },
+      "spans": {
+        "0": {
+          "opacity": 0.498
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 62,
+      "endTime": 65,
+      "text": "A banner effect scrolling across the screen for a while.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "left": 100,
+        "bottom": 5.556,
+        "fixed": true
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "nowrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      },
+      "animations": [
+        {
+          "target": "display",
+          "duration": 3,
+          "fill": "both",
+          "keyframes": [
+            {
+              "left": 100,
+              "translate": {
+                "x": 0
+              }
+            },
+            {
+              "left": 0,
+              "translate": {
+                "x": -1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 65,
+      "endTime": 69,
+      "text": "Scrolling credits\nline two\nline three",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 81.25,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "top": 69.444,
+        "fixed": true,
+        "clip": {
+          "rect": [
+            -100,
+            13.889,
+            200,
+            69.444
+          ]
+        }
+      },
+      "textStyle": {
+        "fontFamily": "\"Gandhi Sans\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.3889
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.6111
+          },
+          "color": "rgba(0,0,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,0.412)"
+        }
+      },
+      "animations": [
+        {
+          "target": "display",
+          "duration": 4,
+          "fill": "both",
+          "keyframes": [
+            {
+              "top": 69.444,
+              "translate": {
+                "y": 0
+              },
+              "clip": {
+                "rect": [
+                  -100,
+                  13.889,
+                  200,
+                  69.444
+                ]
+              }
+            },
+            {
+              "top": 13.889,
+              "translate": {
+                "y": -1
+              },
+              "clip": {
+                "rect": [
+                  -100,
+                  13.889,
+                  200,
+                  69.444
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

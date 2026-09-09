@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt:tt xmlns:tt="http://www.w3.org/ns/ttml" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xmlns:ebuttm="urn:ebu:tt:metadata" xmlns:ebutts="urn:ebu:tt:style" xml:lang="de" ttp:timeBase="media" ttp:cellResolution="32 15">
+  <tt:head>
+    <tt:metadata>
+      <ebuttm:documentMetadata>
+        <ebuttm:conformsToStandard>urn:ebu:tt:distribution:2014-01</ebuttm:conformsToStandard>
+        <ebuttm:documentEbuttVersion>v1.0</ebuttm:documentEbuttVersion>
+        <ebuttm:documentIdentifier>tagesschau-2024-03-01</ebuttm:documentIdentifier>
+        <ebuttm:documentOriginatingSystem>subtitle-export 4.2</ebuttm:documentOriginatingSystem>
+        <ebuttm:documentCopyright>ARD</ebuttm:documentCopyright>
+      </ebuttm:documentMetadata>
+    </tt:metadata>
+    <tt:styling>
+      <tt:style xml:id="defaultStyle" tts:fontFamily="Verdana, Arial, Tiresias" tts:fontSize="160%" tts:lineHeight="125%" tts:textAlign="center" tts:color="#FFFFFF" tts:backgroundColor="#00000000" tts:fontStyle="normal" tts:fontWeight="normal" tts:textDecoration="none" ebutts:linePadding="0.5c" ebutts:multiRowAlign="auto"/>
+      <tt:style xml:id="textWhiteOnBlack" tts:color="#FFFFFF" tts:backgroundColor="#000000"/>
+      <tt:style xml:id="textYellowOnBlack" tts:color="#FFFF00" tts:backgroundColor="#000000"/>
+      <tt:style xml:id="textCyanOnBlack" tts:color="#00FFFF" tts:backgroundColor="#000000"/>
+      <tt:style xml:id="italic" tts:fontStyle="italic"/>
+      <tt:style xml:id="leftAlign" tts:textAlign="start" ebutts:multiRowAlign="start"/>
+    </tt:styling>
+    <tt:layout>
+      <tt:region xml:id="bottom" tts:origin="10% 10%" tts:extent="80% 80%" tts:displayAlign="after" tts:padding="0c" tts:writingMode="lrtb" tts:overflow="visible"/>
+      <tt:region xml:id="top" tts:origin="10% 10%" tts:extent="80% 80%" tts:displayAlign="before" tts:padding="0c" tts:writingMode="lrtb" tts:overflow="visible"/>
+    </tt:layout>
+  </tt:head>
+  <tt:body>
+    <tt:div style="defaultStyle">
+      <tt:p xml:id="sub1" begin="00:00:00.760" end="00:00:03.320" region="bottom"><tt:span style="textWhiteOnBlack">Guten Abend, meine Damen und Herren,</tt:span><tt:br/><tt:span style="textWhiteOnBlack">ich begrüße Sie zur Tagesschau.</tt:span></tt:p>
+      <tt:p xml:id="sub2" begin="00:00:03.400" end="00:00:06.880" region="bottom"><tt:span style="textYellowOnBlack">* Wir haben heute drei Themen. *</tt:span></tt:p>
+      <tt:p xml:id="sub3" begin="00:00:06.960" end="00:00:10.200" region="bottom"><tt:span style="textCyanOnBlack">Die Verhandlungen sind gescheitert.</tt:span></tt:p>
+      <tt:p xml:id="sub4" begin="00:00:10.280" end="00:00:13.000" region="top"><tt:span style="textWhiteOnBlack">(Musik)</tt:span></tt:p>
+      <tt:p xml:id="sub5" begin="00:00:13.080" end="00:00:16.640" region="bottom" style="leftAlign"><tt:span style="textWhiteOnBlack">- Kommst du mit?</tt:span><tt:br/><tt:span style="textYellowOnBlack">- Nein, ich bleibe hier.</tt:span></tt:p>
+      <tt:p xml:id="sub6" begin="00:00:16.720" end="00:00:20.000" region="bottom"><tt:span style="textWhiteOnBlack"><tt:span style="italic">Er flüsterte:</tt:span> "Es ist Zeit."</tt:span></tt:p>
+      <tt:p xml:id="sub7" begin="00:00:20.080" end="00:00:24.000" region="bottom"><tt:span style="textWhiteOnBlack">Untertitel im Auftrag des ZDF, 2024</tt:span></tt:p>
+    </tt:div>
+  </tt:body>
+</tt:tt>

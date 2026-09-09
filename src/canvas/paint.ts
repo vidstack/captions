@@ -1,0 +1,693 @@
+import type { Box } from '../vtt/overlay/box';
+import type { CueAnimation, CueKeyframe } from '../vtt/vtt-cue';
+import { ease, sampleAnimation } from './animate';
+import { fontString, shadowPx, type Run, type RunStyle } from './flow';
+import type { MeasuredCue, MeasuredRegion } from './measure';
+import type { TextMeasurer } from './text-measurer';
+import type { CanvasTheme } from './theme';
+import {
+  clipToPolygon,
+  combineTransforms,
+  isIdentity,
+  lengthToPx,
+  transform2D,
+  transformOriginPx,
+  type LengthEnv,
+  type Transform2D,
+} from './values';
+
+/** The subset of `CanvasRenderingContext2D` the painter uses (also satisfied by offscreen contexts). */
+export type PaintContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+/** Loads and caches image cue URLs; `onLoad` asks for a repaint. */
+export class ImageCache {
+  private _images = new Map<string, HTMLImageElement | null>();
+
+  constructor(private _onLoad: () => void) {}
+
+  get(url: string): HTMLImageElement | null {
+    if (this._images.has(url)) return this._images.get(url)!;
+    this._images.set(url, null);
+    if (typeof Image !== 'function') return null;
+    const image = new Image();
+    image.addEventListener(
+      'load',
+      () => {
+        this._images.set(url, image);
+        this._onLoad();
+      },
+      { once: true },
+    );
+    image.src = url;
+    return null;
+  }
+
+  clear() {
+    this._images.clear();
+  }
+}
+
+export interface PaintOptions {
+  time: number;
+  theme: CanvasTheme;
+  images: ImageCache;
+  /** Re-measures runs whose span animation changes the font size or letter spacing. */
+  measurer?: TextMeasurer;
+}
+
+/** The DOM's `transition: top 0.433s` on `scroll: up` regions (see regions.css). */
+const REGION_SCROLL_DURATION = 0.433;
+
+const NO_COLOR = new Set(['transparent', 'none', 'rgba(0,0,0,0)', 'rgba(0, 0, 0, 0)']);
+
+/** Paints one laid out cue. `box` is its final display box in container pixels. */
+export function paintCue(ctx: PaintContext, cue: MeasuredCue, box: Box, options: PaintOptions) {
+  const { theme } = options,
+    { container } = theme,
+    display = sampleTarget(cue, 'display', options),
+    inner = sampleTarget(cue, 'cue', options);
+
+  // Animated position (SSA `\move`, scroll and banner effects, CEA-708 marquees).
+  let left = box.left,
+    top = box.top;
+  const translateX = display.translate?.x ?? cue.cue.layout?.translate?.x ?? 0,
+    translateY = display.translate?.y ?? cue.cue.layout?.translate?.y ?? 0;
+  if (display.left !== undefined)
+    left = (display.left / 100) * container.width + translateX * box.width;
+  if (display.top !== undefined)
+    top = (display.top / 100) * container.height + translateY * box.height;
+  if (display.left === undefined && display.translate?.x !== undefined)
+    left += display.translate.x * box.width;
+  if (display.top === undefined && display.translate?.y !== undefined)
+    top += display.translate.y * box.height;
+  const painted = { left, top, width: box.width, height: box.height },
+    alpha = cue.style.opacity * (display.opacity ?? 1) * (inner.opacity ?? 1);
+
+  withGroupAlpha(ctx, alpha, (layer) => {
+    layer.save();
+    layer.translate(container.left + left, container.top + top);
+
+    // Clips: screen-fixed rectangles and polygons (SSA `\clip`, scroll bands) or box insets
+    // (wipes).
+    const clip = display.clip ?? cue.style.clip;
+    if (clip) {
+      const { points, evenOdd } = clipToPolygon(clip, container, painted);
+      layer.beginPath();
+      points.forEach(([x, y], i) => (i ? layer.lineTo(x, y) : layer.moveTo(x, y)));
+      layer.closePath();
+      layer.clip(evenOdd ? 'evenodd' : 'nonzero');
+    }
+
+    // Cue transforms (SSA rotation/scale, `\t`) pivot on the alignment anchor or `\org`.
+    const transform = combineTransforms(
+      transform2D(cue.style.transform),
+      transform2D(display.transform),
+      transform2D(inner.transform),
+    );
+    applyTransform(layer, transform, transformOriginPx(cue.style.transform, container, painted));
+
+    paintCueContent(layer, cue, options, inner);
+    layer.restore();
+  });
+}
+
+/** Paints a region: clipped to its box, cues stacked from the bottom (`scroll: up`) or top. */
+export function paintRegion(
+  ctx: PaintContext,
+  region: MeasuredRegion,
+  box: Box,
+  options: PaintOptions,
+) {
+  const { container, reducedMotion } = options.theme,
+    { region: spec, rows } = region;
+
+  // `scroll: up`: the DOM grows the region as rows arrive and transitions its `top` (CSS `ease`),
+  // so within 0.433s of a new row the box still sits where the old height put it.
+  let shift = 0;
+  if (spec.scroll === 'up' && !reducedMotion) {
+    const since = options.time - REGION_SCROLL_DURATION,
+      entering = rows.filter((row) => row.start > since && row.start <= options.time);
+    if (entering.length) {
+      const newest = Math.max(...entering.map((row) => row.start)),
+        previousHeight = rows
+          .filter((row) => row.start <= since)
+          .slice(-spec.lines)
+          .reduce((sum, row) => sum + row.height, 0),
+        progress = ease((options.time - newest) / REGION_SCROLL_DURATION, 'ease');
+      shift = (box.height - previousHeight) * (1 - progress);
+    }
+  }
+
+  ctx.save();
+  ctx.translate(
+    container.left + box.left,
+    container.top + box.top + (spec.regionAnchorY / 100) * shift,
+  );
+  ctx.beginPath();
+  ctx.rect(0, 0, box.width, box.height);
+  ctx.clip();
+
+  let y =
+    region.region.scroll === 'up' ? box.height - region.rowHeights.reduce((s, h) => s + h, 0) : 0;
+  region.visible.forEach((cue, i) => {
+    const top = y + 1;
+    withGroupAlpha(ctx, cue.style.opacity, (layer) => {
+      layer.save();
+      layer.translate(cue.box.left, top);
+      paintCueContent(layer, cue, options, {});
+      layer.restore();
+    });
+    y += region.rowHeights[i];
+  });
+  ctx.restore();
+}
+
+/** Background, image, outline, and text of a cue at the current origin (its display box). */
+function paintCueContent(
+  ctx: PaintContext,
+  cue: MeasuredCue,
+  options: PaintOptions,
+  inner: CueKeyframe,
+) {
+  const { style, textBox, flow } = cue,
+    { theme } = options;
+
+  if (!NO_COLOR.has(style.backgroundColor)) {
+    ctx.fillStyle = style.backgroundColor;
+    ctx.fillRect(textBox.left, textBox.top, textBox.width, textBox.height);
+  }
+
+  if (style.imageURL) {
+    const image = options.images.get(style.imageURL);
+    if (image) {
+      const scale =
+          style.imageFit === 'cover'
+            ? Math.max(textBox.width / image.width, textBox.height / image.height)
+            : Math.min(textBox.width / image.width, textBox.height / image.height),
+        w = style.imageFit === 'fill' ? textBox.width : image.width * scale,
+        h = style.imageFit === 'fill' ? textBox.height : image.height * scale;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(textBox.left, textBox.top, textBox.width, textBox.height);
+      ctx.clip();
+      ctx.drawImage(
+        image,
+        textBox.left + (textBox.width - w) / 2,
+        textBox.top + (textBox.height - h) / 2,
+        w,
+        h,
+      );
+      ctx.restore();
+    }
+  }
+
+  if (style.outline) {
+    ctx.lineWidth = style.outline.width;
+    ctx.strokeStyle = style.outline.color;
+    ctx.strokeRect(
+      textBox.left - style.outline.width / 2,
+      textBox.top - style.outline.width / 2,
+      textBox.width + style.outline.width,
+      textBox.height + style.outline.width,
+    );
+  }
+
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.lineJoin = 'round';
+
+  if (cue.vertical) {
+    paintColumns(ctx, cue, options, inner);
+    return;
+  }
+
+  const contentWidth = textBox.width - 2 * style.paddingX;
+  let y = textBox.top + style.paddingY;
+
+  for (const line of flow.lines) {
+    // Runs whose span animation changes the font size or letter spacing are re-measured so the
+    // line reflows around them as the DOM's would.
+    const runs = line.runs.map((run) => {
+        const span = run.style.spanKey
+          ? sampleTarget(cue, { span: run.style.spanKey }, options)
+          : {};
+        return { run, span, width: animatedRunWidth(run, span, options) ?? run.width };
+      }),
+      lineWidth = runs.reduce((sum, entry) => sum + entry.width, 0),
+      slack = contentWidth - lineWidth,
+      // Runs share the line's baseline, so smaller ones sit lower than the line's centre.
+      lineFontSize = Math.max(...line.runs.map((run) => run.style.fontSize));
+    // Ruby annotations sit in a band above the line, overflowing it as in the browser.
+    let x =
+      textBox.left +
+      style.paddingX +
+      (style.textAlign === 'center' ? slack / 2 : style.textAlign === 'right' ? slack : 0);
+
+    for (const { run: measured, span, width } of runs) {
+      const run = width === measured.width ? measured : { ...measured, width },
+        over: RunOverrides = {
+          color: span.color ?? (run.style.color === style.color ? inner.color : undefined),
+          strokeColor: inner.strokeColor ?? span.strokeColor,
+          alpha: span.opacity ?? 1,
+          frame: span,
+          time: options.time,
+          lineFontSize,
+        };
+      if (run.ruby) {
+        const { ruby } = run,
+          baseWidth = run.baseWidth ?? run.width;
+        paintRun(
+          ctx,
+          { text: ruby.text, style: ruby.style, width: ruby.width },
+          x + (run.width - ruby.width) / 2,
+          y - line.rubyHeight,
+          line.rubyHeight,
+          cue,
+          theme,
+          { ...over, lineFontSize: undefined },
+        );
+        paintRun(
+          ctx,
+          { text: run.text, style: run.style, width: baseWidth },
+          x + (run.width - baseWidth) / 2,
+          y,
+          line.height,
+          cue,
+          theme,
+          over,
+        );
+      } else {
+        paintRun(ctx, run, x, y, line.height, cue, theme, over);
+      }
+      x += run.width;
+    }
+    y += line.height;
+  }
+}
+
+/** The advance of a run at its animated font size / letter spacing, or null when unchanged. */
+function animatedRunWidth(run: Run, span: CueKeyframe, options: PaintOptions): number | null {
+  if (!options.measurer || run.ruby || run.style.drawing) return null;
+  if (span.fontSize === undefined && span.letterSpacing === undefined) return null;
+  const { container } = options.theme,
+    { style } = run,
+    env: LengthEnv = { width: container.width, height: container.height, em: style.fontSize },
+    fontSize = lengthToPx(span.fontSize, env) ?? style.fontSize,
+    letterSpacing = lengthToPx(span.letterSpacing, env) ?? style.letterSpacing;
+  return options.measurer.measureText(run.text, fontString({ ...style, fontSize }), letterSpacing);
+}
+
+interface RunOverrides {
+  color?: string;
+  strokeColor?: string;
+  alpha: number;
+  /** The sampled span animation, for transforms, sizes, and sweeps. */
+  frame: CueKeyframe;
+  /** Media time, for timed text. */
+  time: number;
+  /** Largest font on the line; runs align to its baseline instead of the line's centre. */
+  lineFontSize?: number;
+}
+
+/**
+ * Distance from the middle of the em square to the baseline, as a fraction of the font size
+ * (canvas `textBaseline: 'middle'`; typical fonts put the baseline about 0.3em below it).
+ */
+const BASELINE_FROM_MIDDLE = 0.3;
+
+function paintRun(
+  ctx: PaintContext,
+  run: Run,
+  x: number,
+  y: number,
+  lineHeight: number,
+  cue: MeasuredCue,
+  theme: CanvasTheme,
+  over: RunOverrides,
+) {
+  withGroupAlpha(ctx, run.style.opacity * over.alpha, (layer) =>
+    paintRunContent(layer, run, x, y, lineHeight, cue, theme, over),
+  );
+}
+
+function paintRunContent(
+  ctx: PaintContext,
+  run: Run,
+  x: number,
+  y: number,
+  lineHeight: number,
+  cue: MeasuredCue,
+  theme: CanvasTheme,
+  over: RunOverrides,
+) {
+  const { style } = run,
+    { container } = theme,
+    env: LengthEnv = { width: container.width, height: container.height, em: style.fontSize };
+
+  ctx.save();
+
+  if (style.transform || over.frame.transform) {
+    const runBox = { left: x, top: y, width: run.width, height: lineHeight };
+    ctx.translate(x, y);
+    applyTransform(
+      ctx,
+      combineTransforms(transform2D(style.transform), transform2D(over.frame.transform)),
+      transformOriginPx(style.transform, container, runBox),
+    );
+    ctx.translate(-x, -y);
+  }
+
+  if (style.bgColor && !NO_COLOR.has(style.bgColor)) {
+    ctx.fillStyle = style.bgColor;
+    ctx.fillRect(x, y, run.width, lineHeight);
+  }
+
+  if (style.drawing) {
+    const { drawing } = style,
+      [vx, vy, vw, vh] = drawing.viewBox,
+      width = (drawing.width / 100) * container.width,
+      height = (drawing.height / 100) * container.height;
+    ctx.translate(x, y);
+    ctx.scale(width / (vw || 1), height / (vh || 1));
+    ctx.translate(-vx, -vy);
+    const path = new Path2D(drawing.path);
+    ctx.fillStyle = drawing.fill ?? style.color;
+    // oxlint-disable-next-line unicorn/no-array-fill-with-reference-type -- canvas fill, not Array#fill
+    ctx.fill(path);
+    if (drawing.stroke && drawing.strokeWidth) {
+      ctx.strokeStyle = drawing.stroke;
+      ctx.lineWidth = drawing.strokeWidth;
+      ctx.stroke(path);
+    }
+    ctx.restore();
+    return;
+  }
+
+  const fontSize = lengthToPx(over.frame.fontSize, env) ?? style.fontSize,
+    font = fontSize === style.fontSize ? fontString(style) : fontString({ ...style, fontSize });
+  ctx.font = font;
+  if ('letterSpacing' in ctx) {
+    ctx.letterSpacing = `${lengthToPx(over.frame.letterSpacing, env) ?? style.letterSpacing}px`;
+  }
+  const middle =
+      y +
+      lineHeight / 2 +
+      (over.lineFontSize !== undefined ? (over.lineFontSize - fontSize) * BASELINE_FROM_MIDDLE : 0),
+    stroke =
+      over.frame.strokeWidth !== undefined
+        ? {
+            width: lengthToPx(over.frame.strokeWidth, env) ?? 0,
+            color: over.strokeColor ?? style.color,
+          }
+        : style.stroke === undefined
+          ? cue.style.stroke
+          : style.stroke,
+    shadow =
+      over.frame.shadow !== undefined
+        ? shadowPx(over.frame.shadow, env)
+        : style.shadow === undefined
+          ? cue.style.shadow
+          : style.shadow,
+    blur = lengthToPx(over.frame.blur, env);
+
+  if (blur && 'filter' in ctx) ctx.filter = `blur(${blur}px)`;
+
+  if (shadow) {
+    ctx.shadowOffsetX = shadow.x;
+    ctx.shadowOffsetY = shadow.y;
+    ctx.shadowBlur = shadow.blur;
+    ctx.shadowColor = shadow.color;
+  }
+
+  let fill = over.color ?? style.color;
+  if (style.timestamp !== undefined) {
+    const timed = theme.timedColors[over.time >= style.timestamp ? 'past' : 'future'];
+    if (timed) fill = timed;
+  }
+  if (stroke && stroke.width > 0) {
+    ctx.lineWidth = stroke.width;
+    ctx.strokeStyle = over.strokeColor ?? (stroke.color === 'currentColor' ? fill : stroke.color);
+    ctx.strokeText(run.text, x, middle);
+    // The shadow is painted once, with the stroke.
+    ctx.shadowColor = 'transparent';
+  }
+
+  if (style.sweep) {
+    // Karaoke: the sung part in the primary colour, the rest in the secondary, split at the
+    // animated progress (0 = nothing sung, 1 = all sung).
+    const progress = Math.min(Math.max(over.frame.sweep ?? 0, 0), 1),
+      split = x + run.width * progress,
+      pad = stroke ? stroke.width : 0;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x - pad, y - lineHeight, split - x + pad, lineHeight * 3);
+    ctx.clip();
+    ctx.fillStyle = style.sweep.sung;
+    ctx.fillText(run.text, x, middle);
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(split, y - lineHeight, x + run.width + pad - split, lineHeight * 3);
+    ctx.clip();
+    ctx.fillStyle = style.sweep.unsung;
+    ctx.fillText(run.text, x, middle);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = fill;
+    ctx.fillText(run.text, x, middle);
+  }
+  ctx.shadowColor = 'transparent';
+
+  if (style.underline || style.strike) {
+    const thickness = Math.max(1, style.fontSize * 0.06);
+    ctx.fillStyle = fill;
+    if (style.underline) ctx.fillRect(x, middle + style.fontSize * 0.38, run.width, thickness);
+    if (style.strike) ctx.fillRect(x, middle - thickness / 2, run.width, thickness);
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Vertical writing: each line is a column `lineHeight` wide, read right-to-left (`rl`) or
+ * left-to-right (`lr`); ruby annotations overflow to the right of their base in both. Upright runs
+ * stack one glyph per em; sideways runs are rotated a quarter turn clockwise and read downwards.
+ */
+function paintColumns(
+  ctx: PaintContext,
+  cue: MeasuredCue,
+  options: PaintOptions,
+  inner: CueKeyframe,
+) {
+  const { style, textBox, flow } = cue,
+    { theme } = options,
+    // Padding axes are swapped for vertical text (see `measureVerticalCue`).
+    padAlong = style.paddingY,
+    padAcross = style.paddingX,
+    contentHeight = textBox.height - 2 * padAlong;
+
+  // The edge the next column is laid against: the right edge for `rl`, the left for `lr`.
+  let edge =
+    cue.vertical === 'rl' ? textBox.left + textBox.width - padAcross : textBox.left + padAcross;
+
+  for (const column of flow.lines) {
+    const x = cue.vertical === 'rl' ? edge - column.height : edge,
+      cx = x + column.height / 2,
+      rubyCx = x + column.height + column.rubyHeight / 2,
+      slack = contentHeight - column.width;
+    edge = cue.vertical === 'rl' ? x : edge + column.height;
+    let y =
+      textBox.top +
+      padAlong +
+      (style.textAlign === 'center' ? slack / 2 : style.textAlign === 'right' ? slack : 0);
+
+    for (const run of column.runs) {
+      const span = run.style.spanKey ? sampleTarget(cue, { span: run.style.spanKey }, options) : {},
+        fill = resolveFill(run, cue, theme, {
+          color: span.color ?? (run.style.color === style.color ? inner.color : undefined),
+          time: options.time,
+        });
+
+      const top = y;
+      withGroupAlpha(ctx, run.style.opacity * (span.opacity ?? 1), (layer) => {
+        if (run.style.bgColor && !NO_COLOR.has(run.style.bgColor)) {
+          layer.fillStyle = run.style.bgColor;
+          layer.fillRect(x, top, column.height, run.width);
+        }
+
+        if (run.ruby) {
+          const { ruby } = run,
+            baseWidth = run.baseWidth ?? run.width;
+          paintVerticalText(layer, cue, ruby, fill, rubyCx, top + (run.width - ruby.width) / 2);
+          paintVerticalText(
+            layer,
+            cue,
+            { text: run.text, style: run.style, width: baseWidth, upright: run.upright },
+            fill,
+            cx,
+            top + (run.width - baseWidth) / 2,
+          );
+        } else {
+          paintVerticalText(layer, cue, run, fill, cx, top);
+        }
+      });
+      y += run.width;
+    }
+  }
+}
+
+/** Draws one vertical run (or ruby annotation) centred on column `cx`, starting at `y`. */
+function paintVerticalText(
+  ctx: PaintContext,
+  cue: MeasuredCue,
+  run: { text: string; style: RunStyle; width: number; upright?: boolean },
+  fill: string,
+  cx: number,
+  y: number,
+) {
+  const stroke = run.style.stroke === undefined ? cue.style.stroke : run.style.stroke,
+    shadow = run.style.shadow === undefined ? cue.style.shadow : run.style.shadow;
+
+  ctx.save();
+  ctx.font = fontString(run.style);
+  if (shadow) {
+    ctx.shadowOffsetX = shadow.x;
+    ctx.shadowOffsetY = shadow.y;
+    ctx.shadowBlur = shadow.blur;
+    ctx.shadowColor = shadow.color;
+  }
+  const draw = (text: string, tx: number, ty: number) => {
+    if (stroke && stroke.width > 0) {
+      ctx.lineWidth = stroke.width;
+      ctx.strokeStyle = stroke.color === 'currentColor' ? fill : stroke.color;
+      ctx.strokeText(text, tx, ty);
+      ctx.shadowColor = 'transparent';
+    }
+    ctx.fillStyle = fill;
+    ctx.fillText(text, tx, ty);
+  };
+
+  if (run.upright) {
+    ctx.textAlign = 'center';
+    for (const glyph of run.text) {
+      draw(glyph, cx, y + run.style.fontSize / 2);
+      y += run.style.fontSize;
+    }
+  } else {
+    ctx.textAlign = 'left';
+    ctx.translate(cx, y);
+    ctx.rotate(Math.PI / 2);
+    draw(run.text, 0, 0);
+  }
+  ctx.restore();
+}
+
+/** The fill colour of a run after animation overrides and timed-text colouring. */
+function resolveFill(
+  run: Run,
+  cue: MeasuredCue,
+  theme: CanvasTheme,
+  over: { color?: string; time: number },
+): string {
+  let fill = over.color ?? run.style.color;
+  if (run.style.timestamp !== undefined) {
+    const timed = theme.timedColors[over.time >= run.style.timestamp ? 'past' : 'future'];
+    if (timed) fill = timed;
+  }
+  return fill;
+}
+
+/** Samples every animation aimed at a target and merges the frames (later ones win). */
+function sampleTarget(
+  cue: MeasuredCue,
+  target: NonNullable<CueAnimation['target']>,
+  options: PaintOptions,
+): CueKeyframe {
+  const frame: CueKeyframe = {};
+  for (const spec of cue.cue.animations ?? []) {
+    const specTarget = spec.target ?? 'display';
+    const matches =
+      typeof target === 'string'
+        ? specTarget === target
+        : typeof specTarget === 'object' && specTarget.span === target.span;
+    if (!matches) continue;
+    Object.assign(
+      frame,
+      sampleAnimation(spec, options.time, cue.cue.startTime, options.theme.reducedMotion),
+    );
+  }
+  return frame;
+}
+
+/**
+ * Paints `draw` as one group at `alpha`, like CSS `opacity` on the cue box. Text is several draw
+ * calls (shadow, stroke, fill, background) and `globalAlpha` applies to each, so stacking them
+ * would composite to `1 - (1 - alpha)^n`: a fade would hold near opaque and then drop off. Below
+ * full opacity the group is painted at full alpha into a scratch layer the size of the canvas and
+ * composited once, under the caller's clip.
+ */
+function withGroupAlpha(ctx: PaintContext, alpha: number, draw: (ctx: PaintContext) => void) {
+  if (alpha >= 1) {
+    draw(ctx);
+    return;
+  }
+  if (alpha <= 0) return;
+
+  const layer = acquireLayer(ctx);
+  if (!layer) {
+    // No scratch canvas available (unusual runtime): fall back to per-call alpha.
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    draw(ctx);
+    ctx.restore();
+    return;
+  }
+
+  layer.save();
+  layer.setTransform(ctx.getTransform());
+  draw(layer);
+  layer.restore();
+
+  ctx.save();
+  ctx.resetTransform();
+  ctx.globalAlpha *= alpha;
+  ctx.drawImage(layer.canvas, 0, 0);
+  ctx.restore();
+  releaseLayer(ctx, layer);
+}
+
+/** Free scratch layers per target canvas; nested groups take one each. */
+const LAYERS = new WeakMap<object, PaintContext[]>();
+
+function acquireLayer(ctx: PaintContext): PaintContext | null {
+  const { width, height } = ctx.canvas,
+    pool = LAYERS.get(ctx.canvas) ?? [];
+  LAYERS.set(ctx.canvas, pool);
+  let layer = pool.pop() ?? null;
+  if (!layer) {
+    if (typeof OffscreenCanvas === 'function') {
+      layer = new OffscreenCanvas(width, height).getContext('2d');
+    } else if (typeof document !== 'undefined') {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      layer = canvas.getContext('2d');
+    }
+    if (!layer) return null;
+  }
+  if (layer.canvas.width !== width) layer.canvas.width = width;
+  if (layer.canvas.height !== height) layer.canvas.height = height;
+  return layer;
+}
+
+function releaseLayer(ctx: PaintContext, layer: PaintContext) {
+  layer.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+  LAYERS.get(ctx.canvas)?.push(layer);
+}
+
+function applyTransform(ctx: PaintContext, t: Transform2D, [ox, oy]: [number, number]) {
+  if (isIdentity(t)) return;
+  ctx.translate(ox, oy);
+  ctx.transform(t[0], t[1], t[2], t[3], 0, 0);
+  ctx.translate(-ox, -oy);
+}

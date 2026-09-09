@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Modifications Copyright (c) 2017, Pierre-Anthony Lemieux (pal@palemieux.com)-->
+<tt:tt xmlns:tt="http://www.w3.org/ns/ttml" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" ttp:profile="http://www.w3.org/ns/ttml/profile/imsc1/text" xml:lang="en">
+  <head>
+    <metadata> 
+      <ttm:title>Styling Test - style element - 001</ttm:title>
+      <ttm:desc>Test style attributes in the style element.</ttm:desc>
+      <ttm:copyright>Copyright (C) 2008 W3C (MIT, ERCIM, Keio).</ttm:copyright>
+    </metadata>
+    
+    <styling>
+    	<style xml:id="s1" tts:color="yellow" tts:textDecoration="none" tts:textAlign="center" tts:backgroundColor="blue"/>
+    </styling>
+  </head>
+  <body>
+    <div style="s1">
+    	<p begin="0s" end="10s">This caption is aligned in the center, has a blue background and undecorated yellow text.</p>
+   	 </div>
+  </body>
+</tt:tt>

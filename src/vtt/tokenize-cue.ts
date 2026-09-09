@@ -1,9 +1,9 @@
-import type { VTTCue } from './vtt-cue';
+import type { CueSpanStyle, VTTCue } from './vtt-cue';
 import { parseVTTTimestamp } from './vtt-parser';
 
-const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
-  MULTI_SPACE_RE = /*#__PURE__*/ /[\s\t]+/,
-  TAG_NAME = /*#__PURE__*/ {
+const DIGIT_RE = /[0-9]/,
+  MULTI_SPACE_RE = /[\s\t]+/g,
+  TAG_NAME: Record<string, string> = {
     c: 'span',
     i: 'i',
     b: 'b',
@@ -14,17 +14,96 @@ const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
     lang: 'span',
     timestamp: 'span',
   },
-  HTML_ENTITIES = /*#__PURE__*/ {
-    '&amp;': '&',
-    '&lt;': '<',
-    '&gt;': '>',
-    '&quot;': '"',
-    '&#39;': "'",
-    '&nbsp;': '\u{a0}',
-    '&lrm;': '\u{200e}',
-    '&rlm;': '\u{200f}',
+  HTML_ENTITIES: Record<string, string> = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+    nbsp: '\u{a0}',
+    lrm: '\u{200e}',
+    rlm: '\u{200f}',
+    hellip: '\u{2026}',
+    ndash: '\u{2013}',
+    mdash: '\u{2014}',
+    lsquo: '\u{2018}',
+    rsquo: '\u{2019}',
+    ldquo: '\u{201c}',
+    rdquo: '\u{201d}',
+    laquo: '\u{ab}',
+    raquo: '\u{bb}',
+    copy: '\u{a9}',
+    reg: '\u{ae}',
+    trade: '\u{2122}',
+    deg: '\u{b0}',
+    middot: '\u{b7}',
+    bull: '\u{2022}',
+    iexcl: '\u{a1}',
+    iquest: '\u{bf}',
+    frac12: '\u{bd}',
+    frac14: '\u{bc}',
+    frac34: '\u{be}',
+    times: '\u{d7}',
+    divide: '\u{f7}',
+    euro: '\u{20ac}',
+    pound: '\u{a3}',
+    yen: '\u{a5}',
+    cent: '\u{a2}',
+    not: '\u{ac}',
+    notin: '\u{2209}',
+    para: '\u{b6}',
+    sect: '\u{a7}',
+    shy: '\u{ad}',
+    plusmn: '\u{b1}',
+    micro: '\u{b5}',
+    sup2: '\u{b2}',
+    sup3: '\u{b3}',
+    AMP: '&',
+    LT: '<',
+    GT: '>',
+    QUOT: '"',
+    COPY: '\u{a9}',
+    REG: '\u{ae}',
   },
-  HTML_ENTITY_RE = /*#__PURE__*/ /&(?:amp|lt|gt|quot|#(0+)?39|nbsp|lrm|rlm);/g,
+  // HTML legacy references that decode even without a trailing `;` (Latin-1 subset we ship).
+  LEGACY_ENTITIES = new Set([
+    'amp',
+    'AMP',
+    'lt',
+    'LT',
+    'gt',
+    'GT',
+    'quot',
+    'QUOT',
+    'nbsp',
+    'copy',
+    'COPY',
+    'reg',
+    'REG',
+    'not',
+    'para',
+    'sect',
+    'shy',
+    'deg',
+    'plusmn',
+    'micro',
+    'middot',
+    'iexcl',
+    'iquest',
+    'laquo',
+    'raquo',
+    'frac12',
+    'frac14',
+    'frac34',
+    'times',
+    'divide',
+    'pound',
+    'yen',
+    'cent',
+    'sup2',
+    'sup3',
+  ]),
+  HTML_ENTITY_RE = /&(?:#(\d+);|#[xX]([0-9a-fA-F]+);|([a-zA-Z][a-zA-Z0-9]*)(;?))/g,
   COLORS = /*#__PURE__*/ new Set([
     'white',
     'lime',
@@ -35,6 +114,9 @@ const DIGIT_RE = /*#__PURE__*/ /[0-9]/,
     'blue',
     'black',
   ]),
+  HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i,
+  SPAN_KEY_RE = /^s-(.+)$/,
+  MAX_DEPTH = 64,
   BLOCK_TYPES = /*#__PURE__*/ new Set(Object.keys(TAG_NAME));
 
 const enum Mode {
@@ -46,7 +128,25 @@ const enum Mode {
   Timestamp = 6,
 }
 
+/**
+ * Tokenizes WebVTT cue text into a tree of nodes. Text data and annotations are entity-decoded, so
+ * they must be escaped again before being inserted into HTML (see `renderVTTTokensString`).
+ *
+ * @see {@link https://www.w3.org/TR/webvtt1/#cue-text-parsing-rules}
+ */
 export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
+  // Rendering re-tokenizes a cue every time its element is (re)created; cache on the cue and
+  // invalidate when the text or span table changes.
+  const cached = TOKEN_CACHE.get(cue);
+  if (cached && cached.text === cue.text && cached.spans === cue.spans) return cached.tokens;
+  const tokens = tokenize(cue);
+  TOKEN_CACHE.set(cue, { text: cue.text, spans: cue.spans, tokens });
+  return tokens;
+}
+
+const TOKEN_CACHE = new WeakMap<VTTCue, { text: string; spans: unknown; tokens: VTTNode[] }>();
+
+function tokenize(cue: VTTCue): VTTNode[] {
   let buffer = '',
     mode: Mode = Mode.Data,
     result: VTTNode[] = [],
@@ -77,6 +177,8 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
             mode = Mode.Class;
             break;
           case '/':
+            // Also treats self-closing tags such as `<br/>` as unknown tags that are skipped.
+            buffer = '';
             mode = Mode.EndTag;
             break;
           case '>':
@@ -95,7 +197,6 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
           case ' ':
           case '\n':
             addClass();
-            if (node) node.class?.trim();
             mode = Mode.Annotation;
             break;
           case '.':
@@ -103,7 +204,6 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
             break;
           case '>':
             addClass();
-            if (node) node.class?.trim();
             mode = Mode.Data;
             break;
           default:
@@ -112,10 +212,7 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
         break;
       case Mode.Annotation:
         if (char === '>') {
-          buffer = buffer.replace(MULTI_SPACE_RE, ' ');
-          if (node?.type === 'v') node.voice = replaceHTMLEntities(buffer);
-          else if (node?.type === 'lang') node.lang = replaceHTMLEntities(buffer);
-          buffer = '';
+          setAnnotation();
           mode = Mode.Data;
         } else {
           buffer += char;
@@ -123,22 +220,17 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
         break;
       case Mode.EndTag:
         if (char === '>') {
+          // End tag names are matched verbatim; `</ c>` does not close `<c>`.
+          closeNode(buffer);
           buffer = '';
-          node = stack.pop();
           mode = Mode.Data;
+        } else {
+          buffer += char;
         }
         break;
       case Mode.Timestamp:
         if (char === '>') {
-          const time = parseVTTTimestamp(buffer);
-
-          if (time !== null && time >= cue.startTime && time <= cue.endTime) {
-            buffer = 'timestamp';
-            addNode();
-            (node as VTTTimestampNode).time = time;
-          }
-
-          buffer = '';
+          addTimestamp();
           mode = Mode.Data;
         } else {
           buffer += char;
@@ -147,8 +239,51 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
     }
   }
 
+  // End of input: emit whatever tag was being read (the spec's tokenizer returns the pending
+  // start tag / timestamp tag on EOF).
+  switch (mode as Mode) {
+    case Mode.Tag:
+      addNode();
+      break;
+    case Mode.Class:
+      addClass();
+      break;
+    case Mode.Annotation:
+      setAnnotation();
+      break;
+    case Mode.Timestamp:
+      addTimestamp();
+      break;
+  }
+
+  function addTimestamp() {
+    const time = parseVTTTimestamp(buffer);
+    // The spec does not range-check timestamps; renderers simply treat them as past or future.
+    if (time !== null) {
+      // Timestamps do not nest: a new timestamp ends the previous timed segment.
+      if (node?.type === 'timestamp') node = stack.pop();
+      buffer = 'timestamp';
+      addNode();
+      (node as VTTTimestampNode).time = time;
+    }
+    buffer = '';
+  }
+
+  function setAnnotation() {
+    buffer = buffer.replace(MULTI_SPACE_RE, ' ').trim();
+    if (node?.type === 'v') node.voice = replaceHTMLEntities(buffer);
+    else if (node?.type === 'lang') node.lang = replaceHTMLEntities(buffer);
+    buffer = '';
+  }
+
   function addNode() {
-    if (BLOCK_TYPES.has(buffer)) {
+    // `<rt>` is only meaningful directly inside `<ruby>`; elsewhere it is an unknown tag. Nesting
+    // is capped so hostile input can not overflow the renderer's recursion.
+    if (
+      BLOCK_TYPES.has(buffer) &&
+      (buffer !== 'rt' || node?.type === 'ruby') &&
+      stack.length < MAX_DEPTH
+    ) {
       const parent = node;
       node = createBlockNode(buffer);
       if (parent) {
@@ -161,11 +296,43 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
     mode = Mode.Data;
   }
 
+  /**
+   * Closes the current node when the end tag matches it; `</ruby>` also closes an open `<rt>`.
+   * Any other end tag (unknown, mismatched, or matching an ancestor) is ignored, exactly as the
+   * WebVTT cue text parsing rules say, so it can not corrupt nesting (e.g., `</font>` from SRT).
+   */
+  function closeNode(name: string) {
+    if (!node) return;
+
+    // Ancestors first, current node last. Timestamp nodes are transparent (the spec's timestamps
+    // are leaves; ours wrap the text that follows them), so look through them.
+    const chain = [...stack, node];
+    let i = chain.length - 1;
+    while (i > 0 && chain[i].type === 'timestamp') i--;
+
+    const popTo = (k: number) => {
+      node = k >= 0 ? chain[k] : undefined;
+      stack.length = Math.max(0, k);
+    };
+
+    if (chain[i].type === name) popTo(i - 1);
+    else if (name === 'ruby' && chain[i].type === 'rt' && i > 0 && chain[i - 1].type === 'ruby') {
+      popTo(i - 2);
+    }
+  }
+
   function addClass() {
     if (node && buffer) {
       const color = buffer.replace('bg_', '');
-      if (COLORS.has(color)) {
-        node[buffer.startsWith('bg_') ? 'bgColor' : 'color'] = color;
+      // Hex colours are a non-spec extension so other formats (SRT, SSA, TTML) can carry
+      // arbitrary colours through cue text.
+      const spanKey = buffer.match(SPAN_KEY_RE)?.[1];
+      if (spanKey !== undefined && cue.spans?.[spanKey]) {
+        // `<c.s-KEY>` references a per-cue span style instead of a CSS class.
+        node.span = cue.spans[spanKey];
+        node.spanKey = spanKey;
+      } else if (COLORS.has(color) || HEX_COLOR_RE.test(color)) {
+        node[buffer.startsWith('bg_') ? 'bgColor' : 'color'] = color.toLowerCase();
       } else {
         node.class = !node.class ? buffer : node.class + ' ' + buffer;
       }
@@ -177,7 +344,8 @@ export function tokenizeVTTCue(cue: VTTCue): VTTNode[] {
   function addText() {
     if (!buffer) return;
     const text: VTTextNode = { type: 'text', data: replaceHTMLEntities(buffer) };
-    node ? node.children.push(text) : result.push(text);
+    if (node) node.children.push(text);
+    else result.push(text);
     buffer = '';
   }
 
@@ -194,8 +362,37 @@ function createBlockNode(type: string): VTTBlockNode {
   } as VTTBlockNode;
 }
 
-function replaceHTMLEntities(text: string) {
-  return text.replace(HTML_ENTITY_RE, (entity) => HTML_ENTITIES[entity] || "'");
+/**
+ * Extends the named character reference table (e.g., with the full HTML table from
+ * `media-captions/entities`). Names in `legacy` also decode without a trailing `;`.
+ */
+export function registerHTMLEntities(entities: Record<string, string>, legacy?: Iterable<string>) {
+  Object.assign(HTML_ENTITIES, entities);
+  if (legacy) for (const name of legacy) LEGACY_ENTITIES.add(name);
+}
+
+/**
+ * Decodes named and numeric HTML character references in WebVTT cue text.
+ */
+export function replaceHTMLEntities(text: string) {
+  return text.replace(HTML_ENTITY_RE, (entity, decimal, hex, name, semicolon) => {
+    if (decimal) return fromCodePoint(parseInt(decimal, 10));
+    if (hex) return fromCodePoint(parseInt(hex, 16));
+    if (semicolon && HTML_ENTITIES[name]) return HTML_ENTITIES[name];
+    // Unknown or unterminated names still decode a leading legacy reference (`&notit;` -> `¬it;`,
+    // `&amp` -> `&`), matching the HTML character reference rules for text.
+    for (let end = name.length; end > 0; end--) {
+      const prefix = name.slice(0, end);
+      if (LEGACY_ENTITIES.has(prefix)) return HTML_ENTITIES[prefix] + name.slice(end) + semicolon;
+    }
+    return entity;
+  });
+}
+
+function fromCodePoint(code: number) {
+  // Null, surrogates, and out-of-range code points are replaced per the HTML tokenizer rules.
+  if (code <= 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) return '\u{fffd}';
+  return String.fromCodePoint(code);
 }
 
 /**
@@ -206,7 +403,7 @@ export type VTTNode = VTTBlockNode | VTTLeafNode;
 /**
  * @see {@link https://www.w3.org/TR/webvtt1/#cue-text-parsing-rules}
  */
-export type VTTBlockType = 'c' | 'i' | 'b' | 'u' | 'ruby' | 'rt' | 'v' | 'lang' | 'ts';
+export type VTTBlockType = 'c' | 'i' | 'b' | 'u' | 'ruby' | 'rt' | 'v' | 'lang' | 'timestamp';
 
 /**
  * @see {@link https://www.w3.org/TR/webvtt1/#webvtt-internal-node-object}
@@ -227,6 +424,9 @@ export interface VTTBlock {
   class?: string;
   color?: string;
   bgColor?: string;
+  /** Per-run style referenced via `<c.s-KEY>` (see `VTTCue.spans`). */
+  span?: CueSpanStyle;
+  spanKey?: string;
   children: (VTTBlockNode | VTTLeafNode)[];
 }
 

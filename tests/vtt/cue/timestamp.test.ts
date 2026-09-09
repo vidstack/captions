@@ -6,15 +6,40 @@ import { parseText, parseVTTTimestamp } from 'media-captions';
 
 test('BAD: invalid timestamp separators', async () => {
   const { cues, errors } = await parseText(
-    ['WEBVTT', '', '00:00 00:02', '', '00:00-->00:02', 'Text'].join('\n'),
+    ['WEBVTT', '', '00:00 00:02', 'Text', '', '00:00 -> 00:02', 'Text'].join('\n'),
   );
   expect(cues).toHaveLength(0);
+  expect(errors).toHaveLength(0);
+});
+
+test('GOOD: tolerates missing whitespace around separator', async () => {
+  const { cues, errors } = await parseText(['WEBVTT', '', '00:00-->00:02', 'Text'].join('\n'));
+  expect(cues).toHaveLength(1);
+  expect(errors).toHaveLength(0);
+  expect(cues[0].startTime).toBe(0);
+  expect(cues[0].endTime).toBe(2);
+});
+
+test('BAD: end timestamp not after start is kept but reported', async () => {
+  const { cues, errors } = await parseText(
+    ['WEBVTT', '', '00:05.000 --> 00:02.000', 'Text', '', '00:03.000 --> 00:03.000', 'Text'].join(
+      '\n',
+    ),
+  );
+  // Per spec the cues exist (they are just never active); strict mode throws instead.
+  expect(cues).toHaveLength(2);
+  expect(cues[0].startTime).toBe(5);
+  expect(cues[0].endTime).toBe(2);
   expect(errors).toMatchInlineSnapshot(`
     [
-      [Error: cue start timestamp \`00:00-->00:02\` is invalid on line 5],
-      [Error: cue end timestamp \`\` is invalid on line 5],
+      [Error: cue end timestamp \`2\` is not greater than start \`5\` on line 3],
+      [Error: cue end timestamp \`3\` is not greater than start \`3\` on line 6],
     ]
   `);
+});
+
+test('GOOD: hours with more than two digits', () => {
+  expect(parseVTTTimestamp('100:00:01.500')).toBe(360001.5);
 });
 
 test('BAD: invalid fractional digits', async () => {

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt xml:lang="en" xmlns:tt="http://www.w3.org/ns/ttml" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" ttp:contentProfiles="http://www.w3.org/ns/ttml/profile/imsc1.1/text">
+  <head>
+    <styling>
+      <style xml:id="s1" tts:showBackground="whenActive" tts:color="white" tts:backgroundColor="black" tts:textAlign="center" tts:displayAlign="center"/>
+    </styling>
+    <layout>
+
+      <!-- one components -->
+
+      <region style="s1" xml:id="r1" tts:extent="60% 20%" tts:position="center" />
+      <region style="s1" xml:id="r2" tts:extent="60% 20%" tts:position="left" />
+      <region style="s1" xml:id="r3" tts:extent="60% 20%" tts:position="right" />
+      <region style="s1" xml:id="r4" tts:extent="60% 20%" tts:position="top" />
+      <region style="s1" xml:id="r5" tts:extent="60% 20%" tts:position="bottom" />
+      <region style="s1" xml:id="r6" tts:extent="60% 20%" tts:position="25%" />
+
+      <!-- two components -->
+
+      <region style="s1" xml:id="r7" tts:extent="60% 20%" tts:position="bottom center" />
+      <region style="s1" xml:id="r8" tts:extent="60% 20%" tts:position="bottom left" />
+      <region style="s1" xml:id="r9" tts:extent="60% 20%" tts:position="bottom right" />
+      <region style="s1" xml:id="r10" tts:extent="60% 20%" tts:position="center center" />
+      <region style="s1" xml:id="r11" tts:extent="60% 20%" tts:position="center top" />
+      <region style="s1" xml:id="r12" tts:extent="60% 20%" tts:position="center bottom" />
+      <region style="s1" xml:id="r13" tts:extent="60% 20%" tts:position="center left" />
+      <region style="s1" xml:id="r14" tts:extent="60% 20%" tts:position="center right" />
+      <region style="s1" xml:id="r15" tts:extent="60% 20%" tts:position="center 25%" />
+      <region style="s1" xml:id="r16" tts:extent="60% 20%" tts:position="left center" />
+      <region style="s1" xml:id="r17" tts:extent="60% 20%" tts:position="left top" />
+      <region style="s1" xml:id="r18" tts:extent="60% 20%" tts:position="left bottom" />
+      <region style="s1" xml:id="r19" tts:extent="60% 20%" tts:position="left 25%" />
+      <region style="s1" xml:id="r20" tts:extent="60% 20%" tts:position="right center" />
+      <region style="s1" xml:id="r21" tts:extent="60% 20%" tts:position="right top" />
+      <region style="s1" xml:id="r22" tts:extent="60% 20%" tts:position="right bottom" />
+      <region style="s1" xml:id="r23" tts:extent="60% 20%" tts:position="right 25%" />
+      <region style="s1" xml:id="r24" tts:extent="60% 20%" tts:position="top center" />
+      <region style="s1" xml:id="r25" tts:extent="60% 20%" tts:position="top left" />
+      <region style="s1" xml:id="r26" tts:extent="60% 20%" tts:position="top right" />
+      <region style="s1" xml:id="r27" tts:extent="60% 20%" tts:position="25% center" />
+      <region style="s1" xml:id="r28" tts:extent="60% 20%" tts:position="25% top" />
+      <region style="s1" xml:id="r29" tts:extent="60% 20%" tts:position="25% bottom" />
+      <region style="s1" xml:id="r30" tts:extent="60% 20%" tts:position="25% 25%" />
+
+      <!-- three components -->
+
+      <region style="s1" xml:id="r31" tts:extent="60% 20%" tts:position="bottom left 25%" />
+      <region style="s1" xml:id="r32" tts:extent="60% 20%" tts:position="bottom right 25%" />
+      <region style="s1" xml:id="r33" tts:extent="60% 20%" tts:position="bottom 25% center" />
+      <region style="s1" xml:id="r34" tts:extent="60% 20%" tts:position="bottom 25% left" />
+      <region style="s1" xml:id="r35" tts:extent="60% 20%" tts:position="bottom 25% right" />
+      <region style="s1" xml:id="r36" tts:extent="60% 20%" tts:position="center bottom 25%" />
+      <region style="s1" xml:id="r37" tts:extent="60% 20%" tts:position="center left 25%" />
+      <region style="s1" xml:id="r38" tts:extent="60% 20%" tts:position="center right 25%" />
+      <region style="s1" xml:id="r39" tts:extent="60% 20%" tts:position="center top 25%" />
+      <region style="s1" xml:id="r40" tts:extent="60% 20%" tts:position="left bottom 25%" />
+      <region style="s1" xml:id="r41" tts:extent="60% 20%" tts:position="left top 25%" />
+      <region style="s1" xml:id="r42" tts:extent="60% 20%" tts:position="left 25% bottom" />
+      <region style="s1" xml:id="r43" tts:extent="60% 20%" tts:position="left 25% center" />
+      <region style="s1" xml:id="r44" tts:extent="60% 20%" tts:position="left 25% top" />
+      <region style="s1" xml:id="r45" tts:extent="60% 20%" tts:position="right bottom 25%" />
+      <region style="s1" xml:id="r46" tts:extent="60% 20%" tts:position="right top 25%" />
+      <region style="s1" xml:id="r47" tts:extent="60% 20%" tts:position="right 25% bottom" />
+      <region style="s1" xml:id="r48" tts:extent="60% 20%" tts:position="right 25% center" />
+      <region style="s1" xml:id="r49" tts:extent="60% 20%" tts:position="right 25% top" />
+      <region style="s1" xml:id="r50" tts:extent="60% 20%" tts:position="top left 25%" />
+      <region style="s1" xml:id="r51" tts:extent="60% 20%" tts:position="top right 25%" />
+      <region style="s1" xml:id="r52" tts:extent="60% 20%" tts:position="top 25% center" />
+      <region style="s1" xml:id="r53" tts:extent="60% 20%" tts:position="top 25% left" />
+      <region style="s1" xml:id="r54" tts:extent="60% 20%" tts:position="top 25% right" />
+
+      <!-- four components -->
+
+      <region style="s1" xml:id="r55" tts:extent="60% 20%" tts:position="bottom 25% left 25%" />
+      <region style="s1" xml:id="r56" tts:extent="60% 20%" tts:position="bottom 25% right 25%" />
+      <region style="s1" xml:id="r57" tts:extent="60% 20%" tts:position="left 25% bottom 25%" />
+      <region style="s1" xml:id="r58" tts:extent="60% 20%" tts:position="right 25% bottom 25%" />
+      <region style="s1" xml:id="r59" tts:extent="60% 20%" tts:position="top 25% left 25%" />
+      <region style="s1" xml:id="r60" tts:extent="60% 20%" tts:position="top 25% right 25%" />
+      <region style="s1" xml:id="r61" tts:extent="60% 20%" tts:position="left 25% top 25%" />
+      <region style="s1" xml:id="r62" tts:extent="60% 20%" tts:position="right 25% top 25%" />
+
+    </layout>
+  </head>
+  <body>
+    <div timeContainer="seq">
+
+      <p region="r1" dur="1s">center</p>
+      <p region="r2" dur="1s">left</p>
+      <p region="r3" dur="1s">right</p>
+      <p region="r4" dur="1s">top</p>
+      <p region="r5" dur="1s">bottom</p>
+      <p region="r6" dur="1s">25%</p>
+
+      <!-- two components -->
+
+      <p region="r7" dur="1s">bottom center</p>
+      <p region="r8" dur="1s">bottom left</p>
+      <p region="r9" dur="1s">bottom right</p>
+      <p region="r10" dur="1s">center center</p>
+      <p region="r11" dur="1s">center top</p>
+      <p region="r12" dur="1s">center bottom</p>
+      <p region="r13" dur="1s">center left</p>
+      <p region="r14" dur="1s">center right</p>
+      <p region="r15" dur="1s">center 25%</p>
+      <p region="r16" dur="1s">left center</p>
+      <p region="r17" dur="1s">left top</p>
+      <p region="r18" dur="1s">left bottom</p>
+      <p region="r19" dur="1s">left 25%</p>
+      <p region="r20" dur="1s">right center</p>
+      <p region="r21" dur="1s">right top</p>
+      <p region="r22" dur="1s">right bottom</p>
+      <p region="r23" dur="1s">right 25%</p>
+      <p region="r24" dur="1s">top center</p>
+      <p region="r25" dur="1s">top left</p>
+      <p region="r26" dur="1s">top right</p>
+      <p region="r27" dur="1s">25% center</p>
+      <p region="r28" dur="1s">25% top</p>
+      <p region="r29" dur="1s">25% bottom</p>
+      <p region="r30" dur="1s">25% 25%</p>
+
+      <!-- three components -->
+
+      <p region="r31" dur="1s">bottom left 25%</p>
+      <p region="r32" dur="1s">bottom right 25%</p>
+      <p region="r33" dur="1s">bottom 25% center</p>
+      <p region="r34" dur="1s">bottom 25% left</p>
+      <p region="r35" dur="1s">bottom 25% right</p>
+      <p region="r36" dur="1s">center bottom 25%</p>
+      <p region="r37" dur="1s">center left 25%</p>
+      <p region="r38" dur="1s">center right 25%</p>
+      <p region="r39" dur="1s">center top 25%</p>
+      <p region="r40" dur="1s">left bottom 25%</p>
+      <p region="r41" dur="1s">left top 25%</p>
+      <p region="r42" dur="1s">left 25% bottom</p>
+      <p region="r43" dur="1s">left 25% center</p>
+      <p region="r44" dur="1s">left 25% top</p>
+      <p region="r45" dur="1s">right bottom 25%</p>
+      <p region="r46" dur="1s">right top 25%</p>
+      <p region="r47" dur="1s">right 25% bottom</p>
+      <p region="r48" dur="1s">right 25% center</p>
+      <p region="r49" dur="1s">right 25% top</p>
+      <p region="r50" dur="1s">top left 25%</p>
+      <p region="r51" dur="1s">top right 25%</p>
+      <p region="r52" dur="1s">top 25% center</p>
+      <p region="r53" dur="1s">top 25% left</p>
+      <p region="r54" dur="1s">top 25% right</p>
+
+      <!-- four components -->
+
+      <p region="r55" dur="1s">bottom 25% left 25%</p>
+      <p region="r56" dur="1s">bottom 25% right 25%</p>
+      <p region="r57" dur="1s">left 25% bottom 25%</p>
+      <p region="r58" dur="1s">right 25% bottom 25%</p>
+      <p region="r59" dur="1s">top 25% left 25%</p>
+      <p region="r60" dur="1s">top 25% right 25%</p>
+      <p region="r61" dur="1s">left 25% top 25%</p>
+      <p region="r62" dur="1s">right 25% top 25%</p>
+    </div>
+  </body>
+</tt>

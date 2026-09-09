@@ -1,0 +1,1345 @@
+{
+  "cueCount": 11,
+  "errors": [],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 12.3,
+      "endTime": 16.85,
+      "text": "<00:00:12.300><c.s-0>ki</c><00:00:12.550><c.s-1>mi</c><00:00:12.770><c.s-2>no </c><00:00:13.070>ko<00:00:13.250>to<00:00:13.600>ba <00:00:14.000>ga<00:00:14.280> <00:00:14.730>hi<00:00:15.030>bi<00:00:15.310>ku",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 95.833,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "top": 3.704
+      },
+      "textStyle": {
+        "fontFamily": "\"Trebuchet MS\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.9259
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,42,64,1)"
+        }
+      },
+      "spans": {
+        "0": {},
+        "1": {},
+        "2": {}
+      },
+      "animations": [
+        {
+          "delay": 0,
+          "duration": 0.25,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotate": 0
+              }
+            },
+            {
+              "offset": 1,
+              "transform": {
+                "scaleX": 1.1,
+                "scaleY": 1.1,
+                "rotate": 0
+              }
+            }
+          ],
+          "target": {
+            "span": "0"
+          }
+        },
+        {
+          "delay": 0.25,
+          "duration": 0.15,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "transform": {
+                "scaleX": 1.1,
+                "scaleY": 1.1,
+                "rotate": 0
+              }
+            },
+            {
+              "offset": 1,
+              "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotate": 0
+              }
+            }
+          ],
+          "target": {
+            "span": "0"
+          }
+        },
+        {
+          "delay": 0.25,
+          "duration": 0.22,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotate": 0
+              }
+            },
+            {
+              "offset": 1,
+              "transform": {
+                "scaleX": 1.1,
+                "scaleY": 1.1,
+                "rotate": 0
+              }
+            }
+          ],
+          "target": {
+            "span": "1"
+          }
+        },
+        {
+          "delay": 0.47,
+          "duration": 0.15,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "transform": {
+                "scaleX": 1.1,
+                "scaleY": 1.1,
+                "rotate": 0
+              }
+            },
+            {
+              "offset": 1,
+              "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotate": 0
+              }
+            }
+          ],
+          "target": {
+            "span": "1"
+          }
+        },
+        {
+          "delay": 0.47,
+          "duration": 0.3,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotate": 0
+              }
+            },
+            {
+              "offset": 1,
+              "transform": {
+                "scaleX": 1.1,
+                "scaleY": 1.1,
+                "rotate": 0
+              }
+            }
+          ],
+          "target": {
+            "span": "2"
+          }
+        },
+        {
+          "delay": 0.77,
+          "duration": 0.15,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "transform": {
+                "scaleX": 1.1,
+                "scaleY": 1.1,
+                "rotate": 0
+              }
+            },
+            {
+              "offset": 1,
+              "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotate": 0
+              }
+            }
+          ],
+          "target": {
+            "span": "2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 12.3,
+      "endTime": 16.85,
+      "text": "<00:00:12.300><c.s-0>君</c><00:00:12.550><c.s-1>の</c><00:00:13.070><c.s-2>言</c><00:00:13.600><c.s-3>葉</c><00:00:14.280><c.s-4>が</c><00:00:14.730><c.s-5>響く</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 95.833,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 3.704
+      },
+      "textStyle": {
+        "fontFamily": "\"MS Gothic\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.5556
+        },
+        "color": "rgba(255,255,255,1)",
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,42,64,1)"
+        }
+      },
+      "spans": {
+        "0": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "1": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "2": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "3": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "4": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "5": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        }
+      },
+      "animations": [
+        {
+          "target": {
+            "span": "0"
+          },
+          "delay": 0,
+          "duration": 0.25,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "1"
+          },
+          "delay": 0.25,
+          "duration": 0.52,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "2"
+          },
+          "delay": 0.77,
+          "duration": 0.53,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "3"
+          },
+          "delay": 1.3,
+          "duration": 0.68,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "4"
+          },
+          "delay": 1.98,
+          "duration": 0.45,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "5"
+          },
+          "delay": 2.43,
+          "duration": 1.13,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 16.85,
+      "endTime": 21.1,
+      "text": "<00:00:16.850><c.s-0>to</c><00:00:17.150><c.s-1>o</c><00:00:17.400><c.s-2>ku </c><00:00:17.800><c.s-3>he</c><00:00:18.150><c.s-4> </c><00:00:18.450><c.s-5>to</c><00:00:19.050><c.s-6>do</c><00:00:19.550><c.s-7>ke</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 95.833,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "top": 3.704
+      },
+      "textStyle": {
+        "fontFamily": "\"Trebuchet MS\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.9259
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,42,64,1)"
+        }
+      },
+      "spans": {
+        "0": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "1": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "2": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "3": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "4": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "5": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "6": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        },
+        "7": {
+          "sweep": {
+            "sung": "rgba(255,255,255,1)",
+            "unsung": "rgba(0,136,255,1)"
+          }
+        }
+      },
+      "animations": [
+        {
+          "target": "display",
+          "duration": 4.25,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "opacity": 0
+            },
+            {
+              "offset": 0.0471,
+              "opacity": 1
+            },
+            {
+              "offset": 0.9294,
+              "opacity": 1
+            },
+            {
+              "offset": 1,
+              "opacity": 0
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "0"
+          },
+          "delay": 0,
+          "duration": 0.3,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "1"
+          },
+          "delay": 0.3,
+          "duration": 0.25,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "2"
+          },
+          "delay": 0.55,
+          "duration": 0.4,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "3"
+          },
+          "delay": 0.95,
+          "duration": 0.35,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "4"
+          },
+          "delay": 1.3,
+          "duration": 0.3,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "5"
+          },
+          "delay": 1.6,
+          "duration": 0.6,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "6"
+          },
+          "delay": 2.2,
+          "duration": 0.5,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "7"
+          },
+          "delay": 2.7,
+          "duration": 0.45,
+          "fill": "both",
+          "keyframes": [
+            {
+              "sweep": 0
+            },
+            {
+              "sweep": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 16.85,
+      "endTime": 21.1,
+      "text": "<00:00:16.850><c.s-0>遠</c><00:00:17.150><c.s-1>く</c><00:00:17.800><c.s-2>へ</c><00:00:18.150><c.s-3> </c><00:00:18.450><c.s-4>届け</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 95.833,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 3.704
+      },
+      "textStyle": {
+        "fontFamily": "\"MS Gothic\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.5556
+        },
+        "color": "rgba(255,255,255,1)",
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,42,64,1)"
+        }
+      },
+      "spans": {
+        "0": {},
+        "1": {},
+        "2": {},
+        "3": {},
+        "4": {}
+      },
+      "animations": [
+        {
+          "target": "display",
+          "duration": 4.25,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "opacity": 0
+            },
+            {
+              "offset": 0.0471,
+              "opacity": 1
+            },
+            {
+              "offset": 0.9294,
+              "opacity": 1
+            },
+            {
+              "offset": 1,
+              "opacity": 0
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "0"
+          },
+          "delay": 0,
+          "duration": 0.3,
+          "fill": "both",
+          "keyframes": [
+            {
+              "strokeColor": "rgba(0,136,255,1)"
+            },
+            {
+              "strokeColor": "rgba(255,255,255,1)"
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "1"
+          },
+          "delay": 0.3,
+          "duration": 0.65,
+          "fill": "both",
+          "keyframes": [
+            {
+              "strokeColor": "rgba(0,136,255,1)"
+            },
+            {
+              "strokeColor": "rgba(255,255,255,1)"
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "2"
+          },
+          "delay": 0.95,
+          "duration": 0.35,
+          "fill": "both",
+          "keyframes": [
+            {
+              "strokeColor": "rgba(0,136,255,1)"
+            },
+            {
+              "strokeColor": "rgba(255,255,255,1)"
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "3"
+          },
+          "delay": 1.3,
+          "duration": 0.3,
+          "fill": "both",
+          "keyframes": [
+            {
+              "strokeColor": "rgba(0,136,255,1)"
+            },
+            {
+              "strokeColor": "rgba(255,255,255,1)"
+            }
+          ]
+        },
+        {
+          "target": {
+            "span": "4"
+          },
+          "delay": 1.6,
+          "duration": 1.55,
+          "fill": "both",
+          "keyframes": [
+            {
+              "strokeColor": "rgba(0,136,255,1)"
+            },
+            {
+              "strokeColor": "rgba(255,255,255,1)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 21.1,
+      "endTime": 24,
+      "text": "tsu<00:00:21.100>na<00:00:21.300>ga<00:00:21.600>ru <00:00:22.000>omoi",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "left": 50,
+        "top": 11.111,
+        "translate": {
+          "x": -0.5
+        },
+        "fixed": true
+      },
+      "textStyle": {
+        "fontFamily": "\"Trebuchet MS\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.9259
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,42,64,1)"
+        }
+      },
+      "animations": [
+        {
+          "target": "display",
+          "delay": 0,
+          "duration": 0.8,
+          "fill": "both",
+          "keyframes": [
+            {
+              "left": 50,
+              "top": 11.111
+            },
+            {
+              "left": 50,
+              "top": 7.407
+            }
+          ]
+        },
+        {
+          "target": "display",
+          "duration": 2.8999999999999986,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "opacity": 0
+            },
+            {
+              "offset": 0.1034,
+              "opacity": 1
+            },
+            {
+              "offset": 1,
+              "opacity": 1
+            },
+            {
+              "offset": 1,
+              "opacity": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 22,
+      "endTime": 26,
+      "text": "<c.#ffffff><c.s-0>STATION</c></c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "left": 79.167,
+        "top": 16.667,
+        "translate": {
+          "x": -0.5,
+          "y": -0.5
+        },
+        "fixed": true
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial Black\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(0,0,0,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        }
+      },
+      "spans": {
+        "0": {
+          "fontSize": {
+            "unit": "vh",
+            "value": 5
+          },
+          "transform": {
+            "rotate": 8,
+            "origin": [
+              50,
+              50
+            ]
+          },
+          "stroke": null
+        }
+      },
+      "animations": [
+        {
+          "target": "display",
+          "duration": 4,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "opacity": 0
+            },
+            {
+              "offset": 0.0375,
+              "opacity": 1
+            },
+            {
+              "offset": 0.9625,
+              "opacity": 1
+            },
+            {
+              "offset": 1,
+              "opacity": 0
+            }
+          ]
+        }
+      ],
+      "layer": 1
+    },
+    {
+      "id": "",
+      "startTime": 22,
+      "endTime": 26,
+      "text": "<c.s-0></c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "left": 72.917,
+        "top": 11.111,
+        "translate": {},
+        "fixed": true
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial Black\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(0,0,0,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "left",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0,
+          "x": 0
+        }
+      },
+      "spans": {
+        "0": {
+          "drawing": {
+            "path": "M0 0L260 0L260 110L0 110Z",
+            "viewBox": [
+              0,
+              0,
+              260,
+              110
+            ],
+            "width": 13.542,
+            "height": 10.185,
+            "fill": "rgba(42,42,42,1)"
+          }
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 22,
+      "endTime": 26,
+      "text": "<c.s-0></c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "left": 73.438,
+        "top": 12.037,
+        "translate": {},
+        "fixed": true
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial Black\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(0,0,0,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "left",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0,
+          "x": 0
+        }
+      },
+      "spans": {
+        "0": {
+          "drawing": {
+            "path": "M0 0L240 0L240 90L0 90Z",
+            "viewBox": [
+              0,
+              0,
+              240,
+              90
+            ],
+            "width": 12.5,
+            "height": 8.333,
+            "fill": "rgba(232,232,232,1)"
+          }
+        }
+      },
+      "layer": 2
+    },
+    {
+      "id": "",
+      "startTime": 26,
+      "endTime": 29.5,
+      "text": "<v Mio>Half the screen is clipped.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 93.75,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.63,
+        "clip": {
+          "rect": [
+            0,
+            0,
+            50,
+            100
+          ]
+        }
+      },
+      "textStyle": {
+        "fontFamily": "\"Open Sans Semibold\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.5556
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(19,7,2,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,1)"
+        }
+      },
+      "animations": [
+        {
+          "delay": 0,
+          "duration": 3.5,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "color": "rgba(255,255,255,1)"
+            },
+            {
+              "offset": 1,
+              "color": "rgba(0,0,255,1)"
+            }
+          ],
+          "target": "cue"
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 29.5,
+      "endTime": 33,
+      "text": "<v Mio><c.s-0>Spinning text</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 93.75,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.63
+      },
+      "textStyle": {
+        "fontFamily": "\"Open Sans Semibold\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.5556
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(19,7,2,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,1)"
+        }
+      },
+      "spans": {
+        "0": {
+          "transform": {
+            "rotate": -360,
+            "origin": [
+              50,
+              100
+            ]
+          }
+        }
+      },
+      "animations": [
+        {
+          "delay": 0,
+          "duration": 3.5,
+          "fill": "both",
+          "keyframes": [
+            {
+              "offset": 0,
+              "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotate": -360
+              }
+            },
+            {
+              "offset": 1,
+              "transform": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotate": 0
+              }
+            }
+          ],
+          "target": {
+            "span": "0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 33,
+      "endTime": 36,
+      "text": "<c.s-0>Blurred </c><c.s-1>and spaced.\nSecond line <i>italic</i>.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 93.75,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.63
+      },
+      "textStyle": {
+        "fontFamily": "\"Open Sans Semibold\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 5.5556
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(19,7,2,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.1389
+          },
+          "color": "rgba(0,0,0,1)"
+        }
+      },
+      "spans": {
+        "0": {
+          "blur": {
+            "unit": "vh",
+            "value": 0.1852
+          },
+          "letterSpacing": {
+            "unit": "vh",
+            "value": 0.3704
+          }
+        },
+        "1": {
+          "blur": {
+            "unit": "vh",
+            "value": 0.1852
+          }
+        }
+      }
+    }
+  ]
+}

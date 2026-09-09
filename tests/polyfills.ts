@@ -3,7 +3,7 @@ async function interop<T>(loader: () => Promise<T>, specifier: keyof T) {
   return mod[specifier] ?? (mod as any).default[specifier];
 }
 
-const globals = {
+const globals: Record<string, () => Promise<unknown>> = {
   Headers: () => interop(() => import('undici'), 'Headers'),
   ReadableStream: () => interop(() => import('node:stream/web'), 'ReadableStream'),
   TransformStream: () => interop(() => import('node:stream/web'), 'TransformStream'),
@@ -23,3 +23,5 @@ for (const name in globals) {
     });
   }
 }
+
+export {};

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt xml:lang="en-US" xmlns="http://www.w3.org/ns/ttml" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" ttp:timeBase="smpte" ttp:frameRate="30" ttp:frameRateMultiplier="1000 1001" ttp:dropMode="dropNTSC">
+  <head>
+    <metadata>
+      <ttm:title>Feature - English SDH</ttm:title>
+      <ttm:desc>iTunes Timed Text</ttm:desc>
+    </metadata>
+    <styling>
+      <style xml:id="normal" tts:fontFamily="sansSerif" tts:fontWeight="normal" tts:fontStyle="normal" tts:color="white" tts:fontSize="100%"/>
+      <style xml:id="bold" style="normal" tts:fontWeight="bold"/>
+      <style xml:id="italic" style="normal" tts:fontStyle="italic"/>
+      <style xml:id="bold-italic" style="bold" tts:fontStyle="italic"/>
+    </styling>
+    <layout>
+      <region xml:id="bottom" tts:origin="0% 0%" tts:extent="100% 100%" tts:textAlign="center" tts:displayAlign="after"/>
+      <region xml:id="top" tts:origin="0% 0%" tts:extent="100% 100%" tts:textAlign="center" tts:displayAlign="before"/>
+    </layout>
+  </head>
+  <body region="bottom" style="normal">
+    <div>
+      <p begin="00:00:02:15" end="00:00:05:03">[PENSIVE MUSIC PLAYING]</p>
+      <p begin="00:00:05:04" end="00:00:08:00" region="top"><span style="italic">MAN (over radio):</span> All units, stand by.</p>
+      <p begin="00:00:08:01" end="00:00:11:20">WOMAN: We don't have<br/>much time.</p>
+      <p begin="00:00:11:21" end="00:00:14:29">Then we'd better <span style="bold">move</span>.</p>
+      <p begin="00:00:59:28" end="00:01:02:04">One minute mark:<br/>drop-frame timecode boundary.</p>
+      <p begin="00:09:59:28" end="00:10:00:10">Ten minute mark: no frames dropped here.</p>
+      <p begin="01:00:00:00" end="01:00:03:00">One hour in.</p>
+      <p begin="01:00:03:01" end="01:00:06:00"><span style="bold-italic">[SIREN WAILING]</span></p>
+    </div>
+  </body>
+</tt>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt xml:lang="en"
+    xmlns:tt="http://www.w3.org/ns/ttml"
+    xmlns:ttp="http://www.w3.org/ns/ttml#parameter"
+    xmlns="http://www.w3.org/ns/ttml"
+    xmlns:tts="http://www.w3.org/ns/ttml#styling"
+    ttp:contentProfiles="http://www.w3.org/ns/ttml/profile/imsc1.1/text">
+  <head>
+
+    <styling>
+
+
+      <style xml:id="r1"
+          tts:color="white"
+          tts:lineHeight="125%"
+          tts:textAlign="center"
+          tts:displayAlign="before"/>
+
+      <style xml:id="p1"
+          tts:backgroundColor="black"
+          />
+
+    </styling>
+
+    <layout>
+
+      <region 
+          xml:id="r"
+          style="r1"
+          tts:extent="80% 80%"
+          tts:origin="10% 10%" />
+
+    </layout>
+
+  </head>
+
+  <body region="r">
+    <div>
+      <p style="p1">
+        I serve it with greens in those 
+        <span tts:textShadow="10% -20% 5% lime">shadowy scenes,</span>
+        <br/>
+        And I use it for striking a light:
+      </p>
+    </div>
+  </body>
+
+</tt>

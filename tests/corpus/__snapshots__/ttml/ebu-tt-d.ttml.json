@@ -1,0 +1,181 @@
+{
+  "cueCount": 7,
+  "errors": [],
+  "cues": [
+    {
+      "id": "sub1",
+      "startTime": 0.76,
+      "endTime": 3.32,
+      "text": "<c.white.bg_black>Guten Abend, meine Damen und Herren,\nich begrüße Sie zur Tagesschau.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
+      }
+    },
+    {
+      "id": "sub2",
+      "startTime": 3.4,
+      "endTime": 6.88,
+      "text": "<c.yellow.bg_black>* Wir haben heute drei Themen. *</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
+      }
+    },
+    {
+      "id": "sub3",
+      "startTime": 6.96,
+      "endTime": 10.2,
+      "text": "<c.cyan.bg_black>Die Verhandlungen sind gescheitert.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
+      }
+    },
+    {
+      "id": "sub4",
+      "startTime": 10.28,
+      "endTime": 13,
+      "text": "<c.white.bg_black>(Musik)</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 10,
+      "lineAlign": "start",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
+      }
+    },
+    {
+      "id": "sub5",
+      "startTime": 13.08,
+      "endTime": 16.64,
+      "text": "<c.white.bg_black>- Kommst du mit?\n</c><c.yellow.bg_black>- Nein, ich bleibe hier.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "start",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
+      }
+    },
+    {
+      "id": "sub6",
+      "startTime": 16.72,
+      "endTime": 20,
+      "text": "<c.white.bg_black><i>Er flüsterte:</i> \"Es ist Zeit.\"</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
+      }
+    },
+    {
+      "id": "sub7",
+      "startTime": 20.08,
+      "endTime": 24,
+      "text": "<c.white.bg_black>Untertitel im Auftrag des ZDF, 2024</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 8
+        },
+        "lineHeight": {
+          "unit": "em",
+          "value": 1.25
+        }
+      }
+    }
+  ]
+}

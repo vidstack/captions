@@ -1,0 +1,23 @@
+{
+  "cueCount": 1,
+  "errors": [
+    "time expression `bogus` is invalid on line 16"
+  ],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 1,
+      "endTime": 3,
+      "text": "Unclosed paragraph Invalid begin time.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 10,
+      "lineAlign": "start",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center"
+    }
+  ]
+}

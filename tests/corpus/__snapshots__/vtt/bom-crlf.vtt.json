@@ -1,0 +1,51 @@
+{
+  "cueCount": 3,
+  "errors": [],
+  "cues": [
+    {
+      "id": "1",
+      "startTime": 0.5,
+      "endTime": 2,
+      "text": "Saved from Windows Notepad.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "2",
+      "startTime": 2,
+      "endTime": 4.5,
+      "text": "Carriage return and line feed\non every line.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "3",
+      "startTime": 4.5,
+      "endTime": 6,
+      "text": "<b>Bold</b> and <i>italic</i>.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "left"
+    }
+  ]
+}

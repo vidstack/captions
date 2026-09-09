@@ -3,7 +3,21 @@ import type { VTTHeaderMetadata } from '../vtt/vtt-header';
 import type { VTTRegion } from '../vtt/vtt-region';
 import type { ParseError } from './parse-error';
 
-export type CaptionsFileFormat = 'vtt' | 'srt' | 'ssa' | 'ass';
+export type CaptionsFileFormat =
+  | 'vtt'
+  | 'srt'
+  | 'ssa'
+  | 'ass'
+  | 'ttml'
+  | 'dfxp'
+  | 'xml'
+  | 'scc'
+  | 'lrc'
+  | 'sbv'
+  | 'smi'
+  | 'sami'
+  | 'sub'
+  | 'microdvd';
 
 export interface CaptionsParserFactory {
   (): CaptionsParser;
@@ -31,6 +45,23 @@ export interface ParsedCaptionsResult {
   regions: VTTRegion[];
   cues: VTTCue[];
   errors: ParseError[];
+  /**
+   * Fonts embedded in the captions file (e.g., SSA/ASS `[Fonts]` section). Use
+   * `loadEmbeddedFonts` to register them with the document.
+   */
+  fonts?: EmbeddedFont[];
+  /**
+   * Raw CSS collected from WebVTT `STYLE` blocks, in file order. Pass the parse result to
+   * `CaptionsRenderer.changeTrack` to have them applied (scoped and sanitized) to the overlay.
+   */
+  styles?: string[];
+}
+
+export interface EmbeddedFont {
+  /** File name as declared in the captions file (e.g., `arial.ttf`). */
+  name: string;
+  /** Raw font file bytes. */
+  data: Uint8Array;
 }
 
 export interface CaptionsParserInit extends ParseCaptionsOptions {
@@ -49,6 +80,17 @@ export interface ParseCaptionsOptions {
    */
   strict?: boolean;
   /**
+   * Whether the WebVTT parser accepts common real-world deviations from the spec grammar: a
+   * missing `WEBVTT` signature, `,` as the millisecond separator, one or two fraction digits or
+   * none, percentages without `%`, the pre-2013 `align:middle`, and `-->` inside cue text lines
+   * that do not look like timings. Set to `false` for browser-exact parsing that still recovers:
+   * invalid cues are dropped and reported through `errors`/`onError` instead of thrown (that is
+   * what `strict` does). Ignored when `strict` is set.
+   *
+   * @defaultValue true
+   */
+  lenient?: boolean;
+  /**
    * Whether errors should be collected and reported in the final parser result. By default, this
    * value will be true in dev mode or if `strict` mode is true. If set to true and `strict` mode
    * is false, the `onError` callback will be invoked.
@@ -59,13 +101,26 @@ export interface ParseCaptionsOptions {
   errors?: boolean;
   /**
    * The captions file format to be parsed or a custom parser factory (functions that returns a
-   * captions parser). Supported types include: 'vtt', 'srt', 'ssa', and 'ass'.
+   * captions parser). Supported types include: 'vtt', 'srt', 'ssa', 'ass', 'ttml' (also 'dfxp'
+   * and 'xml'), 'scc' (CEA-608), 'lrc', 'sbv', 'smi'/'sami', and 'sub'/'microdvd'.
    */
   type?: CaptionsFileFormat | CaptionsParserFactory;
+  /**
+   * CEA-608 data channel to decode when parsing SCC files (`1` for CC1, `2` for CC2). SCC files
+   * only carry field 1, so `3`/`4` (CC3/CC4) yield no cues here; use `CEA608Decoder` from
+   * `media-captions/cea` with stream `cc_data` for those.
+   *
+   * @defaultValue 1
+   */
+  channel?: 1 | 2 | 3 | 4;
   /**
    * Invoked with metadata that was parsed from the VTT header.
    */
   onHeaderMetadata?(data: VTTHeaderMetadata): void;
+  /**
+   * Invoked with the CSS text of each WebVTT `STYLE` block as it is parsed.
+   */
+  onStyle?(css: string): void;
   /**
    * Invoked when a new VTT Cue has been parsed and constructed.
    */

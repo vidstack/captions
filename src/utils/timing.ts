@@ -1,4 +1,4 @@
-export function debounce<Fn extends (...args: any[]) => void>(fn: Fn, delay): Fn {
+export function debounce<Fn extends (...args: any[]) => void>(fn: Fn, delay: number): Fn {
   let timeout: any = null,
     args: any[] | undefined;
 
@@ -13,11 +13,11 @@ export function debounce<Fn extends (...args: any[]) => void>(fn: Fn, delay): Fn
     timeout = null;
   }
 
-  function debounce() {
+  function debounced() {
     args = [].slice.call(arguments);
     clear();
     timeout = setTimeout(run, delay);
   }
 
-  return debounce as Fn;
+  return debounced as Fn;
 }

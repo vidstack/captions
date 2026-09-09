@@ -1,0 +1,104 @@
+{
+  "cueCount": 2,
+  "errors": [
+    "cue end timestamp `` is invalid on line 15",
+    "cue start timestamp `` is invalid on line 16",
+    "cue end timestamp `` is invalid on line 16",
+    "cue start timestamp `` is invalid on line 17",
+    "cue end timestamp `` is invalid on line 17"
+  ],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 1,
+      "endTime": 3,
+      "text": "A complete line.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 98.438,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,0,0,1)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 5,
+      "endTime": 6,
+      "text": "Another complete line after the truncated ones.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 98.438,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.5556
+          },
+          "color": "rgba(0,0,0,1)"
+        }
+      }
+    }
+  ]
+}

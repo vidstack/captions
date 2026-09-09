@@ -100,7 +100,8 @@ test('BAD: line settings', async () => {
   expect(cues[0].snapToLines).toBe(true);
   expect(cues[0].lineAlign).toBe('start');
 
-  expect(cues[1].line).toBe(10);
+  // Compound settings are atomic: an invalid alignment discards the whole setting.
+  expect(cues[1].line).toBe('auto');
   expect(cues[1].snapToLines).toBe(true);
   expect(cues[1].lineAlign).toBe('start');
 });
@@ -162,7 +163,8 @@ test('BAD: position settings', async () => {
   expect(cues[0].position).toBe('auto');
   expect(cues[0].positionAlign).toBe('auto');
 
-  expect(cues[1].position).toBe(45);
+  // Compound settings are atomic: an invalid alignment discards the whole setting.
+  expect(cues[1].position).toBe('auto');
   expect(cues[1].positionAlign).toBe('auto');
 });
 
@@ -187,7 +189,7 @@ test('GOOD: size settings', async () => {
   expect(errors).toHaveLength(0);
 
   expect(cues[0].size).toBe(45);
-  expect(cues[1].size).toBe(25);
+  expect(cues[1].size).toBe(25.5);
 });
 
 test('BAD: size settings', async () => {
@@ -222,17 +224,30 @@ test('GOOD: align settings', async () => {
 
 test('BAD: align settings', async () => {
   const { cues, errors } = await parseText(
-    ['WEBVTT', '', '00:00 --> 00:02 align:middle', 'Text A'].join('\n'),
+    ['WEBVTT', '', '00:00 --> 00:02 align:top', 'Text A'].join('\n'),
   );
 
   expect(cues).toHaveLength(1);
   expect(errors).toMatchInlineSnapshot(`
     [
-      [Error: invalid value for cue setting \`align\` on line 3 (value: middle)],
+      [Error: invalid value for cue setting \`align\` on line 3 (value: top)],
     ]
   `);
 
   expect(cues[0].align).toBe('center');
+});
+
+test('TOLERANT: legacy align:middle maps to center outside strict mode', async () => {
+  const { cues, errors } = await parseText(
+    ['WEBVTT', '', '00:00 --> 00:02 align:middle', 'Text A'].join('\n'),
+  );
+  expect(errors).toHaveLength(0);
+  expect(cues[0].align).toBe('center');
+  await expect(
+    parseText(['WEBVTT', '', '00:00.000 --> 00:02.000 align:middle', 'Text A'].join('\n'), {
+      strict: true,
+    }),
+  ).rejects.toThrow(/align/);
 });
 
 // -------------------------------------------------------------------------------
@@ -268,16 +283,18 @@ test('GOOD: single line settings', async () => {
   expect(cues[0].align).toBe('end');
 });
 
-test('GOOD: multiline settings', async () => {
-  const { cues, errors } = await parseText(
-    ['WEBVTT', '', '00:00 --> 00:02', 'line:50%', 'align:end', 'size:45%', 'Text A'].join('\n'),
+test('text lines that look like settings are kept as text (settings only live on the timing line)', async () => {
+  const { cues } = await parseText(
+    [
+      'WEBVTT',
+      '',
+      '00:00.000 --> 00:02.000 align:start',
+      'line:50% is not a setting here',
+      'position: everyone',
+    ].join('\n'),
   );
-
   expect(cues).toHaveLength(1);
-  expect(errors).toHaveLength(0);
-
-  expect(cues[0].line).toBe(50);
-  expect(cues[0].size).toBe(45);
-  expect(cues[0].align).toBe('end');
-  expect(cues[0].text).toBe('Text A');
+  expect(cues[0].align).toBe('start');
+  expect(cues[0].line).toBe('auto');
+  expect(cues[0].text).toBe('line:50% is not a setting here\nposition: everyone');
 });

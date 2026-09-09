@@ -1,66 +1,257 @@
-:where([data-part='captions']) {
-  --overlay-padding: 1%;
-  --cue-color: white;
-  --cue-bg-color: rgba(0, 0, 0, 0.8);
-  --cue-font-size: calc(var(--overlay-height) / 100 * 5);
-  --cue-line-height: calc(var(--cue-font-size) * 1.2);
-  --cue-padding-x: calc(var(--cue-font-size) * 0.6);
-  --cue-padding-y: calc(var(--cue-font-size) * 0.4);
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  contain: content;
-  margin: var(--overlay-padding);
-  font-size: var(--cue-font-size);
-  font-family: sans-serif;
-  box-sizing: border-box;
-  pointer-events: none;
-  user-select: none;
-  word-spacing: normal;
-  word-break: break-word;
+/*
+ * Typed custom properties: registration gives them inheritance, a fallback initial value, and
+ * makes them animatable/transitionable (e.g., fading cue colours). Values that fail to parse fall
+ * back to the initial value instead of breaking the declaration.
+ */
+@property --cue-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: white;
 }
 
-:where([data-part='captions'] > [data-part='cue-display']) {
-  position: absolute;
-  direction: ltr;
-  overflow: visible;
-  contain: content;
-  top: var(--cue-top);
-  left: var(--cue-left);
-  right: var(--cue-right);
-  bottom: var(--cue-bottom);
-  width: var(--cue-width, auto);
-  height: var(--cue-height, auto);
-  box-sizing: border-box;
-  transform: var(--cue-transform);
-  text-align: var(--cue-text-align);
-  writing-mode: var(--cue-writing-mode, unset);
-  white-space: pre-line;
-  unicode-bidi: plaintext;
-  min-width: min-content;
-  min-height: min-content;
+@property --cue-bg-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0.8);
 }
 
-:where([data-dir='rtl'] [data-part='cue-display']) {
-  direction: rtl;
+@property --cue-edge-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: black;
 }
 
-:where([data-part='captions'] [data-part='cue']) {
-  display: inline-block;
-  padding: var(--cue-padding-y) var(--cue-padding-x);
-  line-height: var(--cue-line-height);
-  background-color: var(--cue-bg-color);
-  box-sizing: border-box;
-  color: var(--cue-color);
-  box-shadow: var(--cue-box-shadow);
-  white-space: var(--cue-white-space, pre-wrap);
-  outline: var(--cue-outline);
-  text-shadow: var(--cue-text-shadow);
+@property --overlay-width {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
 }
 
-:where([data-part='captions'] [data-part='cue-display'][data-vertical] [data-part='cue']) {
-  padding: var(--cue-padding-x) var(--cue-padding-y);
+@property --overlay-height {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+/*
+ * All defaults live in a cascade layer. Unlayered author styles always win over layered ones, so
+ * consumers can override anything without matching specificity or ordering.
+ */
+@layer media-captions {
+  :where([data-part='captions']) {
+    --overlay-padding: 1%;
+    --cue-color: white;
+    --cue-bg-color: rgba(0, 0, 0, 0.8);
+    --cue-font-size: calc(var(--overlay-height) / 100 * 5);
+    --cue-line-height: calc(var(--cue-font-size) * 1.2);
+    --cue-padding-x: calc(var(--cue-font-size) * 0.6);
+    --cue-padding-y: calc(var(--cue-font-size) * 0.4);
+    --cue-edge-color: black;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    contain: content;
+    /* Enables container query units (cqw/cqh) for consumers who want font sizes that track the
+       overlay without waiting on JS resize observers. */
+    container-type: size;
+    margin: var(--overlay-padding);
+    /* The overlay is the size container, so its own font-size can not use cqh units. */
+    font-size: calc(var(--overlay-height) / 100 * 5);
+    font-family: sans-serif;
+    box-sizing: border-box;
+    pointer-events: none;
+    user-select: none;
+    word-spacing: normal;
+    overflow-wrap: anywhere;
+  }
+
+  @supports (font-size: 1cqh) {
+    :where([data-part='captions']) {
+      /* Same 5% of overlay height, but resolved by the browser during layout (used by cues). */
+      --cue-font-size: 5cqh;
+    }
+  }
+
+  :where([data-part='captions'] > [data-part='cue-display']) {
+    position: absolute;
+    direction: ltr;
+    overflow: visible;
+    /* Layout containment only: paint containment would clip rotated, scaled, or animated text
+       (SSA \frz, \fscx, \t) to the box. */
+    contain: layout style;
+    top: var(--cue-top);
+    left: var(--cue-left);
+    right: var(--cue-right);
+    bottom: var(--cue-bottom);
+    width: var(--cue-width, auto);
+    max-width: var(--cue-max-width, none);
+    clip-path: var(--cue-clip-path, none);
+    height: var(--cue-height, auto);
+    z-index: var(--cue-z-index, auto);
+    font-size: var(--cue-font-size);
+    box-sizing: border-box;
+    transform: var(--cue-transform);
+    transform-origin: var(--cue-transform-origin, 50% 50%);
+    text-align: var(--cue-text-align);
+    writing-mode: var(--cue-writing-mode, unset);
+    white-space: pre-line;
+    unicode-bidi: plaintext;
+    min-width: min-content;
+    min-height: min-content;
+    /* Image cues (IMSC) set `background-image` on the box: fit it, do not tile it. */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  :where([data-dir='rtl'] [data-part='cue-display']) {
+    direction: rtl;
+  }
+
+  :where([data-part='captions'] [data-part='cue']) {
+    display: inline-block;
+    padding: var(--cue-padding-y) var(--cue-padding-x);
+    line-height: var(--cue-line-height);
+    background-color: var(--cue-bg-color);
+    box-sizing: border-box;
+    color: var(--cue-color);
+    box-shadow: var(--cue-box-shadow);
+    white-space: var(--cue-white-space, pre-wrap);
+    outline: var(--cue-outline);
+    text-shadow: var(--cue-text-shadow);
+    /* Uniform outlines: stroke is painted behind the fill so it never eats into glyphs. */
+    paint-order: stroke fill;
+    -webkit-text-stroke: var(--cue-text-stroke, 0);
+    /* Transform animations targeting the text box pivot where the box does (SSA anchors, \org). */
+    transform-origin: var(--cue-transform-origin, 50% 50%);
+    /* The WebVTT spec asks for balanced line wrapping; browsers can finally do it natively. */
+    text-wrap: balance;
+  }
+
+  :where([data-part='captions'] [data-part='cue-display'][data-vertical] [data-part='cue']) {
+    padding: var(--cue-padding-x) var(--cue-padding-y);
+  }
+
+  /* Japanese benefits from phrase-aware wrapping so lines never break mid-word. */
+  :where([data-part='captions'] [data-part='cue']:lang(ja)) {
+    word-break: auto-phrase;
+  }
+
+  /*
+   * FCC / CVAA edge style presets. Set `data-edge-style` on the overlay element:
+   * `uniform`, `drop-shadow`, `raised`, `depressed`, or `none`. Customize the colour with
+   * `--cue-edge-color`.
+   */
+  :where([data-part='captions'][data-edge-style='uniform']) {
+    --cue-text-stroke: 0.08em var(--cue-edge-color);
+  }
+
+  :where([data-part='captions'][data-edge-style='drop-shadow']) {
+    --cue-text-shadow: 0.06em 0.06em 0.12em var(--cue-edge-color);
+  }
+
+  :where([data-part='captions'][data-edge-style='raised']) {
+    --cue-text-shadow: 0.04em 0.04em 0 var(--cue-edge-color);
+  }
+
+  :where([data-part='captions'][data-edge-style='depressed']) {
+    --cue-text-shadow: -0.04em -0.04em 0 var(--cue-edge-color);
+  }
+
+  :where([data-part='captions'][data-edge-style='none']) {
+    --cue-text-shadow: none;
+    --cue-text-stroke: 0;
+  }
+
+  /*
+   * Reduced motion: no region scroll transition or CSS animations. The renderer also holds
+   * Web Animations at their final state.
+   */
+  :where([data-part='captions'][data-reduced-motion] *) {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /*
+   * User presets (FCC/CVAA style caption settings). Set on the overlay element:
+   *   data-text-size="small" | "medium" | "large" | "x-large"
+   *   data-contrast="high"                      (white on black, no translucency)
+   *   data-background="none" | "translucent" | "opaque"
+   *   data-font="sans" | "serif" | "mono" | "casual"
+   */
+  :where([data-part='captions'][data-text-size='small']) {
+    --cue-font-size: 3.5cqh;
+  }
+  :where([data-part='captions'][data-text-size='large']) {
+    --cue-font-size: 6.5cqh;
+  }
+  :where([data-part='captions'][data-text-size='x-large']) {
+    --cue-font-size: 8cqh;
+  }
+  :where([data-part='captions'][data-contrast='high']) {
+    --cue-color: white;
+    --cue-bg-color: black;
+    --cue-edge-color: black;
+  }
+  :where([data-part='captions'][data-background='none']) {
+    --cue-bg-color: transparent;
+  }
+  :where([data-part='captions'][data-background='translucent']) {
+    --cue-bg-color: rgba(0, 0, 0, 0.5);
+  }
+  :where([data-part='captions'][data-background='opaque']) {
+    --cue-bg-color: black;
+  }
+  :where([data-part='captions'][data-font='serif']) {
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  :where([data-part='captions'][data-font='mono']) {
+    font-family: 'Courier New', Courier, monospace;
+  }
+  :where([data-part='captions'][data-font='casual']) {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', casual, sans-serif;
+  }
+
+  /* CEA-708 pen sizes and display effects. */
+  :where([data-part='captions'] [data-part='cue'] .pen-small) {
+    font-size: 0.8em;
+  }
+
+  :where([data-part='captions'] [data-part='cue'] .pen-large) {
+    font-size: 1.25em;
+  }
+
+  :where([data-part='captions'] [data-part='cue'].small-caps),
+  :where([data-part='captions'] [data-part='cue'] .small-caps) {
+    font-variant: small-caps;
+  }
+
+  /* Forced (burned-in style) subtitles, e.g. IMSC itts:forcedDisplay. Hosts can hide the rest. */
+  :where([data-part='captions'][data-forced-only] [data-part='cue']:not(.forced)) {
+    display: none;
+  }
+
+  :where([data-part='captions'] [data-part='cue']) {
+    background-image: var(--cue-bg-image, none);
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+
+  @keyframes media-captions-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes media-captions-wipe-in {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
 }

@@ -1,0 +1,438 @@
+import { parseText, VTTRegion } from 'media-captions';
+import {
+  CanvasCaptionsRenderer,
+  canvasTextMeasurer,
+  layoutCaptions,
+  paintCaptions,
+} from 'media-captions/canvas';
+import { server } from 'vitest/browser';
+
+import { createFixture, cue, cueDisplays, nextFrame, rect, type Fixture } from './helpers';
+
+const WIDTH = 640,
+  HEIGHT = 360;
+
+let fixture: Fixture, canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D;
+
+beforeEach(() => {
+  fixture = createFixture(WIDTH, HEIGHT);
+  canvas = document.createElement('canvas');
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  ctx = canvas.getContext('2d')!;
+});
+
+afterEach(() => {
+  fixture.destroy();
+});
+
+function pixel(x: number, y: number) {
+  return Array.from(ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data);
+}
+
+/** Whether any pixel in the rectangle passes the predicate. */
+function some(x: number, y: number, w: number, h: number, test: (rgba: number[]) => boolean) {
+  const data = ctx.getImageData(
+    Math.round(x),
+    Math.round(y),
+    Math.max(1, Math.round(w)),
+    Math.max(1, Math.round(h)),
+  ).data;
+  for (let i = 0; i < data.length; i += 4) {
+    if (test([data[i], data[i + 1], data[i + 2], data[i + 3]])) return true;
+  }
+  return false;
+}
+
+/** Whether every pixel in the rectangle is fully transparent. */
+function clear(x: number, y: number, w: number, h: number) {
+  return !some(x, y, w, h, (rgba) => rgba[3] > 0);
+}
+
+test('the headless measurer agrees with the DOM renderer on cue boxes', async () => {
+  const cues = [
+    cue(0, 10, 'A plain caption line'),
+    cue(0, 10, 'Second line stacks above it'),
+    cue(0, 10, 'Top left, sized', { line: 1, position: 10, size: 40, align: 'start' }),
+    cue(0, 10, 'Percentage line', { snapToLines: false, line: 30, lineAlign: 'center' }),
+    cue(0, 10, 'Wrapped: this caption is long enough to need at least two lines of text', {
+      size: 50,
+    }),
+  ];
+  fixture.renderer.changeTrack({ cues });
+  fixture.renderer.currentTime = 1;
+  await nextFrame();
+
+  const frame = rect(fixture.viewport),
+    dom = cueDisplays(fixture.overlay).map((display) => {
+      const r = rect(display);
+      return {
+        text: display.textContent!,
+        left: r.left - frame.left,
+        top: r.top - frame.top,
+        width: r.width,
+        height: r.height,
+      };
+    });
+
+  const { theme, targets } = layoutCaptions(cues, canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+
+  for (const target of targets) {
+    if (target.kind !== 'cue') continue;
+    const expected = dom.find((d) => d.text === target.item.cue.text)!,
+      box = target.box,
+      left = theme.container.left + box.left,
+      top = theme.container.top + box.top;
+    // Same font, size, padding, and layout engine: boxes should land within a couple of pixels.
+    expect(Math.abs(left - expected.left), `${expected.text} left`).toBeLessThan(2.5);
+    expect(Math.abs(box.width - expected.width), `${expected.text} width`).toBeLessThan(2.5);
+    expect(Math.abs(box.height - expected.height), `${expected.text} height`).toBeLessThan(2.5);
+    expect(Math.abs(top - expected.top), `${expected.text} top`).toBeLessThan(3);
+  }
+});
+
+test('paints a background box and text where the layout put them', () => {
+  const c = cue(0, 10, 'Hello canvas');
+  paintCaptions(ctx, [c], 1, {});
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  const box = target.box,
+    text = target.item.textBox,
+    x = theme.container.left + box.left + text.left,
+    y = theme.container.top + box.top + text.top;
+
+  // Padding corner: only the translucent black background (alpha 0.8 => 204).
+  const corner = pixel(x + 2, y + 2);
+  expect(corner.slice(0, 3)).toEqual([0, 0, 0]);
+  expect(corner[3]).toBeGreaterThan(190);
+  // Glyphs: some near-white pixels inside the text box.
+  expect(some(x, y, text.width, text.height, ([r, g, b]) => r > 200 && g > 200 && b > 200)).toBe(
+    true,
+  );
+  // Outside the box: nothing.
+  expect(clear(0, 0, WIDTH, y - 2)).toBe(true);
+});
+
+test('typesetting pixels: colour, drawing, and clip', async () => {
+  const ass = `[Script Info]
+PlayResX: 640
+PlayResY: 360
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,30,&H0000FF00,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an7\\pos(40,40)}Green
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an7\\pos(400,40)\\c&H0000FF&\\p1}m 0 0 l 100 0 100 60 0 60{\\p0}
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an7\\pos(40,200)\\clip(40,200,140,260)}Clipped to a small window
+`;
+  const { cues } = await parseText(ass, { type: 'ass' });
+  paintCaptions(ctx, cues, 1, {});
+
+  // The script maps 1:1 onto the frame (PlayRes = canvas), minus the 1% safe area.
+  const safe = 0.01 * WIDTH;
+  // Green glyphs near (40, 40).
+  expect(some(40 + safe, 40 + safe, 120, 40, ([r, g, b]) => g > 200 && r < 80 && b < 80)).toBe(
+    true,
+  );
+  // A red drawing near (400, 40): solid red fill.
+  expect(
+    some(
+      400 + safe + 10,
+      40 + safe + 10,
+      40,
+      20,
+      ([r, g, b, a]) => r > 200 && g < 60 && b < 60 && a > 250,
+    ),
+  ).toBe(true);
+  // The clipped line paints inside its window but nothing past its right edge.
+  expect(some(40 + safe, 200 + safe, 100, 60, ([, , , a]) => a > 0)).toBe(true);
+  expect(clear(140 + safe + 2, 200 + safe, 200, 60)).toBe(true);
+});
+
+test('animations are sampled at media time', async () => {
+  const c = cue(0, 4, 'Fading');
+  c.animations = [{ duration: 4, keyframes: [{ opacity: 0 }, { opacity: 1 }] }];
+  const renderer = new CanvasCaptionsRenderer(canvas);
+  renderer.changeTrack({ cues: [c] });
+
+  const alphaAt = (time: number) => {
+    renderer.currentTime = time;
+    const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+      width: WIDTH,
+      height: HEIGHT,
+    });
+    const target = targets[0];
+    if (target.kind !== 'cue') throw new Error('expected a cue');
+    const x = theme.container.left + target.box.left + target.item.textBox.left + 2,
+      y = theme.container.top + target.box.top + 2;
+    return pixel(x, y)[3];
+  };
+
+  expect(alphaAt(1)).toBeLessThan(alphaAt(3));
+  expect(alphaAt(3.9)).toBeGreaterThan(180);
+  renderer.destroy();
+});
+
+test('regions roll up inside their box and clip to it', () => {
+  const region = new VTTRegion();
+  region.id = 'r';
+  region.width = 60;
+  region.lines = 2;
+  region.scroll = 'up';
+  region.regionAnchorX = 0;
+  region.regionAnchorY = 100;
+  region.viewportAnchorX = 20;
+  region.viewportAnchorY = 90;
+  const cues = ['one', 'two', 'three'].map((text, i) => {
+    const c = cue(i, 10, text);
+    c.region = region;
+    return c;
+  });
+
+  paintCaptions(ctx, cues, 5, {});
+  const { theme, targets } = layoutCaptions(cues, canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'region') throw new Error('expected a region');
+  const box = target.box,
+    left = theme.container.left + box.left,
+    top = theme.container.top + box.top;
+  // Two rows of background inside the region (text is centred), nothing above it.
+  const half = box.height / 2;
+  expect(some(left, top + 4, box.width, half - 6, ([, , , a]) => a > 150)).toBe(true);
+  expect(some(left, top + half + 4, box.width, half - 6, ([, , , a]) => a > 150)).toBe(true);
+  expect(clear(left, top - 20, box.width, 18)).toBe(true);
+});
+
+test('the renderer follows a live track and clears when reset', () => {
+  const renderer = new CanvasCaptionsRenderer(canvas, { backgroundColor: 'rgb(255, 0, 0)' });
+  const track = renderer.track;
+  renderer.changeTrack({ cues: [] });
+  renderer.currentTime = 5;
+  expect(clear(0, 0, WIDTH, HEIGHT)).toBe(true);
+
+  renderer.track.add(cue(0, 10, 'Live'));
+  expect(some(0, 0, WIDTH, HEIGHT, ([r, g, b, a]) => r > 200 && g < 30 && b < 30 && a > 200)).toBe(
+    true,
+  );
+  expect(renderer.activeCues).toHaveLength(1);
+
+  renderer.reset();
+  expect(clear(0, 0, WIDTH, HEIGHT)).toBe(true);
+  expect(renderer.track).not.toBe(track);
+  renderer.destroy();
+});
+
+test('vertical cues flow into columns that match the DOM box', async () => {
+  const c = cue(0, 10, '縦書きのキャプション', { vertical: 'rl' });
+  fixture.renderer.changeTrack({ cues: [c] });
+  fixture.renderer.currentTime = 1;
+  await nextFrame();
+  const frame = rect(fixture.viewport),
+    dom = rect(cueDisplays(fixture.overlay)[0]);
+
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  expect(target.item.vertical).toBe('rl');
+  // One column: width is a line height plus padding, height is the WebVTT size (100%).
+  expect(Math.abs(target.box.width - dom.width)).toBeLessThan(3);
+  expect(Math.abs(target.box.height - dom.height)).toBeLessThan(3);
+  expect(Math.abs(theme.container.left + target.box.left - (dom.left - frame.left))).toBeLessThan(
+    3,
+  );
+
+  // Glyphs are stacked: paint is found in several distinct rows of the column.
+  paintCaptions(ctx, [c], 1, {});
+  const x = theme.container.left + target.box.left,
+    top = theme.container.top + target.box.top + target.item.textBox.top,
+    rows = 6,
+    step = target.item.textBox.height / rows;
+  let painted = 0;
+  for (let i = 0; i < rows; i++) {
+    if (
+      some(x, top + i * step, target.box.width, step, ([r, g, b]) => r > 200 && g > 200 && b > 200)
+    )
+      painted++;
+  }
+  expect(painted).toBeGreaterThanOrEqual(4);
+});
+
+test('ruby annotations sit in a band above the base without growing the box, like the DOM', async () => {
+  const c = cue(0, 10, 'Read <ruby>漢字<rt>kanji</rt></ruby> aloud');
+  fixture.renderer.changeTrack({ cues: [c] });
+  fixture.renderer.currentTime = 1;
+  await nextFrame();
+  const dom = rect(cueDisplays(fixture.overlay)[0]);
+
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  const { flow, textBox } = target.item,
+    [line] = flow.lines;
+  expect(line.runs.some((run) => run.ruby)).toBe(true);
+  expect(line.rubyHeight).toBeGreaterThan(0);
+  // Engines disagree here: Chromium lets the annotation overflow the line box (it lands in the
+  // padding), Firefox and WebKit grow the line box by about the annotation height. The canvas
+  // follows Chromium, so the boxes agree there and differ by at most the band elsewhere.
+  const growth = dom.height - target.box.height;
+  if (server.browser === 'chromium') {
+    expect(Math.abs(growth)).toBeLessThan(3);
+  } else {
+    expect(growth).toBeGreaterThan(0);
+    expect(growth).toBeLessThan(line.rubyHeight + 3);
+  }
+
+  paintCaptions(ctx, [c], 1, {});
+  const x = theme.container.left + target.box.left + textBox.left,
+    lineTop = theme.container.top + target.box.top + textBox.top + theme.paddingY,
+    white = ([r, g, b]: number[]) => r > 200 && g > 200 && b > 200;
+  // The annotation is painted in the band above the line, the base on the line itself.
+  expect(some(x, lineTop - line.rubyHeight, textBox.width, line.rubyHeight, white)).toBe(true);
+  expect(some(x, lineTop, textBox.width, flow.lineHeight, white)).toBe(true);
+});
+
+test('3D rotations project orthographically: rotateY squashes the box horizontally', () => {
+  const c = cue(0, 10, 'Rotated around Y');
+  c.textStyle = { backgroundColor: '#ff0000', transform: { rotateY: 80 } };
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  paintCaptions(ctx, [c], 1, {});
+
+  const { box } = target,
+    left = theme.container.left + box.left,
+    cy = theme.container.top + box.top + box.height / 2,
+    red = ([r, g, b]: number[]) => r > 200 && g < 50 && b < 50;
+  // cos(80deg) = 0.17: the background survives around the centre and vanishes from the outer 30%.
+  expect(some(left + box.width / 2 - 2, cy - 2, 4, 4, red)).toBe(true);
+  expect(clear(left, cy - 2, box.width * 0.3, 4)).toBe(true);
+  expect(clear(left + box.width * 0.7, cy - 2, box.width * 0.3, 4)).toBe(true);
+});
+
+test('cue opacity composites the cue as one group, like CSS opacity', () => {
+  const c = cue(0, 10, 'Half transparent');
+  c.textStyle = { opacity: 0.5 };
+  const { theme, targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+    edgeStyle: 'uniform',
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+  paintCaptions(ctx, [c], 1, { edgeStyle: 'uniform' });
+
+  // Background, stroke, and fill overlap; painted separately at 0.5 they would stack to about
+  // 0.85 (217). As a group the most opaque pixel is the fill at 0.5 (128).
+  const { box } = target,
+    data = ctx.getImageData(
+      Math.round(theme.container.left + box.left),
+      Math.round(theme.container.top + box.top),
+      Math.round(box.width),
+      Math.round(box.height),
+    ).data;
+  let maxAlpha = 0;
+  for (let i = 3; i < data.length; i += 4) if (data[i] > maxAlpha) maxAlpha = data[i];
+  expect(maxAlpha).toBeGreaterThan(100);
+  expect(maxAlpha).toBeLessThan(140);
+});
+
+test('scrolling regions slide new rows in over 0.433s, like the DOM transition', () => {
+  const region = new VTTRegion();
+  Object.assign(region, {
+    id: 'r',
+    width: 60,
+    lines: 3,
+    scroll: 'up',
+    regionAnchorX: 0,
+    regionAnchorY: 100,
+    viewportAnchorX: 20,
+    viewportAnchorY: 90,
+  });
+  const cues = [cue(0, 10, 'one'), cue(2, 10, 'two')];
+  for (const c of cues) c.region = region;
+
+  const { theme, targets } = layoutCaptions(cues, canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'region') throw new Error('expected a region');
+  const { box } = target,
+    left = theme.container.left + box.left,
+    top = theme.container.top + box.top,
+    rowHeight = target.item.rowHeights[0];
+
+  // 50ms after the second row arrived the region (anchored at its bottom) still sits about a row
+  // lower than its final box, so the top of the final box is empty.
+  paintCaptions(ctx, cues, 2.05, {});
+  expect(clear(left, top + 2, box.width, rowHeight * 0.6)).toBe(true);
+
+  // Once the transition is over both rows fill the box.
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  paintCaptions(ctx, cues, 3, {});
+  expect(some(left, top + 4, box.width, rowHeight - 6, ([, , , a]) => a > 150)).toBe(true);
+});
+
+test('runs re-measure when a span animation changes the font size', () => {
+  const c = cue(0, 10, '<c.s-0>Wide</c> tail');
+  c.spans = { '0': {} };
+  c.animations = [
+    {
+      target: { span: '0' },
+      duration: 1,
+      fill: 'both',
+      keyframes: [{ fontSize: { unit: 'em', value: 1 } }, { fontSize: { unit: 'em', value: 3 } }],
+    },
+  ];
+  const { targets } = layoutCaptions([c], canvasTextMeasurer(ctx), {
+    width: WIDTH,
+    height: HEIGHT,
+  });
+  const target = targets[0];
+  if (target.kind !== 'cue') throw new Error('expected a cue');
+
+  const painted = () => {
+    const data = ctx.getImageData(0, 0, WIDTH, HEIGHT).data;
+    let minX = WIDTH,
+      maxX = 0;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 40) {
+        const x = (i >> 2) % WIDTH;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+      }
+    }
+    return maxX - minX;
+  };
+
+  paintCaptions(ctx, [c], 0, {});
+  const before = painted();
+  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  paintCaptions(ctx, [c], 5, {});
+  // "Wide" is three times larger at the end and "tail" moved over to make room, so the painted
+  // width grew well beyond the measured (static) flow width.
+  expect(painted()).toBeGreaterThan(before * 1.5);
+  expect(painted()).toBeGreaterThan(target.item.flow.width + 2 * target.item.style.paddingX);
+});

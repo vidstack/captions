@@ -1,0 +1,11 @@
+WEBVTT
+X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:8589934592
+
+1
+00:03:22.400 --> 00:03:24.100 position:50% align:center
+Live captions continue here.
+
+2
+00:03:24.100 --> 00:03:26.900 position:50% align:center
+The PTS wrapped, but the
+segment keeps its local clock.

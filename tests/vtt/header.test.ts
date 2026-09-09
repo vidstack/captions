@@ -5,7 +5,8 @@ test('GOOD: header is missing in non-strict mode', async () => {
     errors: true,
   });
   expect(cues).toHaveLength(1);
-  expect(errors).toHaveLength(0);
+  // Tolerant: the file still plays but the missing signature is reported.
+  expect(errors.map((e) => e.message)).toEqual(['missing WEBVTT file header']);
 });
 
 test('BAD: should throw in strict mode if header is missing', async () => {

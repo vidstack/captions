@@ -1,0 +1,43 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:02.939 align:start position:0%
+ 
+so<00:00:00.560><c> today</c><00:00:00.800><c> we're</c><00:00:01.040><c> going</c><00:00:01.199><c> to</c><00:00:01.439><c> talk</c><00:00:01.680><c> about</c><00:00:02.080><c> how</c><00:00:02.399><c> to</c>
+
+00:00:02.939 --> 00:00:02.949 align:start position:0%
+so today we're going to talk about how to
+ 
+
+00:00:02.949 --> 00:00:05.269 align:start position:0%
+so today we're going to talk about how to
+parse<00:00:03.360><c> subtitle</c><00:00:03.840><c> files</c><00:00:04.240><c> in</c><00:00:04.480><c> the</c><00:00:04.640><c> browser</c>
+
+00:00:05.269 --> 00:00:05.279 align:start position:0%
+parse subtitle files in the browser
+ 
+
+00:00:05.279 --> 00:00:08.150 align:start position:0%
+parse subtitle files in the browser
+[Music]<00:00:06.000><c> without</c><00:00:06.319><c> any</c><00:00:06.720><c> dependencies</c>
+
+00:00:08.150 --> 00:00:08.160 align:start position:0%
+[Music] without any dependencies
+ 
+
+00:00:08.160 --> 00:00:11.520 align:start position:0%
+[Music] without any dependencies
+it's<00:00:08.400><c> actually</c><00:00:08.800><c> pretty</c><00:00:09.120><c> straightforward</c><00:00:10.160><c> once</c><00:00:10.480><c> you</c><00:00:10.719><c> know</c>
+
+00:00:11.520 --> 00:00:11.530 align:start position:0%
+it's actually pretty straightforward once you know
+ 
+
+00:00:11.530 --> 00:00:14.799 align:start position:0%
+it's actually pretty straightforward once you know
+the<00:00:11.679><c> spec</c><00:00:12.080><c> so</c><00:00:12.400><c> let's</c><00:00:12.719><c> get</c><00:00:12.960><c> started</c>
+
+00:00:14.799 --> 00:00:16.500 align:start position:0%
+the spec so let's get started
+ 

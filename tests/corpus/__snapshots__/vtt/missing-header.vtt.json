@@ -1,0 +1,53 @@
+{
+  "cueCount": 3,
+  "errors": [
+    "missing WEBVTT file header"
+  ],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 1,
+      "endTime": 3,
+      "text": "This file forgot its WEBVTT signature.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 3,
+      "endTime": 5,
+      "text": "Most players still show it.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 5,
+      "endTime": 7,
+      "text": "<i>So do we.</i>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    }
+  ]
+}

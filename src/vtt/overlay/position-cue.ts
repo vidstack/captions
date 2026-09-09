@@ -1,130 +1,130 @@
 import { getLineHeight } from '../../utils/style';
 import type { VTTCue } from '../vtt-cue';
 import {
-  avoidBoxCollisions,
-  BOX_SIDES,
   createBox,
   createCSSBox,
+  LAYOUT_CACHE,
   moveBox,
   resolveRelativeBox,
   setBoxCSSVars,
-  STARTING_BOX,
   type Box,
-  type DirectionalAxis,
 } from './box';
+import type { CueLayoutInput } from './layout';
 
-const POSITION_OVERRIDE = Symbol(__DEV__ ? 'POSITION_OVERRIDE' : 0);
+const BLOCK_SIDES = { horizontal: ['top', 'bottom'], vertical: ['left', 'right'] } as const;
 
-// Adapted from: https://github.com/videojs/vtt.js
-export function positionCue(
+/** Measurements that only change when the cue's content or the overlay size changes. */
+export interface CueMeasureCache {
+  /** Box CSS positions refer to (offset-based), as container fractions. */
+  layoutBox: { top: number; left: number; right: number; bottom: number };
+  /**
+   * Box the cue is actually painted in (includes CSS transforms such as translate, rotate, and
+   * scale), as container fractions. Collisions are computed on this one.
+   */
+  visualBox: { top: number; left: number; right: number; bottom: number };
+  positionOverride: false | 'top' | 'bottom' | 'left' | 'right';
+  lineHeight: number;
+}
+
+export interface CueMeasureOptions {
+  /** Use the padded cue box height as the snap-to-lines step instead of the text line height. */
+  lineStep?: 'line-height' | 'box';
+}
+
+/**
+ * MEASURE phase: reads everything the layout needs for a cue. Results are cached on the element
+ * until the overlay is resized so repeated renders do not touch layout.
+ */
+export function measureCue(
   container: Box,
   cue: VTTCue,
   displayEl: HTMLElement,
-  boxes: Box[],
-): Box {
-  let cueEl = displayEl.firstElementChild!,
-    line = computeCueLine(cue),
-    displayBox: Box,
-    axis: DirectionalAxis[] = [];
+  options: CueMeasureOptions = {},
+): CueLayoutInput {
+  let cache: CueMeasureCache | null = displayEl[LAYOUT_CACHE];
 
-  if (!displayEl[STARTING_BOX]) {
-    displayEl[STARTING_BOX] = createStartingBox(container, displayEl);
+  if (!cache) {
+    cache = displayEl[LAYOUT_CACHE] = createMeasureCache(container, displayEl, cue, options);
   }
 
-  displayBox = resolveRelativeBox(container, { ...displayEl[STARTING_BOX] });
-
-  if (displayEl[POSITION_OVERRIDE]) {
-    axis = [displayEl[POSITION_OVERRIDE] === 'top' ? '+y' : '-y', '+x', '-x'];
-  } else if (cue.snapToLines) {
-    let size: string;
-    switch (cue.vertical) {
-      case '':
-        axis = ['+y', '-y'];
-        size = 'height';
-        break;
-      case 'rl':
-        axis = ['+x', '-x'];
-        size = 'width';
-        break;
-      case 'lr':
-        axis = ['-x', '+x'];
-        size = 'width';
-        break;
-    }
-
-    let step = getLineHeight(cueEl),
-      position = step * Math.round(line),
-      maxPosition = container[size] + step,
-      initialAxis = axis[0];
-
-    if (Math.abs(position) > maxPosition) {
-      position = position < 0 ? -1 : 1;
-      position *= Math.ceil(maxPosition / step) * step;
-    }
-
-    if (line < 0) {
-      position += cue.vertical === '' ? container.height : container.width;
-      axis = axis.reverse();
-    }
-
-    moveBox(displayBox, initialAxis, position);
-  } else {
-    const isHorizontal = cue.vertical === '',
-      posAxis = isHorizontal ? '+y' : '+x',
-      size = isHorizontal ? displayBox.height : displayBox.width;
-
-    moveBox(
-      displayBox,
-      posAxis,
-      ((isHorizontal ? container.height : container.width) * line) / 100,
-    );
-
-    moveBox(
-      displayBox,
-      posAxis,
-      cue.lineAlign === 'center' ? size / 2 : cue.lineAlign === 'end' ? size : 0,
-    );
-
-    axis = isHorizontal ? ['-y', '+y', '-x', '+x'] : ['-x', '+x', '-y', '+y'];
-  }
-
-  displayBox = avoidBoxCollisions(container, displayBox, boxes, axis);
-  setBoxCSSVars(displayEl, container, displayBox, 'cue');
-
-  return displayBox;
+  return {
+    kind: 'cue',
+    box: resolveRelativeBox(container, { ...cache.visualBox } as Box),
+    lineHeight: cache.lineHeight,
+    snapToLines: cue.snapToLines,
+    line: computeCueLine(cue),
+    lineAlign: cue.lineAlign,
+    vertical: cue.vertical,
+    fixed: displayEl.hasAttribute('data-fixed'),
+    positionOverride: cache.positionOverride,
+  };
 }
 
-function createStartingBox(container: Box, cueEl: HTMLElement) {
-  const box = createBox(cueEl),
-    pos = getStyledPositions(cueEl);
-
-  cueEl[POSITION_OVERRIDE] = false;
-
-  if (pos.top) {
-    box.top = pos.top;
-    box.bottom = pos.top + box.height;
-    cueEl[POSITION_OVERRIDE] = 'top';
+/**
+ * WRITE phase: applies the laid out (visual) box. The CSS position is the layout box moved by
+ * however far collision avoidance moved the visual box, so transforms stay intact.
+ */
+export function writeCueBox(container: Box, displayEl: HTMLElement, box: Box) {
+  const cache = displayEl[LAYOUT_CACHE] as CueMeasureCache | null;
+  let written = box;
+  if (cache) {
+    const layout = resolveRelativeBox(container, { ...cache.layoutBox } as Box),
+      visual = resolveRelativeBox(container, { ...cache.visualBox } as Box);
+    written = { ...layout };
+    moveBox(written, '+x', box.left - visual.left);
+    moveBox(written, '+y', box.top - visual.top);
   }
-
-  if (pos.bottom) {
-    const bottom = container.height - pos.bottom;
-    box.top = bottom - box.height;
-    box.bottom = bottom;
-    cueEl[POSITION_OVERRIDE] = 'bottom';
-  }
-
-  if (pos.left) box.left = pos.left;
-  if (pos.right) box.right = container.width - pos.right;
-
-  return createCSSBox(container, box);
+  setBoxCSSVars(displayEl, container, written, 'cue');
 }
 
-function getStyledPositions(el: HTMLElement) {
-  const positions = {};
-  for (const side of BOX_SIDES) {
-    positions[side] = parseFloat(el.style.getPropertyValue(`--cue-${side}`));
+function createMeasureCache(
+  container: Box,
+  displayEl: HTMLElement,
+  cue: VTTCue,
+  options: CueMeasureOptions,
+): CueMeasureCache {
+  const isHorizontal = cue.vertical === '',
+    layout = createBox(displayEl),
+    cueEl = displayEl.firstElementChild ?? displayEl;
+
+  // An explicit position along the block axis (from `layout`, raw `--cue-*` styles, or the
+  // previous layout pass after a resize) turns off line snapping: the box keeps its place instead
+  // of having the line offset applied again. Horizontal cues are positioned by top/bottom;
+  // vertical cues by left/right (their top is the position along the line axis).
+  let positionOverride: CueMeasureCache['positionOverride'] = false;
+  for (const side of BLOCK_SIDES[isHorizontal ? 'horizontal' : 'vertical']) {
+    if (displayEl.style.getPropertyValue(`--cue-${side}`).trim()) positionOverride = side;
   }
-  return positions as Omit<Box, 'width' | 'height'>;
+
+  // Painted box relative to the offset parent, corrected for any ancestor scaling. Only needed
+  // when a transform is in play; otherwise the layout box is exact and avoids sub-pixel drift
+  // between fractional client rects and integer offsets.
+  const transformed = getComputedStyle(displayEl).transform !== 'none',
+    parent = (displayEl.offsetParent ?? displayEl.parentElement) as HTMLElement | null,
+    parentRect = transformed ? parent?.getBoundingClientRect() : undefined,
+    rect = transformed ? displayEl.getBoundingClientRect() : undefined,
+    scale = parentRect && parent!.clientWidth ? parentRect.width / parent!.clientWidth : 1,
+    visual: Box =
+      parentRect && rect
+        ? {
+            left: (rect.left - parentRect.left) / scale,
+            top: (rect.top - parentRect.top) / scale,
+            right: (rect.right - parentRect.left) / scale,
+            bottom: (rect.bottom - parentRect.top) / scale,
+            width: rect.width / scale,
+            height: rect.height / scale,
+          }
+        : { ...layout };
+
+  const lineHeight =
+    options.lineStep === 'box' ? layout.height || getLineHeight(cueEl) : getLineHeight(cueEl);
+
+  return {
+    layoutBox: createCSSBox(container, layout),
+    visualBox: createCSSBox(container, visual.width || visual.height ? visual : layout),
+    positionOverride,
+    lineHeight,
+  };
 }
 
 export function computeCueLine(cue: VTTCue): number {
@@ -139,15 +139,17 @@ export function computeCueLine(cue: VTTCue): number {
   return cue.line;
 }
 
-export function computeCuePosition(cue: VTTCue): number {
+export function computeCuePosition(cue: VTTCue, dir: 'ltr' | 'rtl' = 'ltr'): number {
   if (cue.position === 'auto') {
     switch (cue.align) {
-      case 'start':
       case 'left':
         return 0;
       case 'right':
-      case 'end':
         return 100;
+      case 'start':
+        return dir === 'ltr' ? 0 : 100;
+      case 'end':
+        return dir === 'ltr' ? 100 : 0;
       default:
         return 50;
     }

@@ -8,8 +8,8 @@
     "forceConsistentCasingInFileNames": true,
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
-    "moduleResolution": "node",
-    "noImplicitAny": false,
+    "moduleResolution": "bundler",
+    "noImplicitAny": true,
     "noImplicitOverride": true,
     "noImplicitReturns": false,
     "noUnusedParameters": false,
@@ -19,10 +19,17 @@
     "target": "esnext",
     "useDefineForClassFields": false,
     "paths": {
-      "media-captions": ["./src/index.ts"]
+      "media-captions": ["./src/index.ts"],
+      "media-captions/cea": ["./src/cea/index.ts"],
+      "media-captions/element": ["./src/element/index.ts"],
+      "media-captions/entities": ["./src/entities/index.ts"],
+      "media-captions/mp4": ["./src/mp4/index.ts"],
+      "media-captions/renderer": ["./src/renderer/index.ts"],
+      "media-captions/canvas": ["./src/canvas/index.ts"]
     },
     "types": ["vitest/globals"],
     "verbatimModuleSyntax": true
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "playground"],
+  "exclude": ["**/*.mjs", "node_modules", "dist"]
 }

@@ -1,0 +1,271 @@
+{
+  "cueCount": 12,
+  "errors": [],
+  "cues": [
+    {
+      "id": "s1",
+      "startTime": 1.5005,
+      "endTime": 4,
+      "text": "<c.white>Where were you last night?</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s2",
+      "startTime": 4.25025,
+      "endTime": 7.75075,
+      "text": "<c.white>I told you.\nI was at the office.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s3",
+      "startTime": 7.8341666666666665,
+      "endTime": 10,
+      "text": "<c.white><i>(door slams)</i></c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 10,
+      "lineAlign": "start",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s4",
+      "startTime": 10,
+      "endTime": 13.5005,
+      "text": "<c.yellow>-Until midnight?\n</c><c.cyan>-Yes, until midnight.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s5",
+      "startTime": 13.5005,
+      "endTime": 16,
+      "text": "<c.white>He said <b>nothing</b> for a long time.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s6",
+      "startTime": 16,
+      "endTime": 19,
+      "text": "<c.white>Sign on the wall:\nEXIT</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 50,
+      "lineAlign": "center",
+      "position": 5,
+      "positionAlign": "line-left",
+      "size": 40,
+      "align": "start",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s7",
+      "startTime": 19,
+      "endTime": 22,
+      "text": "<c.white>[speaking French]</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal",
+        "className": "forced"
+      }
+    },
+    {
+      "id": "s8",
+      "startTime": 22,
+      "endTime": 25,
+      "text": "<c.white>مرحبا بكم</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s9",
+      "startTime": 25,
+      "endTime": 28,
+      "text": "<c.white>Preserved   spacing\n  and a newline.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s10",
+      "startTime": 28,
+      "endTime": 31,
+      "text": "<c.white><u>Underlined</u> and <b><i>both</i></b>.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s11",
+      "startTime": 31,
+      "endTime": 34,
+      "text": "<c.white>Duration instead of end.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    },
+    {
+      "id": "s12",
+      "startTime": 34,
+      "endTime": 37,
+      "text": "<c.white.bg_black>Semi-transparent box.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": false,
+      "line": 90,
+      "lineAlign": "end",
+      "position": 10,
+      "positionAlign": "line-left",
+      "size": 80,
+      "align": "center",
+      "textStyle": {
+        "fontSize": {
+          "unit": "vh",
+          "value": 5
+        },
+        "lineHeight": "normal"
+      }
+    }
+  ]
+}

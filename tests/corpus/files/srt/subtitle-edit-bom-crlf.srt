@@ -1,0 +1,25 @@
+﻿1
+00:00:01,000 --> 00:00:03,000
+<i>Subtitle Edit</i> export with a BOM.
+
+2
+00:00:03,000 --> 00:00:05,500
+<b>Bold</b> on the first line,
+<u>underline</u> on the second.
+
+3
+00:00:05,500 --> 00:00:07,000
+<font color="#ff8800">Orange</font> <i><b>nested</b></i>
+
+4
+00:00:07,000 --> 00:00:09,000
+{\an8}Top of the screen.
+
+5
+00:00:09,000 --> 00:00:11,000
+
+
+6
+00:00:11,000 --> 00:00:13,000
+After an empty cue.
+

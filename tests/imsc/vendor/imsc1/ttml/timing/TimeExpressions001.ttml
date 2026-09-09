@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt xml:lang="en" xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" 
+		xmlns:ttp="http://www.w3.org/ns/ttml#parameter" ttp:profile="http://www.w3.org/ns/ttml/profile/imsc1/text"
+		xmlns:tts="http://www.w3.org/ns/ttml#styling"
+		ttp:frameRate="24" ttp:frameRateMultiplier="1000 1001" ttp:tickRate="60">
+	<head>
+	</head>
+	<body>
+		<div timeContainer="seq">			
+			<p begin="0s" end="1.2s">1.2s = 1.2s</p>
+			<p begin="0s" end="1.2m">1.2m = 72s</p>
+			<p begin="0s" end="1.2h">1.2h = 4320s</p>
+			<p begin="0s" end="24f">24f = 1.001s</p>
+			<p begin="0s" end="120t">120t = 2s</p>
+			<p begin="0s" end="01:02:03">01:02:03 = 3723s</p>
+			<p begin="0s" end="01:02:03.235">01:02:03.235 = 3723.235s</p>
+			<p begin="0s" end="01:02:03.2350">01:02:03.2350 = 3723.235s</p>
+			<p begin="0s" end="01:02:03:20">01:02:03:20 = 3723.83416667s</p>
+			<p begin="0s" end="100:00:00.1">100:00:00.1 = 360000.1s</p>
+			<p begin="0s" end="100:00:00:00">100:00:00:00 = 360000s</p>
+		</div>
+	</body>
+</tt>

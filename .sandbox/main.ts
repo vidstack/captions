@@ -1,23 +1,266 @@
-import { CaptionsRenderer, VTTCue, VTTRegion } from '../src';
+import { CaptionsRenderer, CueTrack, parseText, VTTCue, VTTRegion } from '../src';
+import { defineMediaCaptionsElement } from '../src/element';
 
-const overlay = document.getElementById('overlay')!;
-const renderer = new CaptionsRenderer(overlay);
+type Scenario = (
+  mount: (label?: string, small?: boolean) => CaptionsRenderer,
+) => Promise<void> | void;
 
-const cues = [
-  new VTTCue(0, 10, 'Cue A...'),
-  new VTTCue(10, 20, 'Cue B...'),
-  new VTTCue(20, 30, 'Cue C...'),
-];
+const root = document.getElementById('root')!,
+  timeInput = document.getElementById('current-time') as HTMLInputElement,
+  renderers: CaptionsRenderer[] = [];
 
-const region = new VTTRegion();
-cues[1].region = region;
+function mount(label?: string, small = false) {
+  const viewport = document.createElement('div');
+  viewport.className = 'viewport' + (small ? ' small' : '');
+  if (label) {
+    const tag = document.createElement('div');
+    tag.className = 'label';
+    tag.textContent = label;
+    viewport.append(tag);
+  }
+  const overlay = document.createElement('div');
+  viewport.append(overlay);
+  root.append(viewport);
+  const renderer = new CaptionsRenderer(overlay);
+  renderers.push(renderer);
+  return renderer;
+}
 
-renderer.changeTrack({
-  regions: [region],
-  cues,
-});
+function cue(start: number, end: number, text: string, settings: Partial<VTTCue> = {}) {
+  const result = new VTTCue(start, end, text);
+  Object.assign(result, settings);
+  return result;
+}
 
-const input = document.getElementById('current-time')! as HTMLInputElement;
-input.addEventListener('change', () => {
-  renderer.currentTime = input.valueAsNumber;
-});
+const scenarios: Record<string, Scenario> = {
+  cues(attach) {
+    const renderer = attach();
+    renderer.changeTrack({
+      cues: [
+        cue(0, 10, 'line:0 (snap to first line)', { line: 0 }),
+        cue(0, 10, 'line:50% position:10% size:35% align:start', {
+          snapToLines: false,
+          line: 50,
+          position: 10,
+          size: 35,
+          align: 'start',
+        }),
+        cue(0, 10, 'position:90% size:35% align:end', {
+          position: 90,
+          size: 35,
+          align: 'end',
+          line: -4,
+        }),
+        cue(
+          0,
+          10,
+          '<v Narrator>Default cue with <b>bold</b>, <i>italic</i>, and <c.yellow>colour</c>',
+        ),
+        cue(0, 10, 'Karaoke <00:00:01.000>timed <00:00:02.000>text <00:00:04.000>updates', {
+          line: -6,
+        }),
+      ],
+    });
+  },
+
+  regions(attach) {
+    const renderer = attach();
+    const top = new VTTRegion();
+    Object.assign(top, {
+      id: 'top',
+      width: 45,
+      lines: 2,
+      regionAnchorX: 0,
+      regionAnchorY: 0,
+      viewportAnchorX: 5,
+      viewportAnchorY: 8,
+    });
+    const bottom = new VTTRegion();
+    Object.assign(bottom, {
+      id: 'bottom',
+      width: 60,
+      lines: 3,
+      regionAnchorX: 100,
+      regionAnchorY: 100,
+      viewportAnchorX: 95,
+      viewportAnchorY: 92,
+      scroll: 'up',
+    });
+    const cues = [
+      cue(0, 10, 'REGION top: width 45%, anchored top-left'),
+      cue(0, 10, 'Second line in the top region'),
+      cue(0, 10, 'REGION bottom: width 60%, 3 lines, scroll:up'),
+      cue(1, 10, 'Roll-up captions push older lines'),
+      cue(2, 10, 'upwards as new cues arrive'),
+    ];
+    cues[0].region = cues[1].region = top;
+    cues[2].region = cues[3].region = cues[4].region = bottom;
+    renderer.changeTrack({ regions: [top, bottom], cues });
+  },
+
+  'region-scroll'(attach) {
+    const renderer = attach();
+    const region = new VTTRegion();
+    Object.assign(region, { id: 'rollup', width: 70, lines: 3, viewportAnchorX: 15, scroll: 'up' });
+    region.regionAnchorX = 0;
+    const lines = [
+      'Roll-up caption line one',
+      'Roll-up caption line two',
+      'Roll-up caption line three',
+      'Line four scrolls the first line out',
+      'Line five keeps rolling',
+    ];
+    const cues = lines.map((text, i) => cue(i * 0.8, 20, text));
+    for (const c of cues) c.region = region;
+    renderer.changeTrack({ regions: [region], cues });
+  },
+
+  async ssa(attach) {
+    const renderer = attach();
+    const ass = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 1280
+PlayResY: 720
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,52,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,2,2,40,40,40,1
+Style: Sign,Arial,40,&H0000FFFF,&H000000FF,&H00203040,&H00000000,-1,0,0,0,100,100,0,0,3,4,0,8,40,40,30,1
+Style: Note,Arial,34,&H00FFD0A0,&H000000FF,&H00000000,&H00000000,0,-1,0,0,100,100,1,0,1,2,0,7,40,40,120,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,Rin,0,0,0,,Outlined dialogue with {\\i1}italics{\\i0} and {\\c&H00A5FF&}colour{\\r} tags
+Dialogue: 1,0:00:00.00,0:00:10.00,Sign,,0,0,0,,BorderStyle 3 opaque box, top centre
+Dialogue: 0,0:00:00.00,0:00:10.00,Note,,0,0,0,,Top-left italic note with letter spacing
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\pos(640,400)\\an5}\\pos(640,400) centred anchor
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\\an1}{\\k60}Ka{\\k60}ra{\\k60}o{\\k60}ke
+`;
+    const result = await parseText(ass, { type: 'ass' });
+    renderer.changeTrack(result);
+  },
+
+  'edge-styles'(attach) {
+    root.classList.add('grid');
+    for (const style of ['uniform', 'drop-shadow', 'raised', 'depressed'] as const) {
+      const renderer = attach(`data-edge-style="${style}"`, true);
+      renderer.overlay.setAttribute('data-edge-style', style);
+      renderer.overlay.style.setProperty('--cue-bg-color', 'transparent');
+      renderer.changeTrack({ cues: [cue(0, 10, `${style} edge style`)] });
+    }
+  },
+
+  layout(attach) {
+    // The structured cue model: parsers of positioned formats emit these instead of CSS.
+    const renderer = attach();
+    const centered = cue(0, 10, 'layout: left 50%, translate x -0.5, max-content');
+    centered.layout = { left: 50, bottom: 6, width: 'max-content', translate: { x: -0.5 } };
+    centered.textStyle = {
+      color: '#ffd166',
+      textStroke: '0.08em #1c1f2b',
+      backgroundColor: 'transparent',
+    };
+
+    const fixed = cue(0, 10, 'layout.fixed: pinned at 70% / 35%, never moved by collisions');
+    fixed.layout = {
+      left: 70,
+      top: 35,
+      width: 'max-content',
+      translate: { x: -0.5, y: -0.5 },
+      fixed: true,
+    };
+    fixed.textStyle = { fontSize: '4cqh', opacity: '0.9' };
+
+    const boxed = cue(0, 10, 'textStyle: outline box, bold, letter spacing');
+    boxed.layout = { left: 4, top: 8, width: 'max-content', maxWidth: 40 };
+    boxed.textStyle = {
+      backgroundColor: 'rgba(20, 30, 60, 0.95)',
+      outline: '0.15em solid #9cc4ff',
+      fontWeight: 'bold',
+      letterSpacing: '0.05em',
+      textAlign: 'left',
+    };
+
+    const faded = cue(0, 10, 'textStyle.animation: fade in');
+    faded.layout = { right: 4, top: 8, width: 'max-content' };
+    faded.textStyle = { animation: 'media-captions-fade-in 1.5s' };
+
+    renderer.changeTrack({ cues: [centered, fixed, boxed, faded] });
+  },
+
+  live(attach) {
+    // A CueTrack fed incrementally, the way CEA-608/708 stream decoders do in live mode.
+    const renderer = attach('CueTrack live: open-ended cues updated in place');
+    const track = new CueTrack(undefined, { retention: 30 });
+    renderer.changeTrack({ cues: track });
+
+    const first = cue(0, Infinity, 'Live caption arrives with endTime = Infinity');
+    track.add(first);
+
+    // Later the decoder learns when it ended and updates the same object.
+    first.endTime = 2;
+    track.update(first);
+
+    const second = cue(2, Infinity, 'Next caption is on screen right now');
+    track.add(second);
+    second.text = 'Next caption is on screen right now (text edited in place)';
+    track.update(second);
+  },
+
+  element(attach) {
+    // The <media-captions> custom element in light DOM (page stylesheets apply).
+    defineMediaCaptionsElement();
+    const viewport = document.createElement('div');
+    viewport.className = 'viewport';
+    const tag = document.createElement('div');
+    tag.className = 'label';
+    tag.textContent = '<media-captions edge-style="uniform">';
+    viewport.append(tag);
+    const el = document.createElement('media-captions');
+    el.setAttribute('edge-style', 'uniform');
+    viewport.append(el);
+    root.append(viewport);
+    el.load({
+      cues: [
+        cue(0, 10, 'Rendered by the <media-captions> element'),
+        cue(0, 10, 'Attributes: src, type, for, dir, edge-style, shadow', { line: 1 }),
+      ],
+    });
+    renderers.push(el.renderer);
+    void attach; // handled manually above
+  },
+
+  collisions(attach) {
+    const renderer = attach();
+    renderer.changeTrack({
+      cues: [
+        cue(0, 10, 'Three cues share the same line setting'),
+        cue(0.5, 10, 'so collision avoidance stacks them'),
+        cue(1, 10, 'without overlap, in cue order'),
+        cue(0, 10, 'line:1 top cue', { line: 1 }),
+        cue(0.5, 10, 'another line:1 cue pushed down', { line: 1 }),
+      ],
+    });
+  },
+};
+
+const params = new URLSearchParams(location.search),
+  name = params.get('scenario') ?? 'cues',
+  scenario = scenarios[name] ?? scenarios.cues;
+
+document.getElementById('links')!.innerHTML = Object.keys(scenarios)
+  .map((key) => `<a href="?scenario=${key}">${key}</a>`)
+  .join(' · ');
+
+function setTime(time: number) {
+  for (const renderer of renderers) renderer.currentTime = time;
+}
+
+await scenario(mount);
+setTime(Number(params.get('time') ?? timeInput.value));
+timeInput.addEventListener('change', () => setTime(timeInput.valueAsNumber));
+
+// Signal to screenshot tooling that cues are rendered.
+requestAnimationFrame(() =>
+  requestAnimationFrame(() => document.body.setAttribute('data-ready', '')),
+);

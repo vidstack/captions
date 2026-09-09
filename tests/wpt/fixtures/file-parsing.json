@@ -1,0 +1,2364 @@
+{
+  "upstream": "422734d7fd906113ab2e8a929e115bbcdfa5b341",
+  "tests": [
+    {
+      "file": "arrows.html",
+      "name": "WebVTT parser test: arrows",
+      "source": "support/arrows.vtt",
+      "vtt": "WEBVTT\n\n-->\n00:00:00.000 --> 00:00:01.000\ntext0\nfoo-->\n00:00:00.000 --> 00:00:01.000\ntext1\n-->foo\n00:00:00.000 --> 00:00:01.000\ntext2\n--->\n00:00:00.000 --> 00:00:01.000\ntext3\n-->-->\n00:00:00.000 --> 00:00:01.000\ntext4\n00:00:00.000 --> 00:00:01.000\ntext5\n\n00:00:00.000 -a -->\n\n00:00:00.000 --a -->\n\n00:00:00.000 - -->\n\n00:00:00.000 -- -->\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 6
+        },
+        {
+          "path": "cues[0].id",
+          "expected": ""
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text0"
+        },
+        {
+          "path": "cues[1].id",
+          "expected": ""
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[2].id",
+          "expected": ""
+        },
+        {
+          "path": "cues[2].text",
+          "expected": "text2"
+        },
+        {
+          "path": "cues[3].id",
+          "expected": ""
+        },
+        {
+          "path": "cues[3].text",
+          "expected": "text3"
+        },
+        {
+          "path": "cues[4].id",
+          "expected": ""
+        },
+        {
+          "path": "cues[4].text",
+          "expected": "text4"
+        },
+        {
+          "path": "cues[5].id",
+          "expected": ""
+        },
+        {
+          "path": "cues[5].text",
+          "expected": "text5"
+        }
+      ]
+    },
+    {
+      "file": "comment-in-cue-text.html",
+      "name": "WebVTT parser test: comment-in-cue-text",
+      "source": "support/comment-in-cue-text.vtt",
+      "vtt": "WEBVTT\n\nNOTE this is real comment that should be ignored\n\n00:00:00.000 --> 00:00:01.000\nNOTE text\n\nNOTE\nthis is also a real comment that should be ignored\nthis is also a real comment that should be ignored\n\n00:00:01.000 --> 00:00:02.000\nNOTE text\nNOTE text2\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 2
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "NOTE text"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 1
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "NOTE text\nNOTE text2"
+        },
+        {
+          "path": "cues[1].startTime",
+          "expected": 1
+        },
+        {
+          "path": "cues[1].endTime",
+          "expected": 2
+        }
+      ]
+    },
+    {
+      "file": "header-garbage.html",
+      "name": "WebVTT parser test: header, garbage",
+      "source": "support/header-garbage.vtt",
+      "vtt": "WEBVTT\nfoobar\n\n00:00:00.000 --> 00:00:01.000\ntext",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 1
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "file": "header-regions.html",
+      "name": "Tests proper parsing of various regions present in WebVTT header area.",
+      "source": "support/header-regions.vtt",
+      "vtt": "WEBVTT FILE\n\nREGION\nid:region_without_settings\n\nREGION\nid:region_with_all_settings width:32%\nlines:5\nregionanchor:41%,20% viewportanchor:31%,84%\nscroll:up\n\nREGION\nid:region_floating_point_anchor\nregionanchor:41.125%,20.25% viewportanchor:32.75%,32.5%\n\nREGION\nid:not_unique_id width:42%\n\nREGION\nid:not_unique_id\nwidth:67%\n\nREGION\ninvalid_settings values but region still created\n: Invalid Header\n\nREGION\nid:region_split_by_ascii_whitespace\t\t\twidth:10%\nlines:5\f\f\fregionanchor:40%,20%    viewportanchor:30%,80% \f\tscroll:up\n\n00:00:00.000 --> 00:00:02.500 region:someregionattributeid\n\"no region\"\n\n00:00:00.000 --> 00:00:02.500 line:5 region:ignored_attribute_value\n\"no region\"\n\n00:00:00.000 --> 00:00:02.500 size:10% region:ignored_attribute_value\n\"no region\"\n\n00:00:00.000 --> 00:00:02.500 vertical:lr region:ignored_attribute_value\n\"no region\"\n\n00:00:03.000 --> 00:00:04.000 region:region_without_settings\n{}\n\n00:00:04.000 --> 00:00:05.000 region:region_with_all_settings\n{\"width\":32,\"lines\":5,\"regionAnchorX\":41,\"regionAnchorY\":20,\"viewportAnchorX\":31,\"viewportAnchorY\":84,\"scroll\":\"up\"}\n\n00:00:05.000 --> 00:00:06.000 region:region_floating_point_anchor\n{\"regionAnchorX\":41.125,\"regionAnchorY\":20.25,\"viewportAnchorX\":32.75,\"viewportAnchorY\":32.5}\n\n00:00:06.000 --> 00:00:07.000 region:not_unique_id\n{\"width\":67}\n\n00:00:07.000 --> 00:00:08.000 region:\n\"no region\"\n\n00:00:08.000 --> 00:00:09.000 region:region_split_by_ascii_whitespace\n{\"width\":10,\"lines\":5,\"regionAnchorX\":40,\"regionAnchorY\":20,\"viewportAnchorX\":30,\"viewportAnchorY\":80,\"scroll\":\"up\"}\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 10
+        },
+        {
+          "path": "cues[0].region",
+          "expected": null
+        },
+        {
+          "path": "cues[1].region",
+          "expected": null
+        },
+        {
+          "path": "cues[2].region",
+          "expected": null
+        },
+        {
+          "path": "cues[3].region",
+          "expected": null
+        },
+        {
+          "path": "cues[4].region",
+          "truthy": true
+        },
+        {
+          "path": "cues[4].region.width",
+          "expected": 100
+        },
+        {
+          "path": "cues[4].region.lines",
+          "expected": 3
+        },
+        {
+          "path": "cues[4].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[4].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[4].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[4].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[4].region.scroll",
+          "expected": ""
+        },
+        {
+          "path": "cues[5].region",
+          "truthy": true
+        },
+        {
+          "path": "cues[5].region.width",
+          "expected": 32
+        },
+        {
+          "path": "cues[5].region.lines",
+          "expected": 5
+        },
+        {
+          "path": "cues[5].region.regionAnchorX",
+          "expected": 41
+        },
+        {
+          "path": "cues[5].region.regionAnchorY",
+          "expected": 20
+        },
+        {
+          "path": "cues[5].region.viewportAnchorX",
+          "expected": 31
+        },
+        {
+          "path": "cues[5].region.viewportAnchorY",
+          "expected": 84
+        },
+        {
+          "path": "cues[5].region.scroll",
+          "expected": "up"
+        },
+        {
+          "path": "cues[6].region",
+          "truthy": true
+        },
+        {
+          "path": "cues[6].region.width",
+          "expected": 100
+        },
+        {
+          "path": "cues[6].region.lines",
+          "expected": 3
+        },
+        {
+          "path": "cues[6].region.regionAnchorX",
+          "expected": 41.125
+        },
+        {
+          "path": "cues[6].region.regionAnchorY",
+          "expected": 20.25
+        },
+        {
+          "path": "cues[6].region.viewportAnchorX",
+          "expected": 32.75
+        },
+        {
+          "path": "cues[6].region.viewportAnchorY",
+          "expected": 32.5
+        },
+        {
+          "path": "cues[6].region.scroll",
+          "expected": ""
+        },
+        {
+          "path": "cues[7].region",
+          "truthy": true
+        },
+        {
+          "path": "cues[7].region.width",
+          "expected": 67
+        },
+        {
+          "path": "cues[7].region.lines",
+          "expected": 3
+        },
+        {
+          "path": "cues[7].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[7].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[7].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[7].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[7].region.scroll",
+          "expected": ""
+        },
+        {
+          "path": "cues[8].region",
+          "expected": null
+        },
+        {
+          "path": "cues[9].region",
+          "truthy": true
+        },
+        {
+          "path": "cues[9].region.width",
+          "expected": 10
+        },
+        {
+          "path": "cues[9].region.lines",
+          "expected": 5
+        },
+        {
+          "path": "cues[9].region.regionAnchorX",
+          "expected": 40
+        },
+        {
+          "path": "cues[9].region.regionAnchorY",
+          "expected": 20
+        },
+        {
+          "path": "cues[9].region.viewportAnchorX",
+          "expected": 30
+        },
+        {
+          "path": "cues[9].region.viewportAnchorY",
+          "expected": 80
+        },
+        {
+          "path": "cues[9].region.scroll",
+          "expected": "up"
+        }
+      ]
+    },
+    {
+      "file": "header-space.html",
+      "name": "WebVTT parser test: header, space",
+      "source": "support/header-space.vtt",
+      "vtt": "WEBVTT\n \n00:00:00.000 --> 00:00:01.000\ntext",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 1
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "file": "header-tab.html",
+      "name": "WebVTT parser test: header, tab",
+      "source": "support/header-tab.vtt",
+      "vtt": "WEBVTT\n\t\n00:00:00.000 --> 00:00:01.000\ntext\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 1
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "file": "header-timings.html",
+      "name": "WebVTT parser test: header, timings",
+      "source": "support/header-timings.vtt",
+      "vtt": "WEBVTT\n00:00:00.000 --> 00:00:01.000\ntext",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 1
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "file": "ids.html",
+      "name": "WebVTT parser test: ids",
+      "source": "support/ids.vtt",
+      "vtt": "WEBVTT\n\n leading space\n00:00:00.000 --> 00:00:01.000\ntext0\n\ntrailing space \n00:00:00.000 --> 00:00:01.000\ntext1\n\n-- >\n00:00:00.000 --> 00:00:01.000\ntext2\n\n->\n00:00:00.000 --> 00:00:01.000\ntext3\n\n \n00:00:00.000 --> 00:00:01.000\ntext4\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 5
+        },
+        {
+          "path": "cues[0].id",
+          "expected": " leading space"
+        },
+        {
+          "path": "cues[1].id",
+          "expected": "trailing space "
+        },
+        {
+          "path": "cues[2].id",
+          "expected": "-- >"
+        },
+        {
+          "path": "cues[3].id",
+          "expected": "->"
+        },
+        {
+          "path": "cues[4].id",
+          "expected": " "
+        }
+      ]
+    },
+    {
+      "file": "newlines.html",
+      "name": "WebVTT parser test: newlines",
+      "source": "support/newlines.vtt",
+      "vtt": "WEBVTT\r\rcr\r00:00:00.000 --> 00:00:01.000\rtext0\n\nlf\n00:00:00.000 --> 00:00:01.000\ntext1\r\n\r\ncrlf\r\n00:00:00.000 --> 00:00:01.000\r\ntext2\n\rlfcr\r00:00:00.000 --> 00:00:01.000\ntext3\n\r\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 4
+        },
+        {
+          "path": "cues[0].id",
+          "expected": "cr"
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text0"
+        },
+        {
+          "path": "cues[1].id",
+          "expected": "lf"
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[2].id",
+          "expected": "crlf"
+        },
+        {
+          "path": "cues[2].text",
+          "expected": "text2"
+        },
+        {
+          "path": "cues[3].id",
+          "expected": "lfcr"
+        },
+        {
+          "path": "cues[3].text",
+          "expected": "text3"
+        }
+      ]
+    },
+    {
+      "file": "nulls.html",
+      "name": "WebVTT parser test: nulls",
+      "source": "support/nulls.vtt",
+      "vtt": "WEBVTT\n\u0000\n(null in previous line should make this line also part of the header)\n00:00:00.000 --> 00:00:01.000\ntext0\n\n\u0000 (null in id)\n00:00:00.000 --> 00:00:01.000\ntext1\n\n� (null in cue data)\n00:00:00.000 --> 00:00:01.000\n�text\u00002\n\n00:00:00.000 --> 00:00:01.000 align\u0000:end\ntext3\n\n00:00:00.000 --> 00:00:01.000 align:end\u0000\ntext4\n\n00:00:00.000 --> 00:00:01.000\u0000align:end\ntext5\n\n00:00:00.000 --> 00:00:01.000\u0000 align:end\ntext6\n\n00:00:00.000\u0000 --> 00:00:01.000\ninvalid\n\n00:00:00.000 -->\u000000:00:01.000\ninvalid\n\n\u000000:00:00.000 --> 00:00:01.000\ninvalid\n\n0\u00000:00:00.000 --> 00:00:01.000\ninvalid\n\n00\u0000:00:00.000 --> 00:00:01.000\ninvalid\n\n00:\u000000:00.000 --> 00:00:01.000\ninvalid\n\n00:0\u00000:00.000 --> 00:00:01.000\ninvalid\n\n00:00\u0000:00.000 --> 00:00:01.000\ninvalid\n\n00:00:\u000000.000 --> 00:00:01.000\ninvalid\n\n00:00:0\u00000.000 --> 00:00:01.000\ninvalid\n\n00:00:00\u0000.000 --> 00:00:01.000\ninvalid\n\n00:00:00.\u0000000 --> 00:00:01.000\ninvalid\n\n00:00:00.0\u000000 --> 00:00:01.000\ninvalid\n\n00:00:00.00\u00000 --> 00:00:01.000\ninvalid\n\n00:00:00.000\u0000 --> 00:00:01.000\ninvalid\n\n00:00:00.000 \u0000--> 00:00:01.000\ninvalid\n\n00:00:00.000 -\u0000-> 00:00:01.000\ninvalid\n\n00:00:00.000 --\u0000> 00:00:01.000\ninvalid\n\n00:00:00.000 -->\u0000 00:00:01.000\ninvalid\n\n00:00:00.000 --> \u000000:00:01.000\ninvalid\n\n00:00:00.000 --> 0\u00000:00:01.000\ninvalid\n\n00:00:00.000 --> 00\u0000:00:01.000\ninvalid\n\n00:00:00.000 --> 00:\u000000:01.000\ninvalid\n\n00:00:00.000 --> 00:0\u00000:01.000\ninvalid\n\n00:00:00.000 --> 00:00\u0000:01.000\ninvalid\n\n00:00:00.000 --> 00:00:\u000001.000\ninvalid\n\n00:00:00.000 --> 00:00:0\u00001.000\ninvalid\n\n00:00:00.000 --> 00:00:01\u0000.000\ninvalid\n\n00:00:00.000 --> 00:00:01.\u0000000\ninvalid\n\n00:00:00.000 --> 00:00:01.0\u000000\ninvalid\n\n00:00:00.000 --> 00:00:01.00\u00000\ninvalid\n\n\u00000:00:00.000 --> 00:00:01.000\ninvalid\n\n0\u0000:00:00.000 --> 00:00:01.000\ninvalid\n\n00\u000000:00.000 --> 00:00:01.000\ninvalid\n\n00:\u00000:00.000 --> 00:00:01.000\ninvalid\n\n00:0\u0000:00.000 --> 00:00:01.000\ninvalid\n\n00:00\u000000.000 --> 00:00:01.000\ninvalid\n\n00:00:\u00000.000 --> 00:00:01.000\ninvalid\n\n00:00:0\u0000.000 --> 00:00:01.000\ninvalid\n\n00:00:00\u0000000 --> 00:00:01.000\ninvalid\n\n00:00:00.\u000000 --> 00:00:01.000\ninvalid\n\n00:00:00.0\u00000 --> 00:00:01.000\ninvalid\n\n00:00:00.00\u0000 --> 00:00:01.000\ninvalid\n\n00:00:00.000\u0000--> 00:00:01.000\ninvalid\n\n00:00:00.000 \u0000-> 00:00:01.000\ninvalid\n\n00:00:00.000 -\u0000> 00:00:01.000\ninvalid\n\n00:00:00.000 --\u0000 00:00:01.000\ninvalid\n\n00:00:00.000 -->\u000000:00:01.000\ninvalid\n\n00:00:00.000 --> \u00000:00:01.000\ninvalid\n\n00:00:00.000 --> 0\u0000:00:01.000\ninvalid\n\n00:00:00.000 --> 00\u000000:01.000\ninvalid\n\n00:00:00.000 --> 00:\u00000:01.000\ninvalid\n\n00:00:00.000 --> 00:0\u0000:01.000\ninvalid\n\n00:00:00.000 --> 00:00\u000001.000\ninvalid\n\n00:00:00.000 --> 00:00:\u00001.000\ninvalid\n\n00:00:00.000 --> 00:00:0\u0000.000\ninvalid\n\n00:00:00.000 --> 00:00:01\u0000000\ninvalid\n\n00:00:00.000 --> 00:00:01.\u000000\ninvalid\n\n00:00:00.000 --> 00:00:01.0\u00000\ninvalid\n\n00:00:00.000 --> 00:00:01.00\u0000\ninvalid\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 7
+        },
+        {
+          "path": "cues[0].id",
+          "expected": ""
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text0"
+        },
+        {
+          "path": "cues[1].id",
+          "expected": "� (null in id)"
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[2].id",
+          "expected": "� (null in cue data)"
+        },
+        {
+          "path": "cues[2].text",
+          "expected": "�text�2"
+        },
+        {
+          "path": "cues[3].align",
+          "expected": "center"
+        },
+        {
+          "path": "cues[3].text",
+          "expected": "text3"
+        },
+        {
+          "path": "cues[4].align",
+          "expected": "center"
+        },
+        {
+          "path": "cues[4].text",
+          "expected": "text4"
+        },
+        {
+          "path": "cues[5].align",
+          "expected": "center"
+        },
+        {
+          "path": "cues[5].text",
+          "expected": "text5"
+        },
+        {
+          "path": "cues[6].align",
+          "expected": "end"
+        },
+        {
+          "path": "cues[6].text",
+          "expected": "text6"
+        }
+      ]
+    },
+    {
+      "file": "regions-edge-case.html",
+      "name": "WebVTT parser test: multiple regions edge cases",
+      "source": "support/regions-edge-case.vtt",
+      "vtt": "WEBVTT\n\nNOTE valid\n\nREGION\nid:foo lines:1\n\n-->\nREGION\nid:foo\nlines:2\n-->\n\nREGION\nid:bill\nlines:2\n\nREGION\nREGION\nid:jill\nlines:3\n\nREGION\n--->\nid:jill lines:4\n\nREGION\nid:jack--> lines:5\n\nREGION\nid:jack lines:4\n\n00:00:00.000 --> 00:00:01.000 region:foo\ntext\n\n00:00:00.000 --> 00:00:01.000 region:bill\ntext\n\n00:00:00.000 --> 00:00:01.000 region:jill\ntext\n\n00:00:00.000 --> 00:00:01.000 region:jack\ntext\n\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 4
+        },
+        {
+          "path": "cues[0].region.lines",
+          "expected": 1
+        },
+        {
+          "path": "cues[0].region.id",
+          "expected": "foo"
+        },
+        {
+          "path": "cues[1].region.lines",
+          "expected": 2
+        },
+        {
+          "path": "cues[1].region.id",
+          "expected": "bill"
+        },
+        {
+          "path": "cues[2].region.lines",
+          "expected": 3
+        },
+        {
+          "path": "cues[2].region.id",
+          "expected": "jill"
+        },
+        {
+          "path": "cues[3].region.lines",
+          "expected": 4
+        },
+        {
+          "path": "cues[3].region.id",
+          "expected": "jack"
+        }
+      ]
+    },
+    {
+      "file": "regions-id.html",
+      "name": "WebVTT parser test: regions, id",
+      "source": "support/regions-id.vtt",
+      "vtt": "WEBVTT\n\nNOTE No API for accessing region ids, so using lines to uniquely identify regions\n\nREGION\nid:foo\nid:bar\nlines:1\n\nREGION\nid:bar id:foo\nlines:2\n\nREGION\nid:id\nid: foo\nid :bar\nlines:3\n\nREGION\nid:\u000b\nlines:4\n\n00:00:00.000 --> 00:00:01.000 region:foo\nvalid\n\n00:00:00.000 --> 00:00:01.000 region:bar\nvalid\n\n00:00:00.000 --> 00:00:01.000 region:id\nvalid\n\n00:00:00.000 --> 00:00:01.000 region:\u000b\nvalid\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 4
+        },
+        {
+          "path": "cues[0].region.lines",
+          "expected": 2
+        },
+        {
+          "path": "cues[1].region.lines",
+          "expected": 1
+        },
+        {
+          "path": "cues[2].region.lines",
+          "expected": 3
+        },
+        {
+          "path": "cues[3].region.lines",
+          "expected": 4
+        }
+      ]
+    },
+    {
+      "file": "regions-lines.html",
+      "name": "WebVTT parser test: regions, lines",
+      "source": "support/regions-lines.vtt",
+      "vtt": "WEBVTT\n\nNOTE valid\n\nREGION\nid:1\nlines:0\n\nREGION\nid:2\nlines:1\n\nREGION\nid:3\nlines:100\n\nREGION\nid:4\nlines:101\n\nREGION\nid:5\nlines:65536\n\nREGION\nid:6\nlines:4294967295\n\nREGION\nid:7\nlines:1 lines:3\nlines:2\n\nNOTE invalid\n\nREGION\nid:8\nlines:-0\n\nREGION\nid:9\nlines:1.5\n\nREGION\nid:10\nlines:-1\n\nREGION\nid:11\nlines: 1\nlines :1\n\n00:00:00.000 --> 00:00:01.000 region:1\ntext\n\n00:00:00.000 --> 00:00:01.000 region:2\ntext\n\n00:00:00.000 --> 00:00:01.000 region:3\ntext\n\n00:00:00.000 --> 00:00:01.000 region:4\ntext\n\n00:00:00.000 --> 00:00:01.000 region:5\ntext\n\n00:00:00.000 --> 00:00:01.000 region:6\ntext\n\n00:00:00.000 --> 00:00:01.000 region:7\ntext\n\n00:00:00.000 --> 00:00:01.000 region:8\ntext\n\n00:00:00.000 --> 00:00:01.000 region:9\ntext\n\n00:00:00.000 --> 00:00:01.000 region:10\ntext\n\n00:00:00.000 --> 00:00:01.000 region:11\ntext\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 11
+        },
+        {
+          "path": "cues[0].region.lines",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].region.lines",
+          "expected": 1
+        },
+        {
+          "path": "cues[2].region.lines",
+          "expected": 100
+        },
+        {
+          "path": "cues[3].region.lines",
+          "expected": 101
+        },
+        {
+          "path": "cues[4].region.lines",
+          "expected": 65536
+        },
+        {
+          "path": "cues[5].region.lines",
+          "expected": 4294967295
+        },
+        {
+          "path": "cues[6].region.lines",
+          "expected": 2
+        },
+        {
+          "path": "cues[7].region.lines",
+          "expected": 3
+        },
+        {
+          "path": "cues[8].region.lines",
+          "expected": 3
+        },
+        {
+          "path": "cues[9].region.lines",
+          "expected": 3
+        },
+        {
+          "path": "cues[10].region.lines",
+          "expected": 3
+        }
+      ]
+    },
+    {
+      "file": "regions-old.html",
+      "name": "WebVTT parser test: regions, old",
+      "source": "support/regions-old.vtt",
+      "vtt": "WEBVTT\nRegion: id=foo width=40% lines=3 regionanchor=0%,100% viewportanchor=10%,90% scroll=up\nRegion: id=bar width=40% lines=3 regionanchor=100%,100% viewportanchor=90%,90% scroll=up\n\n00:00:00.000 --> 00:00:01.000 region:foo\ntext0\n\n00:00:00.000 --> 00:00:01.000 region:bar\ntext1\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 2
+        },
+        {
+          "path": "cues[0].region",
+          "expected": null
+        },
+        {
+          "path": "cues[1].region",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "file": "regions-regionanchor.html",
+      "name": "WebVTT parser test: regions, regionanchor",
+      "source": "support/regions-regionanchor.vtt",
+      "vtt": "WEBVTT\n\nNOTE valid\n\nREGION\nid:0\n\nREGION\nid:1\nregionanchor:0%,0%\n\nREGION\nid:2\nregionanchor:1%,1%\n\nREGION\nid:3\nregionanchor:100%,0%\n\nREGION\nid:4\nregionanchor:0%,100%\n\nREGION\nid:5\nregionanchor:100%,100%\n\nNOTE invalid\n\nREGION\nid:6\nregionanchor:0,0\n\nREGION\nid:7\nregionanchor:0%,0\n\nREGION\nid:8\nregionanchor:0,0%\n\nREGION\nid:9\nregionanchor:1%\n\nREGION\nid:10\nregionanchor:,1%\n\nREGION\nid:11\nregionanchor:101%,1%\n\nREGION\nid:12\nregionanchor:1%,101%\n\nREGION\nid:13\nregionanchor:-0%,0%\n\nREGION\nid:14\nregionanchor:0%,-0%\n\nREGION\nid:15\nregionanchor:65536%,65536%\n\nREGION\nid:16\nregionanchor:4294967296%,4294967296%\n\nREGION\nid:17\nregionanchor:18446744073709552000%,18446744073709552000%\n\nREGION\nid:18\nregionanchor:10000000000000000000000000000000000%,10000000000000000000000000000000000%\n\nREGION\nid:19\nregionanchor: 100%,100%\nregionanchor :100%,100%\nregionanchor:100% ,100%\nregionanchor:100%, 100%\nregionanchor:100 %,100%\nregionanchor:100%,100 %\n\n00:00:00.000 --> 00:00:01.000 region:0\ntext\n\n00:00:00.000 --> 00:00:01.000 region:1\ntext\n\n00:00:00.000 --> 00:00:01.000 region:2\ntext\n\n00:00:00.000 --> 00:00:01.000 region:3\ntext\n\n00:00:00.000 --> 00:00:01.000 region:4\ntext\n\n00:00:00.000 --> 00:00:01.000 region:5\ntext\n\n00:00:00.000 --> 00:00:01.000 region:6\ntext\n\n00:00:00.000 --> 00:00:01.000 region:7\ntext\n\n00:00:00.000 --> 00:00:01.000 region:8\ntext\n\n00:00:00.000 --> 00:00:01.000 region:9\ntext\n\n00:00:00.000 --> 00:00:01.000 region:10\ntext\n\n00:00:00.000 --> 00:00:01.000 region:11\ntext\n\n00:00:00.000 --> 00:00:01.000 region:12\ntext\n\n00:00:00.000 --> 00:00:01.000 region:13\ntext\n\n00:00:00.000 --> 00:00:01.000 region:14\ntext\n\n00:00:00.000 --> 00:00:01.000 region:15\ntext\n\n00:00:00.000 --> 00:00:01.000 region:16\ntext\n\n00:00:00.000 --> 00:00:01.000 region:17\ntext\n\n00:00:00.000 --> 00:00:01.000 region:18\ntext\n\n00:00:00.000 --> 00:00:01.000 region:19\ntext\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 20
+        },
+        {
+          "path": "cues[0].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[1].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].region.regionAnchorY",
+          "expected": 0
+        },
+        {
+          "path": "cues[2].region.regionAnchorX",
+          "expected": 1
+        },
+        {
+          "path": "cues[2].region.regionAnchorY",
+          "expected": 1
+        },
+        {
+          "path": "cues[3].region.regionAnchorX",
+          "expected": 100
+        },
+        {
+          "path": "cues[3].region.regionAnchorY",
+          "expected": 0
+        },
+        {
+          "path": "cues[4].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[4].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[5].region.regionAnchorX",
+          "expected": 100
+        },
+        {
+          "path": "cues[5].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[6].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[6].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[7].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[7].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[8].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[8].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[9].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[9].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[10].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[10].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[11].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[11].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[12].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[12].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[13].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[13].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[14].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[14].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[15].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[15].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[16].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[16].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[17].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[17].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[18].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[18].region.regionAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[19].region.regionAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[19].region.regionAnchorY",
+          "expected": 100
+        }
+      ]
+    },
+    {
+      "file": "regions-scroll.html",
+      "name": "WebVTT parser test: regions, scroll",
+      "source": "support/regions-scroll.vtt",
+      "vtt": "WEBVTT\n\nREGION\nid:0\n\nREGION\nid:1\nscroll:up\n\nREGION\nid:2\nscroll:up scroll:up scroll:up scroll:up scroll:up scroll:up scroll:up scroll:up\nscroll:up scroll:up scroll:up scroll:up scroll:up scroll:up scroll:up scroll:up\n\nREGION\nid:3\nscroll:down\nscroll:left\nscroll:right\n\nREGION\nid:4\nscroll: up\nscroll :up\n\nREGION\nid:5\nscroll:up scroll:\n\n00:00:00.000 --> 00:00:01.000 region:0\ntext\n\n00:00:00.000 --> 00:00:01.000 region:1\ntext\n\n00:00:00.000 --> 00:00:01.000 region:2\ntext\n\n00:00:00.000 --> 00:00:01.000 region:3\ntext\n\n00:00:00.000 --> 00:00:01.000 region:4\ntext\n\n00:00:00.000 --> 00:00:01.000 region:5\ntext\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 6
+        },
+        {
+          "path": "cues[0].region.scroll",
+          "expected": ""
+        },
+        {
+          "path": "cues[1].region.scroll",
+          "expected": "up"
+        },
+        {
+          "path": "cues[2].region.scroll",
+          "expected": "up"
+        },
+        {
+          "path": "cues[3].region.scroll",
+          "expected": ""
+        },
+        {
+          "path": "cues[4].region.scroll",
+          "expected": ""
+        },
+        {
+          "path": "cues[5].region.scroll",
+          "expected": "up"
+        }
+      ]
+    },
+    {
+      "file": "regions-viewportanchor.html",
+      "name": "WebVTT parser test: regions, viewportanchor",
+      "source": "support/regions-viewportanchor.vtt",
+      "vtt": "WEBVTT\n\nNOTE valid\n\nREGION\nid:0\n\nREGION\nid:1\nviewportanchor:0%,0%\n\nREGION\nid:2\nviewportanchor:1%,1%\n\nREGION\nid:3\nviewportanchor:100%,0%\n\nREGION\nid:4\nviewportanchor:0%,100%\n\nREGION\nid:5\nviewportanchor:100%,100%\n\nNOTE invalid\n\nREGION\nid:6\nviewportanchor:0,0\n\nREGION\nid:7\nviewportanchor:0%,0\n\nREGION\nid:8\nviewportanchor:0,0%\n\nREGION\nid:9\nviewportanchor:1%\n\nREGION\nid:10\nviewportanchor:,1%\n\nREGION\nid:11\nviewportanchor:101%,1%\n\nREGION\nid:12\nviewportanchor:1%,101%\n\nREGION\nid:13\nviewportanchor:-0%,0%\n\nREGION\nid:14\nviewportanchor:0%,-0%\n\nREGION\nid:15\nviewportanchor:65536%,65536%\n\nREGION\nid:16\nviewportanchor:4294967296%,4294967296%\n\nREGION\nid:17\nviewportanchor:18446744073709552000%,18446744073709552000%\n\nREGION\nid:18\nviewportanchor:10000000000000000000000000000000000%,10000000000000000000000000000000000%\n\nREGION\nid:19\nviewportanchor: 100%,100%\nviewportanchor :100%,100%\nviewportanchor:100% ,100%\nviewportanchor:100%, 100%\nviewportanchor:100 %,100%\nviewportanchor:100%,100 %\n\n00:00:00.000 --> 00:00:01.000 region:0\ntext\n\n00:00:00.000 --> 00:00:01.000 region:1\ntext\n\n00:00:00.000 --> 00:00:01.000 region:2\ntext\n\n00:00:00.000 --> 00:00:01.000 region:3\ntext\n\n00:00:00.000 --> 00:00:01.000 region:4\ntext\n\n00:00:00.000 --> 00:00:01.000 region:5\ntext\n\n00:00:00.000 --> 00:00:01.000 region:6\ntext\n\n00:00:00.000 --> 00:00:01.000 region:7\ntext\n\n00:00:00.000 --> 00:00:01.000 region:8\ntext\n\n00:00:00.000 --> 00:00:01.000 region:9\ntext\n\n00:00:00.000 --> 00:00:01.000 region:10\ntext\n\n00:00:00.000 --> 00:00:01.000 region:11\ntext\n\n00:00:00.000 --> 00:00:01.000 region:12\ntext\n\n00:00:00.000 --> 00:00:01.000 region:13\ntext\n\n00:00:00.000 --> 00:00:01.000 region:14\ntext\n\n00:00:00.000 --> 00:00:01.000 region:15\ntext\n\n00:00:00.000 --> 00:00:01.000 region:16\ntext\n\n00:00:00.000 --> 00:00:01.000 region:17\ntext\n\n00:00:00.000 --> 00:00:01.000 region:18\ntext\n\n00:00:00.000 --> 00:00:01.000 region:19\ntext\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 20
+        },
+        {
+          "path": "cues[0].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[1].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].region.viewportAnchorY",
+          "expected": 0
+        },
+        {
+          "path": "cues[2].region.viewportAnchorX",
+          "expected": 1
+        },
+        {
+          "path": "cues[2].region.viewportAnchorY",
+          "expected": 1
+        },
+        {
+          "path": "cues[3].region.viewportAnchorX",
+          "expected": 100
+        },
+        {
+          "path": "cues[3].region.viewportAnchorY",
+          "expected": 0
+        },
+        {
+          "path": "cues[4].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[4].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[5].region.viewportAnchorX",
+          "expected": 100
+        },
+        {
+          "path": "cues[5].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[6].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[6].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[7].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[7].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[8].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[8].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[9].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[9].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[10].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[10].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[11].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[11].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[12].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[12].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[13].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[13].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[14].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[14].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[15].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[15].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[16].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[16].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[17].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[17].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[18].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[18].region.viewportAnchorY",
+          "expected": 100
+        },
+        {
+          "path": "cues[19].region.viewportAnchorX",
+          "expected": 0
+        },
+        {
+          "path": "cues[19].region.viewportAnchorY",
+          "expected": 100
+        }
+      ]
+    },
+    {
+      "file": "settings-align.html",
+      "name": "WebVTT parser test: settings, align",
+      "source": "support/settings-align.vtt",
+      "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:01.000\ntext0\n\n00:00:00.000 --> 00:00:01.000 align:start\ntext1\n\n00:00:00.000 --> 00:00:01.000 align:center\ntext2\n\n00:00:00.000 --> 00:00:01.000 align:end\ntext3\n\n00:00:00.000 --> 00:00:01.000 align:left\ntext4\n\n00:00:00.000 --> 00:00:01.000 align:right\ntext5\n\n00:00:00.000 --> 00:00:01.000 align:start align:end\ntext6\n\n00:00:00.000 --> 00:00:01.000 align:end align:CENTER\ntext7\n\n00:00:00.000 --> 00:00:01.000 align:end align: center\ntext8\n\n00:00:00.000 --> 00:00:01.000 align:end align:\ntext9\n\n00:00:00.000 --> 00:00:01.000 align:end align:middle\ntext10\n\n00:00:00.000 --> 00:00:01.000 align:end align\ntext11\n\n00:00:00.000 --> 00:00:01.000 align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:end align:center\ntext12\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 13
+        },
+        {
+          "path": "cues[0].align",
+          "expected": "center"
+        },
+        {
+          "path": "cues[1].align",
+          "expected": "start"
+        },
+        {
+          "path": "cues[2].align",
+          "expected": "center"
+        },
+        {
+          "path": "cues[3].align",
+          "expected": "end"
+        },
+        {
+          "path": "cues[4].align",
+          "expected": "left"
+        },
+        {
+          "path": "cues[5].align",
+          "expected": "right"
+        },
+        {
+          "path": "cues[6].align",
+          "expected": "end"
+        },
+        {
+          "path": "cues[7].align",
+          "expected": "end"
+        },
+        {
+          "path": "cues[8].align",
+          "expected": "end"
+        },
+        {
+          "path": "cues[9].align",
+          "expected": "end"
+        },
+        {
+          "path": "cues[10].align",
+          "expected": "end"
+        },
+        {
+          "path": "cues[11].align",
+          "expected": "end"
+        },
+        {
+          "path": "cues[12].align",
+          "expected": "center"
+        }
+      ]
+    },
+    {
+      "file": "settings-line.html",
+      "name": "WebVTT parser test: settings, line",
+      "source": "support/settings-line.vtt",
+      "vtt": "WEBVTT\n\nNOTE valid\n\n00:00:00.000 --> 00:00:01.000 line:-1\nvalid0\n\n00:00:00.000 --> 00:00:01.000 line:0\nvalid1\n\n00:00:00.000 --> 00:00:01.000 line:-0\nvalid2\n\n00:00:00.000 --> 00:00:01.000 line:1\nvalid3\n\n00:00:00.000 --> 00:00:01.000 line:100\nvalid4\n\n00:00:00.000 --> 00:00:01.000 line:101\nvalid5\n\n00:00:00.000 --> 00:00:01.000 line:65536\nvalid6\n\n00:00:00.000 --> 00:00:01.000 line:4294967296\nvalid7\n\n00:00:00.000 --> 00:00:01.000 line:18446744073709552000\nvalid8\n\n00:00:00.000 --> 00:00:01.000 line:10000000000000000000000000000000000\nvalid9\n\n00:00:00.000 --> 00:00:01.000 line:1.5\nvalid10\n\nNumber.MAX_VALUE\n00:00:00.000 --> 00:00:01.000 line:179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nvalid11\n\n-1 * Number.MAX_VALUE\n00:00:00.000 --> 00:00:01.000 line:-179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\nvalid12\n\nNumber.MIN_VALUE\n00:00:00.000 --> 00:00:01.000 line:0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005\nvalid13\n\nLess than Number.MIN_VALUE\n00:00:00.000 --> 00:00:01.000 line:0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002\nvalid14\n\nNOTE invalid\n\n00:00:00.000 --> 00:00:01.000 line:65536%\ninvalid15\n\n00:00:00.000 --> 00:00:01.000 line:4294967296%\ninvalid16\n\n00:00:00.000 --> 00:00:01.000 line:18446744073709552000%\ninvalid17\n\n00:00:00.000 --> 00:00:01.000 line:10000000000000000000000000000000000%\ninvalid18\n\n00:00:00.000 --> 00:00:01.000 line:-0%\ninvalid19\n\n00:00:00.000 --> 00:00:01.000 line:101%\ninvalid20\n\n00:00:00.000 --> 00:00:01.000 line:1%-\ninvalid21\n\n00:00:00.000 --> 00:00:01.000 line:1-\ninvalid22\n\n00:00:00.000 --> 00:00:01.000 line:%1\ninvalid23\n\n00:00:00.000 --> 00:00:01.000 line:1%%\ninvalid24\n\n00:00:00.000 --> 00:00:01.000 line:0%0\ninvalid25\n\n00:00:00.000 --> 00:00:01.000 line: 0%\ninvalid26\n\n00:00:00.000 --> 00:00:01.000 line:0%x\ninvalid27\n\n00:00:00.000 --> 00:00:01.000 line:-\ninvalid28\n\n00:00:00.000 --> 00:00:01.000 line:%\ninvalid29\n\n00:00:00.000 --> 00:00:01.000 line:1..5\ninvalid30\n\n00:00:00.000 --> 00:00:01.000 line:.5\ninvalid31\n\n00:00:00.000 --> 00:00:01.000 line:5.\ninvalid32\n\nGreater than Number.MAX_VALUE\n00:00:00.000 --> 00:00:01.000 line:179769313486231590000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\ninvalid33\n\nLess than -1 * Number.MAX_VALUE\n00:00:00.000 --> 00:00:01.000 line:-179769313486231590000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\ninvalid34\n\nexponential notation\n00:00:00.000 --> 00:00:01.000 line:1e2\ninvalid35\n\n00:00:00.000 --> 00:00:01.000 line:100%,middle\ninvalid36\n\n00:00:00.000 --> 00:00:01.000 line:100%,\ninvalid37\n\nNOTE extra\n\n00:00:00.000 --> 00:00:01.000 line:0%\ntext38\n\n00:00:00.000 --> 00:00:01.000 line:00%\ntext39\n\n00:00:00.000 --> 00:00:01.000 line:100%\ntext40\n\n00:00:00.000 --> 00:00:01.000 line:100%,start\ntext41\n\n00:00:00.000 --> 00:00:01.000 line:100%,center\ntext42\n\n00:00:00.000 --> 00:00:01.000 line:100%,end\ntext43\n\nNumber.MIN_VALUE %\n00:00:00.000 --> 00:00:01.000 line:0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005%\ntext44\n\nLess than Number.MIN_VALUE %\n00:00:00.000 --> 00:00:01.000 line:0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002%\ntext45\n\nCompound keyword must not match as \"start\" followed by \"end\"\n00:00:00.000 --> 00:00:01.000 line:100%,startend\ntext46\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 47
+        },
+        {
+          "path": "cues[0].line",
+          "expected": -1
+        },
+        {
+          "path": "cues[0].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[1].line",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[2].line",
+          "expected": 0
+        },
+        {
+          "path": "cues[2].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[3].line",
+          "expected": 1
+        },
+        {
+          "path": "cues[3].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[4].line",
+          "expected": 100
+        },
+        {
+          "path": "cues[4].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[5].line",
+          "expected": 101
+        },
+        {
+          "path": "cues[5].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[6].line",
+          "expected": 65536
+        },
+        {
+          "path": "cues[6].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[7].line",
+          "expected": 4294967296
+        },
+        {
+          "path": "cues[7].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[8].line",
+          "expected": 18446744073709552000
+        },
+        {
+          "path": "cues[8].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[9].line",
+          "expected": 1e+34
+        },
+        {
+          "path": "cues[9].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[10].line",
+          "expected": 1.5
+        },
+        {
+          "path": "cues[10].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[11].line",
+          "expected": 1.7976931348623157e+308
+        },
+        {
+          "path": "cues[11].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[12].line",
+          "expected": -1.7976931348623157e+308
+        },
+        {
+          "path": "cues[12].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[13].line",
+          "expected": 5e-324
+        },
+        {
+          "path": "cues[13].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[14].line",
+          "expected": 0
+        },
+        {
+          "path": "cues[14].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[15].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[15].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[16].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[16].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[17].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[17].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[18].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[18].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[19].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[19].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[20].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[20].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[21].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[21].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[22].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[22].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[23].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[23].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[24].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[24].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[25].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[25].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[26].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[26].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[27].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[27].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[28].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[28].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[29].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[29].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[30].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[30].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[31].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[31].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[32].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[32].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[33].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[33].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[34].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[34].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[35].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[35].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[36].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[36].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[37].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[37].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[38].line",
+          "expected": 0
+        },
+        {
+          "path": "cues[38].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[39].line",
+          "expected": 0
+        },
+        {
+          "path": "cues[39].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[40].line",
+          "expected": 100
+        },
+        {
+          "path": "cues[40].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[40].lineAlign",
+          "expected": "start"
+        },
+        {
+          "path": "cues[41].line",
+          "expected": 100
+        },
+        {
+          "path": "cues[41].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[41].lineAlign",
+          "expected": "start"
+        },
+        {
+          "path": "cues[42].line",
+          "expected": 100
+        },
+        {
+          "path": "cues[42].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[42].lineAlign",
+          "expected": "center"
+        },
+        {
+          "path": "cues[43].line",
+          "expected": 100
+        },
+        {
+          "path": "cues[43].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[43].lineAlign",
+          "expected": "end"
+        },
+        {
+          "path": "cues[44].line",
+          "expected": 5e-324
+        },
+        {
+          "path": "cues[44].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[45].line",
+          "expected": 0
+        },
+        {
+          "path": "cues[45].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[46].line",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[46].snapToLines",
+          "expected": true
+        },
+        {
+          "path": "cues[46].lineAlign",
+          "expected": "start"
+        }
+      ]
+    },
+    {
+      "file": "settings-multiple.html",
+      "name": "WebVTT parser test: settings, multiple",
+      "source": "support/settings-multiple.vtt",
+      "vtt": "WEBVTT\n\nid0\n00:00:00.000 --> 00:00:01.000 align:start line:1% vertical:lr size:50% position:25%\ntext0\n\nid1\n00:00:00.000 --> 00:00:01.000 align:center line:1 vertical:rl size:0% position:100%\ntext1\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 2
+        },
+        {
+          "path": "cues[0].id",
+          "expected": "id0"
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text0"
+        },
+        {
+          "path": "cues[0].align",
+          "expected": "start"
+        },
+        {
+          "path": "cues[0].line",
+          "expected": 1
+        },
+        {
+          "path": "cues[0].snapToLines",
+          "expected": false
+        },
+        {
+          "path": "cues[0].vertical",
+          "expected": "lr"
+        },
+        {
+          "path": "cues[0].size",
+          "expected": 50
+        },
+        {
+          "path": "cues[0].position",
+          "expected": 25
+        },
+        {
+          "path": "cues[1].id",
+          "expected": "id1"
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[1].align",
+          "expected": "center"
+        },
+        {
+          "path": "cues[1].line",
+          "expected": 1
+        },
+        {
+          "path": "cues[1].vertical",
+          "expected": "rl"
+        },
+        {
+          "path": "cues[1].size",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].position",
+          "expected": 100
+        }
+      ]
+    },
+    {
+      "file": "settings-position.html",
+      "name": "WebVTT parser test: settings, position",
+      "source": "support/settings-position.vtt",
+      "vtt": "WEBVTT\n\nNOTE valid\n\n00:00:00.000 --> 00:00:01.000 position:1%\ntext0\n\n00:00:00.000 --> 00:00:01.000 position:100%\ntext1\n\n00:00:00.000 --> 00:00:01.000 position:1% position:x\ntext2\n\n00:00:00.000 --> 00:00:01.000 position:1.5%\ntext3\n\n00:00:00.000 --> 00:00:01.000 position:1%,line-left\ntext4\n\n00:00:00.000 --> 00:00:01.000 position:1%,center\ntext5\n\n00:00:00.000 --> 00:00:01.000 position:1%,line-right\ntext6\n\n00:00:00.000 --> 00:00:01.000 position:1% ,center\ntext7\n\nNOTE invalid\n\n00:00:00.000 --> 00:00:01.000 position:1%,middle\ninvalid8\n\n00:00:00.000 --> 00:00:01.000 position:1%, center\ninvalid9\n\n00:00:00.000 --> 00:00:01.000 position:-1%\ninvalid10\n\n00:00:00.000 --> 00:00:01.000 position:1\ninvalid11\n\n00:00:00.000 --> 00:00:01.000 position:1x\ninvalid12\n\n00:00:00.000 --> 00:00:01.000 position:1%x\ninvalid13\n\n00:00:00.000 --> 00:00:01.000 position:\ninvalid14\n\n00:00:00.000 --> 00:00:01.000 position: 1%\ninvalid15\n\n00:00:00.000 --> 00:00:01.000 position:101%\ninvalid16\n\n00:00:00.000 --> 00:00:01.000 position:65536%\ninvalid17\n\n00:00:00.000 --> 00:00:01.000 position:4294967296%\ninvalid18\n\n00:00:00.000 --> 00:00:01.000 position:101%,line-left\ninvalid19\n\n00:00:00.000 --> 00:00:01.000 position:101%,center\ninvalid20\n\n00:00:00.000 --> 00:00:01.000 position:101%,line-right\ninvalid21\n\nCompound keyword must not match as \"line-left\" followed by \"center\"\n00:00:00.000 --> 00:00:01.000 position:1%,line-leftcenter\ninvalid22\n\nCompound keyword must not match as \"line-left\" followed by \"auto\"\n00:00:00.000 --> 00:00:01.000 position:1%,line-leftauto\ninvalid23\n\nThe colalign keywords are only line-left, center and line-right; \"auto\" voids the setting\n00:00:00.000 --> 00:00:01.000 position:1%,auto\ninvalid24\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 25
+        },
+        {
+          "path": "cues[0].position",
+          "expected": 1
+        },
+        {
+          "path": "cues[0].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[1].position",
+          "expected": 100
+        },
+        {
+          "path": "cues[1].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[2].position",
+          "expected": 1
+        },
+        {
+          "path": "cues[2].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[3].position",
+          "expected": 1.5
+        },
+        {
+          "path": "cues[3].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[4].position",
+          "expected": 1
+        },
+        {
+          "path": "cues[4].positionAlign",
+          "expected": "line-left"
+        },
+        {
+          "path": "cues[5].position",
+          "expected": 1
+        },
+        {
+          "path": "cues[5].positionAlign",
+          "expected": "center"
+        },
+        {
+          "path": "cues[6].position",
+          "expected": 1
+        },
+        {
+          "path": "cues[6].positionAlign",
+          "expected": "line-right"
+        },
+        {
+          "path": "cues[7].position",
+          "expected": 1
+        },
+        {
+          "path": "cues[7].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[8].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[8].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[9].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[9].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[10].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[10].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[11].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[11].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[12].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[12].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[13].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[13].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[14].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[14].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[15].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[15].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[16].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[16].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[17].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[17].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[18].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[18].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[19].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[19].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[20].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[20].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[21].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[21].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[22].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[22].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[23].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[23].positionAlign",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[24].position",
+          "expected": "auto"
+        },
+        {
+          "path": "cues[24].positionAlign",
+          "expected": "auto"
+        }
+      ]
+    },
+    {
+      "file": "settings-region.html",
+      "name": "WebVTT parser test: settings, region",
+      "source": "support/settings-region.vtt",
+      "vtt": "WEBVTT\n\nREGION\nid:foo\n\nREGION\nid:bar\n\nREGION\nid:foo\n\nREGION\nwidth:10%\n\n00:00:00.000 --> 00:00:01.000 region:foo\ntext0\n\n00:00:00.000 --> 00:00:01.000 region:bar\ntext1\n\n00:00:00.000 --> 00:00:01.000 region:foo region:bar\ntext2\n\n00:00:00.000 --> 00:00:01.000 region:invalid\ntext3\n\n00:00:00.000 --> 00:00:01.000 region:invalid region:foo\ntext4\n\n00:00:00.000 --> 00:00:01.000 region:\ninvalid5\n\n00:00:00.000 --> 00:00:01.000 region: \ninvalid6\n\n00:00:00.000 --> 00:00:01.000 region: foo\ninvalid7\n\n00:00:00.000 --> 00:00:01.000 region :foo\ninvalid8\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 9
+        },
+        {
+          "path": "cues[0].region",
+          "truthy": true
+        },
+        {
+          "path": "cues[1].region",
+          "truthy": true
+        },
+        {
+          "path": "cues[0].region",
+          "notSameAs": "cues[1].region"
+        },
+        {
+          "path": "cues[0].region",
+          "sameAs": "cues[0].region"
+        },
+        {
+          "path": "cues[1].region",
+          "sameAs": "cues[1].region"
+        },
+        {
+          "path": "cues[2].region",
+          "sameAs": "cues[1].region"
+        },
+        {
+          "path": "cues[3].region",
+          "expected": null
+        },
+        {
+          "path": "cues[4].region",
+          "sameAs": "cues[0].region"
+        },
+        {
+          "path": "cues[5].region",
+          "expected": null
+        },
+        {
+          "path": "cues[6].region",
+          "expected": null
+        },
+        {
+          "path": "cues[7].region",
+          "expected": null
+        },
+        {
+          "path": "cues[8].region",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "file": "settings-size.html",
+      "name": "WebVTT parser test: settings, size",
+      "source": "support/settings-size.vtt",
+      "vtt": "WEBVTT\n\nNOTE valid\n\n00:00:00.000 --> 00:00:01.000\ntext0\n\n00:00:00.000 --> 00:00:01.000 size:1xx size:2%\ntext1\n\n00:00:00.000 --> 00:00:01.000 size:0%\ntext2\n\n00:00:00.000 --> 00:00:01.000 size:00%\ntext3\n\n00:00:00.000 --> 00:00:01.000 size:50% size:100%\ntext4\n\n00:00:00.000 --> 00:00:01.000 size:50% size:101%\ntext5\n\n00:00:00.000 --> 00:00:01.000 size:1.5%\ntext6\n\nNOTE invalid\n\n00:00:00.000 --> 00:00:01.000 size:\ninvalid7\n\n00:00:00.000 --> 00:00:01.000 size:x\ninvalid8\n\n00:00:00.000 --> 00:00:01.000 size:%\ninvalid9\n\n00:00:00.000 --> 00:00:01.000 size:%%\ninvalid10\n\n00:00:00.000 --> 00:00:01.000 size:1%%\ninvalid11\n\n00:00:00.000 --> 00:00:01.000 size:1%x\ninvalid12\n\n00:00:00.000 --> 00:00:01.000 size:101%\ninvalid13\n\n00:00:00.000 --> 00:00:01.000 size:-3%\ninvalid14\n\n00:00:00.000 --> 00:00:01.000 size:200%\ninvalid15\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 16
+        },
+        {
+          "path": "cues[0].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[1].size",
+          "expected": 2
+        },
+        {
+          "path": "cues[2].size",
+          "expected": 0
+        },
+        {
+          "path": "cues[3].size",
+          "expected": 0
+        },
+        {
+          "path": "cues[4].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[5].size",
+          "expected": 50
+        },
+        {
+          "path": "cues[6].size",
+          "expected": 1.5
+        },
+        {
+          "path": "cues[7].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[8].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[9].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[10].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[11].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[12].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[13].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[14].size",
+          "expected": 100
+        },
+        {
+          "path": "cues[15].size",
+          "expected": 100
+        }
+      ]
+    },
+    {
+      "file": "settings-vertical.html",
+      "name": "WebVTT parser test: settings, size",
+      "source": "support/settings-vertical.vtt",
+      "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:01.000\ntext0\n\n00:00:00.000 --> 00:00:01.000 vertical:lr\ntext1\n\n00:00:00.000 --> 00:00:01.000 vertical:rl\ntext2\n\n00:00:00.000 --> 00:00:01.000 vertical:rl vertical:lr\ntext3\n\n00:00:00.000 --> 00:00:01.000 vertical:\ninvalid4\n\n00:00:00.000 --> 00:00:01.000 vertical:RL\ninvalid5\n\n00:00:00.000 --> 00:00:01.000 vertical: rl\ninvalid6\n\n00:00:00.000 --> 00:00:01.000 vertical:vertical-rl\ninvalid7\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 8
+        },
+        {
+          "path": "cues[0].vertical",
+          "expected": ""
+        },
+        {
+          "path": "cues[1].vertical",
+          "expected": "lr"
+        },
+        {
+          "path": "cues[2].vertical",
+          "expected": "rl"
+        },
+        {
+          "path": "cues[3].vertical",
+          "expected": "lr"
+        },
+        {
+          "path": "cues[4].vertical",
+          "expected": ""
+        },
+        {
+          "path": "cues[5].vertical",
+          "expected": ""
+        },
+        {
+          "path": "cues[6].vertical",
+          "expected": ""
+        },
+        {
+          "path": "cues[7].vertical",
+          "expected": ""
+        }
+      ]
+    },
+    {
+      "file": "signature-bom.html",
+      "name": "WebVTT parser test: signature, bom",
+      "source": "support/signature-bom.vtt",
+      "vtt": "﻿WEBVTT\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "signature-no-newline.html",
+      "name": "WebVTT parser test: signature, no newline",
+      "source": "support/signature-no-newline.vtt",
+      "vtt": "WEBVTT",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "signature-space-no-newline.html",
+      "name": "WebVTT parser test: signature, space, no newline",
+      "source": "support/signature-space-no-newline.vtt",
+      "vtt": "WEBVTT ",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "signature-space.html",
+      "name": "WebVTT parser test: signature, space",
+      "source": "support/signature-space.vtt",
+      "vtt": "WEBVTT \n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "signature-tab-no-newline.html",
+      "name": "WebVTT parser test: signature, tab, no newline",
+      "source": "support/signature-tab-no-newline.vtt",
+      "vtt": "WEBVTT\t",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "signature-tab.html",
+      "name": "WebVTT parser test: signature, tab",
+      "source": "support/signature-tab.vtt",
+      "vtt": "WEBVTT\t\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "signature-timings.html",
+      "name": "WebVTT parser test: signature, timings",
+      "source": "support/signature-timings.vtt",
+      "vtt": "WEBVTT 00:00:00.000 --> 00:00:01.000\ntext\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "timings-60.html",
+      "name": "WebVTT parser test: timings, 60",
+      "source": "support/timings-60.vtt",
+      "vtt": "WEBVTT\n\n00:00:60.000 --> 00:00:01.000\ninvalid\n\n00:60:00.000 --> 00:00:01.000\ninvalid\n\n00:00:00.000 --> 00:00:60.000\ninvalid\n\n00:00:00.000 --> 00:60:00.000\ninvalid\n\n00:00:00.000 --> 60:00:01.000\ntext1\n\n60:00:00.000 --> 60:00:01.000\ntext2\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 2
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 216001
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text2"
+        },
+        {
+          "path": "cues[1].startTime",
+          "expected": 216000
+        },
+        {
+          "path": "cues[1].endTime",
+          "expected": 216001
+        }
+      ]
+    },
+    {
+      "file": "timings-eof.html",
+      "name": "WebVTT parser test: timings, eof",
+      "source": "support/timings-eof.vtt",
+      "vtt": "WEBVTT\n\n00:00:00.000 -->",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "timings-garbage.html",
+      "name": "WebVTT parser test: timings, garbage",
+      "source": "support/timings-garbage.vtt",
+      "vtt": "WEBVTT\n\nx00:00:00.000 --> 00:00:01.000\ninvalid\n\n0x0:00:00.000 --> 00:00:01.000\ninvalid\n\n00x:00:00.000 --> 00:00:01.000\ninvalid\n\n00:x00:00.000 --> 00:00:01.000\ninvalid\n\n00:0x0:00.000 --> 00:00:01.000\ninvalid\n\n00:00x:00.000 --> 00:00:01.000\ninvalid\n\n00:00:x00.000 --> 00:00:01.000\ninvalid\n\n00:00:0x0.000 --> 00:00:01.000\ninvalid\n\n00:00:00x.000 --> 00:00:01.000\ninvalid\n\n00:00:00.x000 --> 00:00:01.000\ninvalid\n\n00:00:00.0x00 --> 00:00:01.000\ninvalid\n\n00:00:00.00x0 --> 00:00:01.000\ninvalid\n\n00:00:00.000x --> 00:00:01.000\ninvalid\n\n00:00:00.000 x--> 00:00:01.000\ninvalid\n\n00:00:00.000 -x-> 00:00:01.000\ninvalid\n\n00:00:00.000 --x> 00:00:01.000\ninvalid\n\n00:00:00.000 -->x 00:00:01.000\ninvalid\n\n00:00:00.000 --> x00:00:01.000\ninvalid\n\n00:00:00.000 --> 0x0:00:01.000\ninvalid\n\n00:00:00.000 --> 00x:00:01.000\ninvalid\n\n00:00:00.000 --> 00:x00:01.000\ninvalid\n\n00:00:00.000 --> 00:0x0:01.000\ninvalid\n\n00:00:00.000 --> 00:00x:01.000\ninvalid\n\n00:00:00.000 --> 00:00:x01.000\ninvalid\n\n00:00:00.000 --> 00:00:0x1.000\ninvalid\n\n00:00:00.000 --> 00:00:01x.000\ninvalid\n\n00:00:00.000 --> 00:00:01.x000\ninvalid\n\n00:00:00.000 --> 00:00:01.0x00\ninvalid\n\n00:00:00.000 --> 00:00:01.00x0\ninvalid\n\nx0:00:00.000 --> 00:00:01.000\ninvalid\n\n0x:00:00.000 --> 00:00:01.000\ninvalid\n\n00x00:00.000 --> 00:00:01.000\ninvalid\n\n00:x0:00.000 --> 00:00:01.000\ninvalid\n\n00:0x:00.000 --> 00:00:01.000\ninvalid\n\n00:00x00.000 --> 00:00:01.000\ninvalid\n\n00:00:x0.000 --> 00:00:01.000\ninvalid\n\n00:00:0x.000 --> 00:00:01.000\ninvalid\n\n00:00:00x000 --> 00:00:01.000\ninvalid\n\n00:00:00.x00 --> 00:00:01.000\ninvalid\n\n00:00:00.0x0 --> 00:00:01.000\ninvalid\n\n00:00:00.00x --> 00:00:01.000\ninvalid\n\n00:00:00.000x--> 00:00:01.000\ninvalid\n\n00:00:00.000 x-> 00:00:01.000\ninvalid\n\n00:00:00.000 -x> 00:00:01.000\ninvalid\n\n00:00:00.000 --x 00:00:01.000\ninvalid\n\n00:00:00.000 -->x00:00:01.000\ninvalid\n\n00:00:00.000 --> x0:00:01.000\ninvalid\n\n00:00:00.000 --> 0x:00:01.000\ninvalid\n\n00:00:00.000 --> 00x00:01.000\ninvalid\n\n00:00:00.000 --> 00:x0:01.000\ninvalid\n\n00:00:00.000 --> 00:0x:01.000\ninvalid\n\n00:00:00.000 --> 00:00x01.000\ninvalid\n\n00:00:00.000 --> 00:00:x1.000\ninvalid\n\n00:00:00.000 --> 00:00:0x.000\ninvalid\n\n00:00:00.000 --> 00:00:01x000\ninvalid\n\n00:00:00.000 --> 00:00:01.x00\ninvalid\n\n00:00:00.000 --> 00:00:01.0x0\ninvalid\n\n00:00:00.000 --> 00:00:01.00x\ninvalid\n\n00.00:00.000 --> 00:00:01.000\ninvalid\n\n00:00.00.000 --> 00:00:01.000\ninvalid\n\n00:00:00:000 --> 00:00:01.000\ninvalid\n\n00:00.00:000 --> 00:00:01.000\ninvalid\n\n00:00:00,000 --> 00:00:01,000\ninvalid",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "file": "timings-negative.html",
+      "name": "WebVTT parser test: timings, negative",
+      "source": "support/timings-negative.vtt",
+      "vtt": "WEBVTT\n\n00:00:00.000 --> 00:00:00.000\ntext0\n\n00:00:01.000 --> 00:00:00.999\ntext1\n\n00:01:00.000 --> 00:00:59.999\ntext2\n\n01:00:00.000 --> 00:59:59.999\ntext3\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 4
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text0"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[1].startTime",
+          "expected": 1
+        },
+        {
+          "path": "cues[1].endTime",
+          "expected": 0.999
+        },
+        {
+          "path": "cues[2].text",
+          "expected": "text2"
+        },
+        {
+          "path": "cues[2].startTime",
+          "expected": 60
+        },
+        {
+          "path": "cues[2].endTime",
+          "expected": 59.999
+        },
+        {
+          "path": "cues[3].text",
+          "expected": "text3"
+        },
+        {
+          "path": "cues[3].startTime",
+          "expected": 3600
+        },
+        {
+          "path": "cues[3].endTime",
+          "expected": 3599.999
+        }
+      ]
+    },
+    {
+      "file": "timings-omitted-hours.html",
+      "name": "WebVTT parser test: timings, omitted hours",
+      "source": "support/timings-omitted-hours.vtt",
+      "vtt": "WEBVTT\n\n00:00.000 --> 00:00:01.000\ntext0\n\n00:00:00.000 --> 00:01.000\ntext1\n\n00:00.000 --> 00:01.000\ntext2\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 3
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text0"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 1
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[1].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].endTime",
+          "expected": 1
+        },
+        {
+          "path": "cues[2].text",
+          "expected": "text2"
+        },
+        {
+          "path": "cues[2].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[2].endTime",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "file": "timings-too-long.html",
+      "name": "WebVTT parser test: timings, too long",
+      "source": "support/timings-too-long.vtt",
+      "vtt": "WEBVTT\n\n000:00:00.000 --> 00:00:01.000\ntext0\n\n00::00:00.000 --> 00:00:01.000\ninvalid\n\n00:000:00.000 --> 00:00:01.000\ninvalid\n\n00:00::00.000 --> 00:00:01.000\ninvalid\n\n00:00:000.000 --> 00:00:01.000\ninvalid\n\n00:00:00..000 --> 00:00:01.000\ninvalid\n\n00:00:00.0000 --> 00:00:01.000\ninvalid\n\n00:00.0000 --> 00:00:01.000\ninvalid\n\n000:00.000 --> 00:01.000\ninvalid\n\n00::00.000 --> 00:01.000\ninvalid\n\n00:000.000 --> 00:01.000\ninvalid\n\n00:00..000 --> 00:01.000\ninvalid\n\n00:00.0000 --> 00:01.000\ninvalid\n\n00:00.000 --> 000:01.000\ninvalid\n\n00:00:00.000 --> 000:00:01.000\ntext1\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 2
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text0"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 1
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[1].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].endTime",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "file": "timings-too-short.html",
+      "name": "WebVTT parser test: timings, too short",
+      "source": "support/timings-too-short.vtt",
+      "vtt": "WEBVTT\n\n0:00:00.000 --> 00:00:01.000\ntext0\n\n0000:00.000 --> 00:00:01.000\ninvalid\n\n00:0:00.000 --> 00:00:01.000\ninvalid\n\n00:0000.000 --> 00:00:01.000\ninvalid\n\n00:00:0.000 --> 00:00:01.000\ninvalid\n\n00:00:00000 --> 00:00:01.000\ninvalid\n\n00:00:00.00 --> 00:00:01.000\ninvalid\n\n00:00:00.0 --> 00:00:01.000\ninvalid\n\n00:00:00. --> 00:00:01.000\ninvalid\n\n00:00:00 --> 00:00:01.000\ninvalid\n\n00:00:0 --> 00:00:01.000\ninvalid\n\n00:00: --> 00:00:01.000\ninvalid\n\n00:00 --> 00:00:01.000\ninvalid\n\n00:0 --> 00:00:01.000\ninvalid\n\n00: --> 00:00:01.000\ninvalid\n\n00 --> 00:00:01.000\ninvalid\n\n0 --> 00:00:01.000\ninvalid\n\n --> 00:00:01.000\ninvalid\n\n0:00.000 --> 00:01.000\ninvalid\n\n0000.000 --> 00:01.000\ninvalid\n\n00:0.000 --> 00:01.000\ninvalid\n\n00:00000 --> 00:01.000\ninvalid\n\n00:00.00 --> 00:01.000\ninvalid\n\n00:00.0 --> 00:01.000\ninvalid\n\n00:00. --> 00:01.000\ninvalid\n\n0:00. --> 00:01.000\ninvalid\n\n:00. --> 00:01.000\ninvalid\n\n00. --> 00:01.000\ninvalid\n\n0. --> 00:01.000\ninvalid\n\n. --> 00:01.000\ninvalid\n\n00:00.000 --> 0:01.000\ninvalid\n\n00:00:00.000 --> 0:00:01.000\ntext1\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 2
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "text0"
+        },
+        {
+          "path": "cues[0].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[0].endTime",
+          "expected": 1
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[1].startTime",
+          "expected": 0
+        },
+        {
+          "path": "cues[1].endTime",
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "file": "whitespace-chars.html",
+      "name": "WebVTT parser test: whitespace chars",
+      "source": "support/whitespace-chars.vtt",
+      "vtt": "WEBVTT\n\nspaces\n   00:00:00.000    -->  00:00:01.000 \n   text0\n\ntabs\n\t\t\t00:00:00.000\t\t\t\t-->\t\t00:00:01.000\t\ntext1\n\nform feed\n\f\f\f00:00:00.000\f\f\f\f-->\f\f00:00:01.000\f\ntext2\n\nvertical tab\n\u000b\u000b\u000b00:00:00.000\u000b\u000b\u000b\u000b-->\u000b\u000b00:00:01.000\u000b\ninvalid\n",
+      "assertions": [
+        {
+          "path": "cues.length",
+          "expected": 3
+        },
+        {
+          "path": "cues[0].id",
+          "expected": "spaces"
+        },
+        {
+          "path": "cues[0].text",
+          "expected": "   text0"
+        },
+        {
+          "path": "cues[1].id",
+          "expected": "tabs"
+        },
+        {
+          "path": "cues[1].text",
+          "expected": "text1"
+        },
+        {
+          "path": "cues[2].id",
+          "expected": "form feed"
+        },
+        {
+          "path": "cues[2].text",
+          "expected": "text2"
+        }
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "file": "stylesheets.html",
+      "name": "WebVTT parser test: stylesheets, rules",
+      "reason": "asserts `document.styleSheets.length` (DOM); STYLE parsing has no cue assertions"
+    }
+  ]
+}

@@ -39,71 +39,126 @@ Dialogue: 0:00:08,\t0:00:09.20, Four!
   expect(cues[0].startTime).toBe(5.1);
   expect(cues[0].endTime).toBe(7.2);
   expect(cues[0].text).toBe('Hello, world!');
-  delete cues[0].style!['--cue-text-shadow'];
-  expect(cues[0].style).toMatchInlineSnapshot(`
+  expect({ layout: cues[0].layout, textStyle: cues[0].textStyle }).toMatchInlineSnapshot(`
     {
-      "--cue-bg-color": "none",
-      "--cue-bottom": "10px",
-      "--cue-color": "rgba(255,255,255,1)",
-      "--cue-left": "10px",
-      "--cue-line-height": "normal",
-      "--cue-padding-y": "0",
-      "--cue-right": "10px",
-      "--cue-text-align": "center",
-      "--cue-transform": "scaleX(1) scaleY(1) rotate(0deg)",
-      "--cue-white-space": "normal",
-      "--cue-width": "auto",
-      "font-family": "Arial",
-      "font-size": "calc(36 / var(--overlay-height))",
-      "letter-spacing": "0px",
+      "layout": {
+        "bottom": 3.472,
+        "left": 50,
+        "maxWidth": 94.792,
+        "translate": {
+          "x": -0.5,
+        },
+        "width": "max-content",
+      },
+      "textStyle": {
+        "backgroundColor": "transparent",
+        "color": "rgba(255,255,255,1)",
+        "fontFamily": ""Arial", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 12.5,
+        },
+        "lineHeight": "normal",
+        "padding": {
+          "y": 0,
+        },
+        "shadow": {
+          "color": "rgba(0,0,0,1)",
+          "x": {
+            "unit": "vh",
+            "value": 0.6944,
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.6944,
+          },
+        },
+        "stroke": {
+          "color": "rgba(0,0,0,1)",
+          "width": {
+            "unit": "vh",
+            "value": 1.3889,
+          },
+        },
+        "textAlign": "center",
+        "wrap": "wrap",
+      },
     }
   `);
 
   expect(cues[1].startTime).toBe(4205.1);
   expect(cues[1].endTime).toBe(4808);
   expect(cues[1].text).toBe('Never!\nThis is text on a new line.\nAnd, another line.');
-  delete cues[1].style!['--cue-text-shadow'];
-  expect(cues[1].style).toMatchInlineSnapshot(`
+  expect({ layout: cues[1].layout, textStyle: cues[1].textStyle }).toMatchInlineSnapshot(`
     {
-      "--cue-bg-color": "none",
-      "--cue-bottom": "10px",
-      "--cue-color": "rgba(255,255,255,1)",
-      "--cue-left": "10px",
-      "--cue-line-height": "normal",
-      "--cue-padding-y": "0",
-      "--cue-right": "10px",
-      "--cue-text-align": "center",
-      "--cue-transform": "scaleX(1) scaleY(1) rotate(0deg)",
-      "--cue-white-space": "normal",
-      "--cue-width": "auto",
-      "font-family": "Arial",
-      "font-size": "calc(24 / var(--overlay-height))",
-      "font-style": "italic",
-      "font-weight": "bold",
-      "letter-spacing": "0px",
-      "text-decoration": "line-through",
+      "layout": {
+        "bottom": 3.472,
+        "left": 50,
+        "maxWidth": 94.792,
+        "translate": {
+          "x": -0.5,
+        },
+        "width": "max-content",
+      },
+      "textStyle": {
+        "backgroundColor": "transparent",
+        "color": "rgba(255,255,255,1)",
+        "fontFamily": ""Arial", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 8.3333,
+        },
+        "fontWeight": 700,
+        "italic": true,
+        "lineHeight": "normal",
+        "padding": {
+          "y": 0,
+        },
+        "shadow": {
+          "color": "rgba(0,0,0,1)",
+          "x": {
+            "unit": "vh",
+            "value": 0.6944,
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.6944,
+          },
+        },
+        "strike": true,
+        "stroke": {
+          "color": "rgba(0,0,0,1)",
+          "width": {
+            "unit": "vh",
+            "value": 1.3889,
+          },
+        },
+        "textAlign": "center",
+        "underline": true,
+        "wrap": "wrap",
+      },
     }
   `);
 
   expect(cues[2].startTime).toBe(4);
   expect(cues[2].endTime).toBe(7.2);
   expect(cues[2].text).toBe('One!');
-  expect(cues[2].style).toBeUndefined();
+  expect(cues[2].layout).toBeUndefined();
 
   expect(cues[3].startTime).toBe(5);
   expect(cues[3].endTime).toBe(8.2);
   expect(cues[3].text).toBe('Two!');
-  expect(cues[3].style).toBeUndefined();
+  expect(cues[3].layout).toBeUndefined();
 
   expect(cues[4].startTime).toBe(6);
   expect(cues[4].endTime).toBe(9.2);
   expect(cues[4].text).toBe('Three!\nNew line of text on three.');
-  expect(cues[4].style).toBeUndefined();
+  expect(cues[4].layout).toBeUndefined();
 
   expect(cues[5].startTime).toBe(8);
   expect(cues[5].endTime).toBe(9.2);
   expect(cues[5].text).toBe('Four!');
-  expect(cues[5].style).toBeUndefined();
+  expect(cues[5].layout).toBeUndefined();
 });
 
 test('BAD: events block missing format line', async () => {

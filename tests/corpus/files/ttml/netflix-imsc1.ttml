@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ittp="http://www.w3.org/ns/ttml/profile/imsc1#parameter" xmlns:itts="http://www.w3.org/ns/ttml/profile/imsc1#styling" xml:lang="en" ttp:profile="http://www.w3.org/ns/ttml/profile/imsc1/text" ttp:timeBase="media" ttp:frameRate="24" ttp:frameRateMultiplier="1000 1001" ittp:aspectRatio="16 9">
+  <head>
+    <metadata>
+      <ttm:title>Episode 1</ttm:title>
+      <ttm:desc>Subtitles (en-US)</ttm:desc>
+    </metadata>
+    <styling>
+      <style xml:id="baseStyle" tts:fontFamily="proportionalSansSerif" tts:fontSize="100%" tts:lineHeight="normal" tts:color="white" tts:textAlign="center" tts:backgroundColor="transparent" itts:fillLineGap="true"/>
+      <style xml:id="italic" tts:fontStyle="italic"/>
+      <style xml:id="yellow" tts:color="#FFFF00"/>
+      <style xml:id="rtl" tts:direction="rtl" tts:unicodeBidi="embed"/>
+    </styling>
+    <layout>
+      <region xml:id="bottom" tts:origin="10% 80%" tts:extent="80% 10%" tts:displayAlign="after"/>
+      <region xml:id="top" tts:origin="10% 10%" tts:extent="80% 10%" tts:displayAlign="before"/>
+      <region xml:id="left" tts:origin="5% 40%" tts:extent="40% 20%" tts:displayAlign="center" tts:textAlign="start"/>
+    </layout>
+  </head>
+  <body style="baseStyle">
+    <div>
+      <p xml:id="s1" begin="00:00:01:12" end="00:00:04:00" region="bottom">Where were you last night?</p>
+      <p xml:id="s2" begin="00:00:04:06" end="00:00:07:18" region="bottom">I told you.<br/>I was at the office.</p>
+      <p xml:id="s3" begin="00:00:07:20" end="00:00:10:00" region="top"><span style="italic">(door slams)</span></p>
+      <p xml:id="s4" begin="00:00:10:00" end="00:00:13:12" region="bottom"><span style="yellow">-Until midnight?</span><br/><span tts:color="cyan">-Yes, until midnight.</span></p>
+      <p xml:id="s5" begin="00:00:13:12" end="00:00:16:00" region="bottom">He said <span tts:fontWeight="bold">nothing</span> for a long time.</p>
+      <p xml:id="s6" begin="00:00:16:00" end="00:00:19:00" region="left" tts:textAlign="start">Sign on the wall:<br/>EXIT</p>
+      <p xml:id="s7" begin="00:00:19:00" end="00:00:22:00" region="bottom" itts:forcedDisplay="true">[speaking French]</p>
+      <p xml:id="s8" begin="00:00:22:00" end="00:00:25:00" region="bottom" style="rtl">مرحبا بكم</p>
+      <p xml:id="s9" begin="00:00:25:00" end="00:00:28:00" region="bottom" xml:space="preserve">Preserved   spacing
+  and a newline.</p>
+      <p xml:id="s10" begin="00:00:28:00" end="00:00:31:00" region="bottom"><span tts:textDecoration="underline">Underlined</span> and <span tts:fontStyle="italic" tts:fontWeight="bold">both</span>.</p>
+      <p xml:id="s11" begin="00:00:31:00" dur="00:00:03:00" region="bottom">Duration instead of end.</p>
+      <p xml:id="s12" begin="00:00:34:00" end="00:00:37:00" region="bottom" tts:backgroundColor="#00000080">Semi-transparent box.</p>
+    </div>
+  </body>
+</tt>

@@ -7,7 +7,8 @@ export async function parseText(
 ): Promise<ParsedCaptionsResult> {
   const stream = new ReadableStream<string>({
     start(controller) {
-      const lines = text.split(LINE_TERMINATOR_RE);
+      // Byte streams strip the BOM in TextDecoder; do the same for strings.
+      const lines = text.replace(/^\uFEFF/, '').split(LINE_TERMINATOR_RE);
       for (const line of lines) controller.enqueue(line);
       controller.close();
     },
@@ -32,6 +33,28 @@ export async function parseTextStream(
       case 'ssa':
       case 'ass':
         factory = (await import('../ssa/ssa-parser')).default;
+        break;
+      case 'ttml':
+      case 'dfxp':
+      case 'xml':
+        factory = (await import('../ttml/ttml-parser')).default;
+        break;
+      case 'scc':
+        factory = (await import('../scc/scc-parser')).default;
+        break;
+      case 'lrc':
+        factory = (await import('../lrc/lrc-parser')).default;
+        break;
+      case 'sbv':
+        factory = (await import('../sbv/sbv-parser')).default;
+        break;
+      case 'smi':
+      case 'sami':
+        factory = (await import('../sami/sami-parser')).default;
+        break;
+      case 'sub':
+      case 'microdvd':
+        factory = (await import('../microdvd/microdvd-parser')).default;
         break;
       default:
         factory = (await import('../vtt/vtt-parser')).default;

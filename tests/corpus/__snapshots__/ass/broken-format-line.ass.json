@@ -1,0 +1,557 @@
+{
+  "cueCount": 10,
+  "errors": [
+    "cue end timestamp `2` is not greater than start `3` on line 17",
+    "cue start timestamp `abc` is invalid on line 18",
+    "cue end timestamp `def` is invalid on line 19",
+    "cue start timestamp `99:99:99.99` is invalid on line 28",
+    "cue end timestamp `99:99:99.99` is invalid on line 28",
+    "format missing for `Dialogue` block on line 36"
+  ],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 1,
+      "endTime": 3,
+      "text": "Short format line still works.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 6,
+      "endTime": 7,
+      "text": "Unknown style name.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center"
+    },
+    {
+      "id": "",
+      "startTime": 8,
+      "endTime": 9,
+      "text": "Bad tag arguments.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 9,
+      "endTime": 10,
+      "text": "<c.s-0></c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0,
+          "x": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      },
+      "spans": {
+        "0": {
+          "drawing": {
+            "path": "M0 0Z",
+            "viewBox": [
+              -2,
+              -2,
+              4,
+              4
+            ],
+            "width": 1.042,
+            "height": 0.556,
+            "fill": "rgba(255,255,255,1)",
+            "stroke": "rgba(0,0,0,1)",
+            "strokeWidth": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 10,
+      "endTime": 11,
+      "text": "<c.s-0></c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0,
+          "x": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      },
+      "spans": {
+        "0": {
+          "drawing": {
+            "path": "M0 0L100 0L100 100Z",
+            "viewBox": [
+              -2,
+              -2,
+              104,
+              104
+            ],
+            "width": 27.083,
+            "height": 14.444,
+            "fill": "rgba(255,255,255,1)",
+            "stroke": "rgba(0,0,0,1)",
+            "strokeWidth": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 11,
+      "endTime": 12,
+      "text": "<00:00:11.000><00:00:11.000><c.s-0>Odd karaoke durations.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      },
+      "spans": {
+        "0": {}
+      },
+      "animations": [
+        {
+          "target": {
+            "span": "0"
+          },
+          "delay": 0,
+          "duration": 999999999.99,
+          "fill": "both",
+          "keyframes": [
+            {
+              "strokeColor": "rgba(255,255,255,1)"
+            },
+            {
+              "strokeColor": "rgba(255,255,255,1)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 12,
+      "endTime": 13,
+      "text": "Bad clips.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 13,
+      "endTime": 14,
+      "text": "<c.s-0>Garbage values.</c>",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      },
+      "spans": {
+        "0": {
+          "transform": {
+            "scaleX": 0,
+            "origin": [
+              50,
+              100
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 14,
+      "endTime": 15,
+      "text": "}}}Brace soup.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 15,
+      "endTime": 16,
+      "text": "Recovered.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 94.792,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 1.389
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 6.6667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.2778
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    }
+  ]
+}

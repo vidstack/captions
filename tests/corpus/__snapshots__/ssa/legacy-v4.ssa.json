@@ -1,0 +1,815 @@
+{
+  "cueCount": 13,
+  "errors": [],
+  "cues": [
+    {
+      "id": "",
+      "startTime": 1,
+      "endTime": 4,
+      "text": "Legacy SSA dialogue on the bottom.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 4,
+      "endTime": 7,
+      "text": "Alignment 6 is top-centre in SSA v4.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "top": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 7,
+      "endTime": 10,
+      "text": "<v Narrator>Marked line with a name.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,0,1)",
+        "italic": true,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      },
+      "layer": 1
+    },
+    {
+      "id": "",
+      "startTime": 10,
+      "endTime": 13,
+      "text": "Two lines\nwith a hard break and a soft break.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 13,
+      "endTime": 16,
+      "text": "Old-style \\a alignment override.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "top": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 16,
+      "endTime": 19,
+      "text": "Middle via \\a10.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5,
+          "y": -0.5
+        },
+        "top": 50
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 19,
+      "endTime": 23,
+      "text": "BorderStyle 3 puts a box behind the text.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 3.75
+        },
+        "color": "rgba(255,255,255,1)",
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center"
+      }
+    },
+    {
+      "id": "",
+      "startTime": 23,
+      "endTime": 28,
+      "text": "Effect field with a bang.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 28,
+      "endTime": 34,
+      "text": "Banner scrolling across the bottom of the screen.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "left": 100,
+        "bottom": 4.167,
+        "fixed": true
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "nowrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      },
+      "animations": [
+        {
+          "target": "display",
+          "duration": 6,
+          "fill": "both",
+          "keyframes": [
+            {
+              "left": 100,
+              "translate": {
+                "x": 0
+              }
+            },
+            {
+              "left": 0,
+              "translate": {
+                "x": -1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 34,
+      "endTime": 40,
+      "text": "Scrolling credits\nline two",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "top": 100,
+        "fixed": true,
+        "clip": {
+          "rect": [
+            -100,
+            100,
+            200,
+            100
+          ]
+        }
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      },
+      "animations": [
+        {
+          "target": "display",
+          "duration": 0,
+          "fill": "both",
+          "keyframes": [
+            {
+              "top": 100,
+              "translate": {
+                "y": 0
+              },
+              "clip": {
+                "rect": [
+                  -100,
+                  100,
+                  200,
+                  100
+                ]
+              }
+            },
+            {
+              "top": 100,
+              "translate": {
+                "y": -1
+              },
+              "clip": {
+                "rect": [
+                  -100,
+                  100,
+                  200,
+                  100
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "",
+      "startTime": 40,
+      "endTime": 43,
+      "text": "<c.#00ff00>Green </c><c.#ff0000>red </c>default.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 43,
+      "endTime": 46,
+      "text": "Per-line margins.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 68.75,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 8.333
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    },
+    {
+      "id": "",
+      "startTime": 47,
+      "endTime": 50,
+      "text": "<b><i><u>All three</u></i></b> off.",
+      "region": null,
+      "vertical": "",
+      "snapToLines": true,
+      "line": "auto",
+      "lineAlign": "start",
+      "position": "auto",
+      "positionAlign": "auto",
+      "size": 100,
+      "align": "center",
+      "layout": {
+        "width": "max-content",
+        "maxWidth": 84.375,
+        "left": 50,
+        "translate": {
+          "x": -0.5
+        },
+        "bottom": 4.167
+      },
+      "textStyle": {
+        "fontFamily": "\"Arial\", sans-serif",
+        "fontSize": {
+          "unit": "vh",
+          "value": 4.1667
+        },
+        "color": "rgba(255,255,255,1)",
+        "fontWeight": 700,
+        "opacity": 0,
+        "wrap": "wrap",
+        "lineHeight": "normal",
+        "textAlign": "center",
+        "backgroundColor": "transparent",
+        "padding": {
+          "y": 0
+        },
+        "stroke": {
+          "width": {
+            "unit": "vh",
+            "value": 0.8333
+          },
+          "color": "rgba(255,255,0,1)"
+        },
+        "shadow": {
+          "x": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "y": {
+            "unit": "vh",
+            "value": 0.4167
+          },
+          "color": "rgba(0,0,0,0.8)"
+        }
+      }
+    }
+  ]
+}

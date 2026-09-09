@@ -135,11 +135,6 @@ exports[`tag name 1`] = `
   },
   {
     "children": [],
-    "tagName": "rt",
-    "type": "rt",
-  },
-  {
-    "children": [],
     "tagName": "span",
     "type": "v",
   },

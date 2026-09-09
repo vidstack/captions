@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tt ttp:cellResolution="60 20" xml:lang="en"
+	xmlns="http://www.w3.org/ns/ttml"
+	xmlns:ttp="http://www.w3.org/ns/ttml#parameter" 
+	xmlns:tts="http://www.w3.org/ns/ttml#styling">
+  <head>
+    <layout>
+      <region xml:id="r1" tts:backgroundColor="black" tts:color="white" tts:origin="16.7% 60%" tts:extent="66.7% 20%" tts:displayAlign="after"/>
+      <region xml:id="r2" tts:backgroundColor="blue" tts:color="white" tts:origin="16.7% 20%" tts:extent="66.7% 20%" tts:displayAlign="after"/>
+    </layout>
+  </head>
+ <body>
+   <div>
+     <p>This text should not appear
+       <span region="r1">Bottom Region</span>
+       <span region="r2">Top Region</span>
+     </p>
+   </div>
+ </body>
+</tt>

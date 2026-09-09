@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Formatting (oxfmt) and linting (oxlint) through Vite+.
+      - run: pnpm check
+      - run: pnpm typecheck
+      - run: pnpm coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+          if-no-files-found: ignore
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      # Includes the visual suite: its Linux Chromium baselines are committed (re-record them with
+      # record-baselines.yml after an intentional rendering change).
+      - run: pnpm vp test --run --project browser
+        env:
+          BROWSERS: chromium,firefox,webkit
+      - run: pnpm build
+      - run: pnpm size
+      # `pnpm docs` is forwarded to npm's built-in `docs` (opens a browser); run the script.
+      - run: pnpm run docs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: docs/api
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: vitest-attachments
+          path: .vitest-attachments
+          if-no-files-found: ignore
