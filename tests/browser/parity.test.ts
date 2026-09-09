@@ -27,11 +27,10 @@ const WIDTH = 640,
    */
   PHASE = 0.45,
   /**
-   * Centre distance allowed between the DOM text and the painted pixels. Horizontally the canvas
-   * flow may break a line at a different word than the browser, which shifts the union of left- or
-   * right-aligned lines; vertically both writers must agree on the line grid.
+   * Distance allowed between the DOM text and the painted pixels: horizontally on the alignment
+   * edge (see `alignmentEdge`), vertically on the centre of the line grid.
    */
-  X_TOLERANCE = 16,
+  X_TOLERANCE = 10,
   Y_TOLERANCE = 8,
   OPACITY_TOLERANCE = 0.2;
 
@@ -87,7 +86,15 @@ function paintedBox(context: PaintContext) {
     if (a > maxAlpha) maxAlpha = a;
   }
   if (maxX < 0) return null;
-  return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, top: minY, bottom: maxY, maxAlpha };
+  return {
+    cx: (minX + maxX) / 2,
+    cy: (minY + maxY) / 2,
+    left: minX,
+    right: maxX,
+    top: minY,
+    bottom: maxY,
+    maxAlpha,
+  };
 }
 
 /** Cues whose painted extent is clipped (SSA \clip, scroll bands) have no comparable centre. */
@@ -111,7 +118,27 @@ function domTextCentre(inner: HTMLElement, frame: DOMRect) {
     top = Math.max(r.top, frame.top),
     bottom = Math.min(r.bottom, frame.bottom);
   if (right <= left || bottom <= top) return null;
-  return { cx: (left + right) / 2 - frame.left, cy: (top + bottom) / 2 - frame.top };
+  return {
+    cx: (left + right) / 2 - frame.left,
+    cy: (top + bottom) / 2 - frame.top,
+    left: left - frame.left,
+    right: right - frame.left,
+  };
+}
+
+/**
+ * The horizontal reference both writers must agree on. Wrap points can differ between the canvas
+ * flow and the browser, which moves the centre of left- or right-aligned multi-line text, but not
+ * the edge the lines are aligned to.
+ */
+function alignmentEdge(inner: HTMLElement): 'left' | 'center' | 'right' {
+  const { textAlign, direction } = getComputedStyle(inner),
+    ltr = direction !== 'rtl';
+  if (textAlign === 'center') return 'center';
+  if (textAlign === 'left' || (textAlign === 'start' && ltr) || (textAlign === 'end' && !ltr)) {
+    return 'left';
+  }
+  return 'right';
 }
 
 function effectiveOpacity(display: HTMLElement) {
@@ -176,15 +203,24 @@ for (const sample of textSamples) {
         }
 
         const inner = display.querySelector<HTMLElement>('[data-part="cue"]') ?? display,
-          centre = domTextCentre(inner, frame);
+          centre = domTextCentre(inner, frame),
+          edge = alignmentEdge(inner),
+          domX = centre ? (edge === 'center' ? centre.cx : centre[edge]) : 0,
+          // The painted box includes the background, so step in by the padding to reach the glyphs.
+          pad = target.item.style.paddingX,
+          canvasX =
+            edge === 'center'
+              ? painted.cx
+              : edge === 'left'
+                ? painted.left + pad
+                : painted.right - pad;
         if (
           centre &&
           !isClipped(cue) &&
-          (Math.abs(centre.cx - painted.cx) > X_TOLERANCE ||
-            Math.abs(centre.cy - painted.cy) > Y_TOLERANCE)
+          (Math.abs(domX - canvasX) > X_TOLERANCE || Math.abs(centre.cy - painted.cy) > Y_TOLERANCE)
         ) {
           problems.push(
-            `${at(time)}: "${text}" centre DOM (${centre.cx.toFixed(0)}, ${centre.cy.toFixed(0)}) vs canvas (${painted.cx.toFixed(0)}, ${painted.cy.toFixed(0)})`,
+            `${at(time)}: "${text}" ${edge} DOM (${domX.toFixed(0)}, ${centre.cy.toFixed(0)}) vs canvas (${canvasX.toFixed(0)}, ${painted.cy.toFixed(0)})`,
           );
         }
         if (Math.abs(opacity - painted.maxAlpha / 255) > OPACITY_TOLERANCE) {
