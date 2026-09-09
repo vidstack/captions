@@ -1,13 +1,6 @@
 import { setCSSVar } from '../../utils/style';
 import type { VTTRegion } from '../vtt-region';
-import {
-  createBox,
-  createCSSBox,
-  LAYOUT_CACHE,
-  resolveRelativeBox,
-  setBoxCSSVars,
-  type Box,
-} from './box';
+import { setBoxCSSVars, type Box } from './box';
 import type { RegionLayoutInput } from './layout';
 
 /**
@@ -27,23 +20,25 @@ export function writeRegionHeight(regionEl: HTMLElement, height: number) {
   setCSSVar(regionEl, 'region-height', height + 'px');
 }
 
-/** MEASURE (part 2): the region box, cached as container fractions until the next resize. */
+/**
+ * MEASURE (part 2): the region box from its anchors, in container pixels (the same arithmetic as
+ * the stylesheet's default `top`/`left`). Computed rather than read back from the element: the
+ * element's `top` follows the region height and transitions, so a rect read once and cached pinned
+ * a bottom-anchored roll-up region where its first row put it and later rows pushed it off the
+ * overlay.
+ */
 export function measureRegion(
   container: Box,
-  regionEl: HTMLElement,
+  region: VTTRegion,
   height: number,
 ): RegionLayoutInput {
-  if (!regionEl[LAYOUT_CACHE]) {
-    regionEl[LAYOUT_CACHE] = createCSSBox(container, createBox(regionEl));
-  }
-
-  const box = resolveRelativeBox(container, { ...regionEl[LAYOUT_CACHE] } as Box);
-  box.width = regionEl.clientWidth;
-  box.height = height;
-  box.right = box.left + box.width;
-  box.bottom = box.top + height;
-
-  return { kind: 'region', box };
+  const width = (region.width / 100) * container.width,
+    left = (region.viewportAnchorX / 100) * container.width - (region.regionAnchorX / 100) * width,
+    top = (region.viewportAnchorY / 100) * container.height - (region.regionAnchorY / 100) * height;
+  return {
+    kind: 'region',
+    box: { left, top, width, height, right: left + width, bottom: top + height },
+  };
 }
 
 /** WRITE phase. */

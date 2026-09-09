@@ -1,7 +1,6 @@
 import { setCSSVar, setDataAttr, setPartAttr } from '../../../utils/style';
 import type { VTTCue } from '../../vtt-cue';
 import type { VTTRegion } from '../../vtt-region';
-import { LAYOUT_CACHE } from '../box';
 import type { RendererFeature } from '../feature';
 import {
   measureRegion,
@@ -36,10 +35,6 @@ export function regions(): RendererFeature {
       els.clear();
     },
 
-    resize() {
-      for (const el of els.values()) el[LAYOUT_CACHE] = null;
-    },
-
     containerFor(_, cue) {
       // https://www.w3.org/TR/webvtt1/#processing-cue-settings: a region only applies to cues
       // that use the defaults for size, vertical, and line.
@@ -66,7 +61,7 @@ export function regions(): RendererFeature {
 
     measureContainer(ctx, target) {
       if (regionOf(target.cue) !== target.el) return;
-      return measureRegion(ctx.overlayBox, target.el, heights.get(target.el) ?? 0);
+      return measureRegion(ctx.overlayBox, target.cue.region!, heights.get(target.el) ?? 0);
     },
 
     writeContainer(ctx, target, box) {
